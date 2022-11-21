@@ -1,0 +1,8 @@
+source/components/Animation.cs
+source/components/Group.cs
+source/components/Layer.cs
+source/components/State.cs
+source/components/Transition.cs
+source/lib/VaMUtils.cs
+source/Core.cs
+source/Ui.cs
