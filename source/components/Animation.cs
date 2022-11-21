@@ -28,9 +28,23 @@ namespace ThatsLewd
       public Animation(Layer layer, string name = null)
       {
         this.layer = layer;
-        SetNameUnique(name ?? "New Animation");
+        SetNameUnique(name ?? "animation");
         Animation.list.Add(this);
       }
+
+      public Animation(Layer layer, Animation source) : this(layer)
+      {
+        foreach (Transition transition in source.fromTransitions)
+        {
+          new Transition(this, transition.to);
+        }
+        foreach (Transition transition in source.toTransitions)
+        {
+          new Transition(transition.from, this);
+        }
+      }
+
+      public Animation(Animation source) : this(source.layer, source) { }
 
       public void Delete()
       {
@@ -39,15 +53,15 @@ namespace ThatsLewd
 
       public void SetNameUnique(string name)
       {
-        for (int i = 1; true; i++)
+        for (int i = 0; true; i++)
         {
-          if (i == 1)
+          if (i == 0)
           {
             this.name = $"{name}";
           }
           else
           {
-            this.name = $"{name} {i.ToString().PadLeft(3, '0')}";
+            this.name = $"{name} copy{i.ToString().PadLeft(3, '0')}";
           }
 
           bool matchFound = false;

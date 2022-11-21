@@ -38,11 +38,15 @@ namespace ThatsLewd
     Layer activeLayer = null;
     Animation activeAnimation = null;
 
+    JSONStorableString groupNameStorable;
+    JSONStorableString stateNameStorable;
+    JSONStorableString layerNameStorable;
+    JSONStorableString animationNameStorable;
+
     void UIInit()
     {
       UIBuilder.Init(this, CreateUIElement);
       RebuildUI();
-      SetupCallbacks();
     }
 
     void UIUpdate()
@@ -72,23 +76,15 @@ namespace ThatsLewd
       UI(UIBuilder.CreateToggle(ref playbackEnabledStorable, UIColumn.LEFT, "Playback Enabled", true));
       UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 50f));
 
-      UI(UIBuilder.CreateStringChooser(ref selectGroupStorable, UIColumn.LEFT, "Group", null, register: false));
-      UI(UIBuilder.CreateStringChooser(ref selectStateStorable, UIColumn.RIGHT, "State", null, register: false));
-      UI(UIBuilder.CreateStringChooser(ref selectLayerStorable, UIColumn.LEFT, "Layer", null, register: false));
-      UI(UIBuilder.CreateStringChooser(ref selectAnimationStorable, UIColumn.RIGHT, "Animation", null, register: false));
+      UI(UIBuilder.CreateStringChooser(ref selectGroupStorable, UIColumn.LEFT, "Group", null, callback: HandleSelectGroup, register: false));
+      UI(UIBuilder.CreateStringChooser(ref selectStateStorable, UIColumn.RIGHT, "State", null, callback: HandleSelectState, register: false));
+      UI(UIBuilder.CreateStringChooser(ref selectLayerStorable, UIColumn.LEFT, "Layer", null, callback: HandleSelectLayer, register: false));
+      UI(UIBuilder.CreateStringChooser(ref selectAnimationStorable, UIColumn.RIGHT, "Animation", null, callback: HandleSelectAnimation, register: false));
 
       UI(UIBuilder.CreateTabBar(UIColumn.LEFT, Tabs.list, HandleTabSelect, 5));
       UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 2 * 55f));
 
       BuildActiveTabUI();
-    }
-
-    void SetupCallbacks()
-    {
-      selectGroupStorable.setCallbackFunction += HandleSelectGroup;
-      selectStateStorable.setCallbackFunction += HandleSelectState;
-      selectLayerStorable.setCallbackFunction += HandleSelectLayer;
-      selectAnimationStorable.setCallbackFunction += HandleSelectAnimation;
     }
 
     void HandleTabSelect(string tabName)
@@ -136,6 +132,11 @@ namespace ThatsLewd
       RefreshStateList();
       Utils.SelectStringChooserFirstValue(selectStateStorable);
 
+      if (groupNameStorable != null)
+      {
+        groupNameStorable.valNoCallback = activeGroup?.name ?? "";
+      }
+
       InvalidateUI();
     }
 
@@ -143,6 +144,11 @@ namespace ThatsLewd
     {
       Utils.EnsureStringChooserValue(selectStateStorable, defaultToFirstChoice: true, noCallback: true);
       activeState = State.list.Find((s) => s.name == selectStateStorable.val);
+
+      if (stateNameStorable != null)
+      {
+        stateNameStorable.valNoCallback = activeState?.name ?? "";
+      }
 
       InvalidateUI();
     }
@@ -155,6 +161,11 @@ namespace ThatsLewd
       RefreshAnimationList();
       Utils.SelectStringChooserFirstValue(selectAnimationStorable);
 
+      if (layerNameStorable != null)
+      {
+        layerNameStorable.valNoCallback = activeLayer?.name ?? "";
+      }
+
       InvalidateUI();
     }
 
@@ -162,6 +173,11 @@ namespace ThatsLewd
     {
       Utils.EnsureStringChooserValue(selectAnimationStorable, defaultToFirstChoice: true, noCallback: true);
       activeAnimation = Animation.list.Find((a) => a.name == selectAnimationStorable.val);
+
+      if (animationNameStorable != null)
+      {
+        animationNameStorable.valNoCallback = activeAnimation?.name ?? "";
+      }
 
       InvalidateUI();
     }
@@ -262,10 +278,14 @@ namespace ThatsLewd
         return;
       }
 
+      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate Group", HandleDuplicateGroup));
+      UI(UIBuilder.CreateTextInput(ref groupNameStorable, UIColumn.LEFT, "Name", activeGroup?.name ?? "", callback: HandleRenameGroup));
       UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
+
       var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete Group", HandleDeleteGroup);
       deleteButton.buttonColor = UIColor.RED;
       UI(deleteButton);
+
     }
 
     void HandleNewGroup()
@@ -273,6 +293,26 @@ namespace ThatsLewd
       Group group = new Group();
       RefreshGroupList();
       selectGroupStorable.val = group.name;
+    }
+
+    void HandleDuplicateGroup()
+    {
+      if (activeGroup != null)
+      {
+        Group group = new Group(activeGroup);
+        RefreshGroupList();
+        selectGroupStorable.val = group.name;
+      }
+    }
+
+    void HandleRenameGroup(string val)
+    {
+      if (activeGroup != null)
+      {
+        activeGroup.SetNameUnique(val);
+        RefreshGroupList();
+        selectGroupStorable.val = activeGroup.name;
+      }
     }
 
     void HandleDeleteGroup()
@@ -317,7 +357,10 @@ namespace ThatsLewd
         return;
       }
 
+      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate State", HandleDuplicateState));
+      UI(UIBuilder.CreateTextInput(ref stateNameStorable, UIColumn.LEFT, "Name", activeState?.name ?? "", callback: HandleRenameState));
       UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
+
       var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete State", HandleDeleteState);
       deleteButton.buttonColor = UIColor.RED;
       UI(deleteButton);
@@ -330,6 +373,26 @@ namespace ThatsLewd
         State state = new State(activeGroup);
         RefreshStateList();
         selectStateStorable.val = state.name;
+      }
+    }
+
+    void HandleDuplicateState()
+    {
+      if (activeState != null)
+      {
+        State state = new State(activeState);
+        RefreshStateList();
+        selectStateStorable.val = state.name;
+      }
+    }
+
+    void HandleRenameState(string val)
+    {
+      if (activeState != null)
+      {
+        activeState.SetNameUnique(val);
+        RefreshStateList();
+        selectStateStorable.val = activeState.name;
       }
     }
 
@@ -365,7 +428,10 @@ namespace ThatsLewd
         return;
       }
 
+      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate Layer", HandleDuplicateLayer));
+      UI(UIBuilder.CreateTextInput(ref layerNameStorable, UIColumn.LEFT, "Name", activeLayer?.name ?? "", callback: HandleRenameLayer));
       UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
+
       var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete Layer", HandleDeleteLayer);
       deleteButton.buttonColor = UIColor.RED;
       UI(deleteButton);
@@ -376,6 +442,26 @@ namespace ThatsLewd
       Layer layer = new Layer();
       RefreshLayerList();
       selectLayerStorable.val = layer.name;
+    }
+
+    void HandleDuplicateLayer()
+    {
+      if (activeLayer != null)
+      {
+        Layer layer = new Layer(activeLayer);
+        RefreshLayerList();
+        selectLayerStorable.val = layer.name;
+      }
+    }
+
+    void HandleRenameLayer(string val)
+    {
+      if (activeLayer != null)
+      {
+        activeLayer.SetNameUnique(val);
+        RefreshLayerList();
+        selectLayerStorable.val = activeLayer.name;
+      }
     }
 
     void HandleDeleteLayer()
@@ -420,7 +506,10 @@ namespace ThatsLewd
         return;
       }
 
+      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate Animation", HandleDuplicateAnimation));
+      UI(UIBuilder.CreateTextInput(ref animationNameStorable, UIColumn.LEFT, "Name", activeAnimation?.name ?? "", callback: HandleRenameAnimation));
       UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
+
       var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete Animation", HandleDeleteAnimation);
       deleteButton.buttonColor = UIColor.RED;
       UI(deleteButton);
@@ -433,6 +522,26 @@ namespace ThatsLewd
         Animation animation = new Animation(activeLayer);
         RefreshAnimationList();
         selectAnimationStorable.val = animation.name;
+      }
+    }
+
+    void HandleDuplicateAnimation()
+    {
+      if (activeAnimation != null)
+      {
+        Animation animation = new Animation(activeAnimation);
+        RefreshAnimationList();
+        selectAnimationStorable.val = animation.name;
+      }
+    }
+
+    void HandleRenameAnimation(string val)
+    {
+      if (activeAnimation != null)
+      {
+        activeAnimation.SetNameUnique(val);
+        RefreshAnimationList();
+        selectAnimationStorable.val = activeAnimation.name;
       }
     }
 

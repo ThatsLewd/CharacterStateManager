@@ -21,8 +21,16 @@ namespace ThatsLewd
 
       public Layer(string name = null)
       {
-        SetNameUnique(name ?? "New Layer");
+        SetNameUnique(name ?? "layer");
         Layer.list.Add(this);
+      }
+
+      public Layer(Layer source) : this()
+      {
+        foreach (Animation animation in source.animations)
+        {
+          new Animation(this, animation);
+        }
       }
 
       public void Delete()
@@ -36,15 +44,15 @@ namespace ThatsLewd
 
       public void SetNameUnique(string name)
       {
-        for (int i = 1; true; i++)
+        for (int i = 0; true; i++)
         {
-          if (i == 1)
+          if (i == 0)
           {
             this.name = $"{name}";
           }
           else
           {
-            this.name = $"{name} {i.ToString().PadLeft(3, '0')}";
+            this.name = $"{name} copy{i.ToString().PadLeft(3, '0')}";
           }
 
           bool matchFound = false;

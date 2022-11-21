@@ -21,8 +21,16 @@ namespace ThatsLewd
 
       public Group(string name = null)
       {
-        SetNameUnique(name ?? "New Group");
+        SetNameUnique(name ?? "group");
         Group.list.Add(this);
+      }
+
+      public Group(Group source) : this()
+      {
+        foreach (State state in source.states)
+        {
+          new State(this, state);
+        }
       }
 
       public void Delete()
@@ -36,15 +44,15 @@ namespace ThatsLewd
 
       public void SetNameUnique(string name)
       {
-        for (int i = 1; true; i++)
+        for (int i = 0; true; i++)
         {
-          if (i == 1)
+          if (i == 0)
           {
             this.name = $"{name}";
           }
           else
           {
-            this.name = $"{name} {i.ToString().PadLeft(3, '0')}";
+            this.name = $"{name} copy{i.ToString().PadLeft(3, '0')}";
           }
 
           bool matchFound = false;

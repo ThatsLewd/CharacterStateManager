@@ -69,7 +69,7 @@ namespace VaMUtils
     }
 
     // Create VaM-UI Toggle button
-    public static UIDynamicToggle CreateToggle(ref JSONStorableBool storable, UIColumn side, string label, bool defaultValue, bool register = true)
+    public static UIDynamicToggle CreateToggle(ref JSONStorableBool storable, UIColumn side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = true)
     {
       if (storable == null)
       {
@@ -79,13 +79,17 @@ namespace VaMUtils
           storable.storeType = JSONStorableParam.StoreType.Full;
           script.RegisterBool(storable);
         }
+        if (callback != null)
+        {
+          storable.setCallbackFunction += callback;
+        }
       }
       UIDynamicToggle toggle = script.CreateToggle(storable, side == UIColumn.RIGHT);
       return toggle;
     }
 
     // Create VaM-UI Float slider (hint: use c# named parameters for optional arguments)
-    public static UIDynamicSlider CreateSlider(ref JSONStorableFloat storable, UIColumn side, string label, float defaultValue, float minValue, float maxValue, bool fixedRange = false, bool integer = false, bool interactable = true, bool register = true)
+    public static UIDynamicSlider CreateSlider(ref JSONStorableFloat storable, UIColumn side, string label, float defaultValue, float minValue, float maxValue, bool fixedRange = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = true)
     {
       if (storable == null)
       {
@@ -94,6 +98,10 @@ namespace VaMUtils
         {
           storable.storeType = JSONStorableParam.StoreType.Full;
           script.RegisterFloat(storable);
+        }
+        if (callback != null)
+        {
+          storable.setCallbackFunction += callback;
         }
       }
       UIDynamicSlider slider = script.CreateSlider(storable, side == UIColumn.RIGHT);
@@ -107,7 +115,7 @@ namespace VaMUtils
     }
 
     // Create VaM-UI ColorPicker
-    public static UIDynamicColorPicker CreateColor(ref JSONStorableColor storable, UIColumn side, string label, Color defaultValue, bool register = true)
+    public static UIDynamicColorPicker CreateColor(ref JSONStorableColor storable, UIColumn side, string label, Color defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = true)
     {
       if (storable == null)
       {
@@ -118,13 +126,17 @@ namespace VaMUtils
           storable.storeType = JSONStorableParam.StoreType.Full;
           script.RegisterColor(storable);
         }
+        if (callback != null)
+        {
+          storable.setCallbackFunction += callback;
+        }
       }
       UIDynamicColorPicker picker = script.CreateColorPicker(storable, side == UIColumn.RIGHT);
       return picker;
     }
 
     // Create VaM-UI StringChooser
-    public static UIDynamicPopup CreateStringChooser(ref JSONStorableStringChooser storable, UIColumn side, string label, List<string> initialChoices, bool noDefaultSelection = false, bool register = true)
+    public static UIDynamicPopup CreateStringChooser(ref JSONStorableStringChooser storable, UIColumn side, string label, List<string> initialChoices, bool noDefaultSelection = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = true)
     {
       if (storable == null)
       {
@@ -139,13 +151,17 @@ namespace VaMUtils
           storable.storeType = JSONStorableParam.StoreType.Full;
           script.RegisterStringChooser(storable);
         }
+        if (callback != null)
+        {
+          storable.setCallbackFunction += callback;
+        }
       }
       UIDynamicPopup popup = script.CreateScrollablePopup(storable, side == UIColumn.RIGHT);
       return popup;
     }
 
     // Create VaM-UI TextureChooser. Note that you are responsible for destroying the texture when you don't need it anymore.
-    public static void CreateTexture2DChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, TextureSettings settings, TextureSetCallback callback, bool register = true)
+    public static void CreateTexture2DChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = true)
     {
       if (storable == null)
       {
@@ -172,7 +188,7 @@ namespace VaMUtils
     }
 
     // Create VaM-UI AssetBundleChooser.
-    public static void CreateAssetBundleChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, string fileExtensions, bool register = true)
+    public static void CreateAssetBundleChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = true)
     {
       if (storable == null)
       {
@@ -185,6 +201,10 @@ namespace VaMUtils
         if (!string.IsNullOrEmpty(defaultValue))
         {
           storable.SetFilePath(defaultValue);
+        }
+        if (callback != null)
+        {
+          storable.setCallbackFunction += callback;
         }
       }
       UIDynamicButton button = script.CreateButton("Select " + label, side == UIColumn.RIGHT);
@@ -231,7 +251,7 @@ namespace VaMUtils
     }
 
     // Create one-line text input with label
-    public static UIDynamicTextInput CreateTextInput(ref JSONStorableString storable, UIColumn side, string label, string defaultValue = "", bool register = false)
+    public static UIDynamicTextInput CreateTextInput(ref JSONStorableString storable, UIColumn side, string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
     {
       if (ourLabelWithInputPrefab == null)
       {
@@ -301,6 +321,10 @@ namespace VaMUtils
           {
             storable.storeType = JSONStorableParam.StoreType.Full;
             script.RegisterString(storable);
+          }
+          if (callback != null)
+          {
+            storable.setCallbackFunction += callback;
           }
         }
         Transform t = ourCreateUIElement(ourLabelWithInputPrefab.transform, side == UIColumn.RIGHT);
@@ -666,7 +690,10 @@ namespace VaMUtils
           tex.filterMode = settings.filterMode;
           tex.anisoLevel = settings.anisoLevel;
         }
-        callback(tex);
+        if (callback != null)
+        {
+          callback(tex);
+        }
       };
       ImageLoaderThreaded.singleton.QueueImage(queuedImage);
     }
