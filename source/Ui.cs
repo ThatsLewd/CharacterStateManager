@@ -24,6 +24,7 @@ namespace ThatsLewd
     bool uiNeedsRebuilt = false;
     List<object> uiItems = new List<object>();
 
+    GameObject tabBarPrefab;
     string activeTab;
 
     JSONStorableBool playbackEnabledStorable;
@@ -47,6 +48,12 @@ namespace ThatsLewd
     {
       UIBuilder.Init(this, CreateUIElement);
       RebuildUI();
+    }
+
+    void UIDestroy()
+    {
+      UIBuilder.Destroy();
+      Utils.SafeDestroy(ref tabBarPrefab);
     }
 
     void UIUpdate()
@@ -81,7 +88,7 @@ namespace ThatsLewd
       UI(UIBuilder.CreateStringChooser(ref selectLayerStorable, UIColumn.LEFT, "Layer", null, callback: HandleSelectLayer, register: false));
       UI(UIBuilder.CreateStringChooser(ref selectAnimationStorable, UIColumn.RIGHT, "Animation", null, callback: HandleSelectAnimation, register: false));
 
-      UI(UIBuilder.CreateTabBar(UIColumn.LEFT, Tabs.list, HandleTabSelect, 5));
+      UI(UIBuilder.CreateTabBar(ref tabBarPrefab, UIColumn.LEFT, Tabs.list, HandleTabSelect, 5));
       UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 2 * 55f));
 
       BuildActiveTabUI();
@@ -263,7 +270,15 @@ namespace ThatsLewd
     void BuildGroupsTabUI()
     {
       UI(UIBuilder.CreateHeaderText(UIColumn.LEFT, "Groups"));
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 45f));
+
+      if (activeGroup == null)
+      {
+        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 45f));
+      }
+      else
+      {
+        UI(UIBuilder.CreateOnelineTextInput(ref groupNameStorable, UIColumn.RIGHT, "Name", activeGroup?.name ?? "", callback: HandleRenameGroup));
+      }
 
       UI(UIBuilder.CreateInfoTextNoScroll(
         UIColumn.LEFT,
@@ -271,18 +286,17 @@ namespace ThatsLewd
         5
       ));
 
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "New Group", HandleNewGroup));
+      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "New Group", HandleNewGroup));
 
       if (activeGroup == null)
       {
         return;
       }
 
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate Group", HandleDuplicateGroup));
-      UI(UIBuilder.CreateTextInput(ref groupNameStorable, UIColumn.LEFT, "Name", activeGroup?.name ?? "", callback: HandleRenameGroup));
-      UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
+      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "Duplicate Group", HandleDuplicateGroup));
+      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
 
-      var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete Group", HandleDeleteGroup);
+      var deleteButton = UIBuilder.CreateButton(UIColumn.RIGHT, "Delete Group", HandleDeleteGroup);
       deleteButton.buttonColor = UIColor.RED;
       UI(deleteButton);
 
@@ -337,7 +351,7 @@ namespace ThatsLewd
       UI(UIBuilder.CreateInfoTextNoScroll(
         UIColumn.LEFT,
         @"A <b>State</b> defines what a character is currently doing (idle, sitting, etc). A state assigns animations to layers that can be played either sequentially or randomly. For example, a dance may be composed of sequential animations, or an idle may be composed of random animations.",
-        7
+        8
       ));
 
       if (activeGroup == null)
@@ -358,7 +372,7 @@ namespace ThatsLewd
       }
 
       UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate State", HandleDuplicateState));
-      UI(UIBuilder.CreateTextInput(ref stateNameStorable, UIColumn.LEFT, "Name", activeState?.name ?? "", callback: HandleRenameState));
+      UI(UIBuilder.CreateOnelineTextInput(ref stateNameStorable, UIColumn.LEFT, "Name", activeState?.name ?? "", callback: HandleRenameState));
       UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
 
       var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete State", HandleDeleteState);
@@ -429,7 +443,7 @@ namespace ThatsLewd
       }
 
       UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate Layer", HandleDuplicateLayer));
-      UI(UIBuilder.CreateTextInput(ref layerNameStorable, UIColumn.LEFT, "Name", activeLayer?.name ?? "", callback: HandleRenameLayer));
+      UI(UIBuilder.CreateOnelineTextInput(ref layerNameStorable, UIColumn.LEFT, "Name", activeLayer?.name ?? "", callback: HandleRenameLayer));
       UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
 
       var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete Layer", HandleDeleteLayer);
@@ -507,7 +521,7 @@ namespace ThatsLewd
       }
 
       UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate Animation", HandleDuplicateAnimation));
-      UI(UIBuilder.CreateTextInput(ref animationNameStorable, UIColumn.LEFT, "Name", activeAnimation?.name ?? "", callback: HandleRenameAnimation));
+      UI(UIBuilder.CreateOnelineTextInput(ref animationNameStorable, UIColumn.LEFT, "Name", activeAnimation?.name ?? "", callback: HandleRenameAnimation));
       UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
 
       var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete Animation", HandleDeleteAnimation);

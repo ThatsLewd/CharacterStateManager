@@ -23,7 +23,7 @@ namespace ThatsLewd
 
     void OnDestroy()
     {
-      UIBuilder.Destroy();
+      UIDestroy();
     }
 
     protected void Update()

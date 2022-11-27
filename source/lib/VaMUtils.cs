@@ -57,15 +57,19 @@ namespace VaMUtils
     public static void Init(MVRScript script, CreateUIElement createUIElementCallback)
     {
       UIBuilder.script = script;
-      ourCreateUIElement = createUIElementCallback;
+      createUIElement = createUIElementCallback;
     }
 
     public static void Destroy()
     {
-      Utils.SafeDestroy(ref ourLabelWithInputPrefab);
-      Utils.SafeDestroy(ref ourLabelWithXButtonPrefab);
-      Utils.SafeDestroy(ref ourTextInfoPrefab);
-      Utils.SafeDestroy(ref ourTwinButtonPrefab);
+      Utils.SafeDestroy(ref customOnelineTextInputPrefab);
+      Utils.SafeDestroy(ref customLabelWithXPrefab);
+      Utils.SafeDestroy(ref customButtonPairPrefab);
+      Utils.SafeDestroy(ref customInfoTextPrefab);
+      Utils.SafeDestroy(ref backgroundElementPrefab);
+      Utils.SafeDestroy(ref labelElementPrefab);
+      Utils.SafeDestroy(ref textFieldElementPrefab);
+      Utils.SafeDestroy(ref buttonElementPrefab);
     }
 
     // Create VaM-UI Toggle button
@@ -250,68 +254,34 @@ namespace VaMUtils
       script.RegisterAction(action);
     }
 
-    // Create one-line text input with label
-    public static UIDynamicTextInput CreateTextInput(ref JSONStorableString storable, UIColumn side, string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
+    // Create one-line text input with a label
+    private static GameObject customOnelineTextInputPrefab;
+    public static UIDynamicOnelineTextInput CreateOnelineTextInput(ref JSONStorableString storable, UIColumn side, string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
     {
-      if (ourLabelWithInputPrefab == null)
+      if (customOnelineTextInputPrefab == null)
       {
-        ourLabelWithInputPrefab = new GameObject("LabelInput");
-        ourLabelWithInputPrefab.SetActive(false);
-        RectTransform rt = ourLabelWithInputPrefab.AddComponent<RectTransform>();
-        rt.anchorMax = new Vector2(0, 1);
-        rt.anchorMin = new Vector2(0, 1);
-        rt.offsetMax = new Vector2(535, -500);
-        rt.offsetMin = new Vector2(10, -600);
-        LayoutElement le = ourLabelWithInputPrefab.AddComponent<LayoutElement>();
-        le.flexibleWidth = 1;
-        le.minHeight = 45;
-        le.minWidth = 350;
-        le.preferredHeight = 45;
-        le.preferredWidth = 500;
+        UIDynamicOnelineTextInput uid = CreateUIDynamicPrefab<UIDynamicOnelineTextInput>("TextInput", 50f);
+        customOnelineTextInputPrefab = uid.gameObject;
 
-        RectTransform backgroundTransform = script.manager.configurableScrollablePopupPrefab.transform.Find("Background") as RectTransform;
-        backgroundTransform = UnityEngine.Object.Instantiate(backgroundTransform, ourLabelWithInputPrefab.transform);
-        backgroundTransform.name = "Background";
-        backgroundTransform.anchorMax = new Vector2(1, 1);
-        backgroundTransform.anchorMin = new Vector2(0, 0);
-        backgroundTransform.offsetMax = new Vector2(0, 0);
-        backgroundTransform.offsetMin = new Vector2(0, -10);
+        RectTransform background = InstantiateBackground(uid.transform);
 
-        RectTransform labelTransform = script.manager.configurableScrollablePopupPrefab.transform.Find("Button/Text") as RectTransform;
-        labelTransform = UnityEngine.Object.Instantiate(labelTransform, ourLabelWithInputPrefab.transform);
-        labelTransform.name = "Text";
-        labelTransform.anchorMax = new Vector2(0, 1);
-        labelTransform.anchorMin = new Vector2(0, 0);
-        labelTransform.offsetMax = new Vector2(155, -10);
-        labelTransform.offsetMin = new Vector2(5, 0);
-        Text labelText = labelTransform.GetComponent<Text>();
-        labelText.text = "Name";
+        RectTransform labelRect = InstantiateLabel(uid.transform);
+        labelRect.anchorMax = new Vector2(0.4f, 1f);
+        Text labelText = labelRect.GetComponent<Text>();
+        labelText.text = "";
         labelText.color = Color.white;
 
-        RectTransform inputTransform = script.manager.configurableTextFieldPrefab.transform as RectTransform;
-        inputTransform = UnityEngine.Object.Instantiate(inputTransform, ourLabelWithInputPrefab.transform);
-        inputTransform.anchorMax = new Vector2(1, 1);
-        inputTransform.anchorMin = new Vector2(0, 0);
-        inputTransform.offsetMax = new Vector2(-5, -5);
-        inputTransform.offsetMin = new Vector2(160, -5);
-        UIDynamicTextField textfield = inputTransform.GetComponent<UIDynamicTextField>();
-        textfield.backgroundColor = Color.white;
-        LayoutElement layout = textfield.GetComponent<LayoutElement>();
-        layout.preferredHeight = layout.minHeight = 35;
-        InputField inputfield = textfield.gameObject.AddComponent<InputField>();
-        inputfield.textComponent = textfield.UItext;
+        RectTransform inputRect = InstantiateTextField(uid.transform);
+        inputRect.anchorMin = new Vector2(0.4f, 0f);
+        inputRect.offsetMin = new Vector2(5f, 5f);
+        inputRect.offsetMax = new Vector2(-5f, -4f);
 
-        RectTransform textTransform = textfield.UItext.rectTransform;
-        textTransform.anchorMax = new Vector2(1, 1);
-        textTransform.anchorMin = new Vector2(0, 0);
-        textTransform.offsetMax = new Vector2(-5, -5);
-        textTransform.offsetMin = new Vector2(10, -5);
+        RectTransform textRect = inputRect.Find("Scroll View/Viewport/Content/Text") as RectTransform;
+        textRect.offsetMin = new Vector2(10f, 0f);
+        textRect.offsetMax = new Vector2(-10f, -5f);
 
-        UnityEngine.Object.Destroy(textfield);
-
-        UIDynamicTextInput uid = ourLabelWithInputPrefab.AddComponent<UIDynamicTextInput>();
         uid.label = labelText;
-        uid.input = inputfield;
+        uid.input = inputRect.GetComponent<InputField>();
       }
       {
         if (storable == null)
@@ -327,212 +297,144 @@ namespace VaMUtils
             storable.setCallbackFunction += callback;
           }
         }
-        Transform t = ourCreateUIElement(ourLabelWithInputPrefab.transform, side == UIColumn.RIGHT);
-        UIDynamicTextInput uid = t.gameObject.GetComponent<UIDynamicTextInput>();
-        storable.inputField = uid.input;
+        Transform t = createUIElement(customOnelineTextInputPrefab.transform, side == UIColumn.RIGHT);
+        UIDynamicOnelineTextInput uid = t.GetComponent<UIDynamicOnelineTextInput>();
         uid.label.text = label;
-        t.gameObject.SetActive(true);
+        storable.inputField = uid.input;
+        uid.gameObject.SetActive(true);
         return uid;
       }
     }
 
     // Create label that has an X button on the right side
-    public static UIDynamicLabelXButton CreateLabelXButton(UIColumn side, string label, UnityAction callback)
+    private static GameObject customLabelWithXPrefab;
+    public static UIDynamicLabelWithX CreateLabelWithX(UIColumn side, string label, UnityAction callback)
     {
-      if (ourLabelWithXButtonPrefab == null)
+      if (customLabelWithXPrefab == null)
       {
-        ourLabelWithXButtonPrefab = new GameObject("LabelXButton");
-        ourLabelWithXButtonPrefab.SetActive(false);
-        RectTransform rt = ourLabelWithXButtonPrefab.AddComponent<RectTransform>();
-        rt.anchorMax = new Vector2(0, 1);
-        rt.anchorMin = new Vector2(0, 1);
-        rt.offsetMax = new Vector2(535, -500);
-        rt.offsetMin = new Vector2(10, -600);
-        LayoutElement le = ourLabelWithXButtonPrefab.AddComponent<LayoutElement>();
-        le.flexibleWidth = 1;
-        le.minHeight = 50;
-        le.minWidth = 350;
-        le.preferredHeight = 50;
-        le.preferredWidth = 500;
+        UIDynamicLabelWithX uid = CreateUIDynamicPrefab<UIDynamicLabelWithX>("LabelWithX", 50f);
+        customLabelWithXPrefab = uid.gameObject;
 
-        RectTransform backgroundTransform = script.manager.configurableScrollablePopupPrefab.transform.Find("Background") as RectTransform;
-        backgroundTransform = UnityEngine.Object.Instantiate(backgroundTransform, ourLabelWithXButtonPrefab.transform);
-        backgroundTransform.name = "Background";
-        backgroundTransform.anchorMax = new Vector2(1, 1);
-        backgroundTransform.anchorMin = new Vector2(0, 0);
-        backgroundTransform.offsetMax = new Vector2(0, 0);
-        backgroundTransform.offsetMin = new Vector2(0, -10);
+        RectTransform background = InstantiateBackground(uid.transform);
 
-        RectTransform buttonTransform = script.manager.configurableScrollablePopupPrefab.transform.Find("Button") as RectTransform;
-        buttonTransform = UnityEngine.Object.Instantiate(buttonTransform, ourLabelWithXButtonPrefab.transform);
-        buttonTransform.name = "Button";
-        buttonTransform.anchorMax = new Vector2(1, 1);
-        buttonTransform.anchorMin = new Vector2(1, 0);
-        buttonTransform.offsetMax = new Vector2(0, 0);
-        buttonTransform.offsetMin = new Vector2(-60, -10);
-        Button buttonButton = buttonTransform.GetComponent<Button>();
-        Text buttonText = buttonTransform.Find("Text").GetComponent<Text>();
-        buttonText.text = "X";
+        RectTransform labelRect = InstantiateLabel(uid.transform);
+        Text labelText = labelRect.GetComponent<Text>();
+        labelText.text = "";
 
-        RectTransform labelTransform = buttonText.rectTransform;
-        labelTransform = UnityEngine.Object.Instantiate(labelTransform, ourLabelWithXButtonPrefab.transform);
-        labelTransform.name = "Text";
-        labelTransform.anchorMax = new Vector2(1, 1);
-        labelTransform.anchorMin = new Vector2(0, 0);
-        labelTransform.offsetMax = new Vector2(-65, 0);
-        labelTransform.offsetMin = new Vector2(5, -10);
-        Text labelText = labelTransform.GetComponent<Text>();
-        labelText.verticalOverflow = VerticalWrapMode.Overflow;
+        RectTransform buttonRect = InstantiateButton(uid.transform);
+        buttonRect.anchorMin = new Vector2(1f, 0f);
+        buttonRect.offsetMin = new Vector2(-50f, 0f);
+        UIDynamicButton button = buttonRect.GetComponent<UIDynamicButton>();
+        button.buttonText.text = "X";
 
-        UIDynamicLabelXButton uid = ourLabelWithXButtonPrefab.AddComponent<UIDynamicLabelXButton>();
         uid.label = labelText;
-        uid.button = buttonButton;
+        uid.button = button;
       }
       {
-        Transform t = ourCreateUIElement(ourLabelWithXButtonPrefab.transform, side == UIColumn.RIGHT);
-        UIDynamicLabelXButton uid = t.gameObject.GetComponent<UIDynamicLabelXButton>();
+        Transform t = createUIElement(customLabelWithXPrefab.transform, side == UIColumn.RIGHT);
+        UIDynamicLabelWithX uid = t.GetComponent<UIDynamicLabelWithX>();
         uid.label.text = label;
-        uid.button.onClick.AddListener(callback);
-        t.gameObject.SetActive(true);
+        uid.button.button.onClick.AddListener(callback);
+        uid.gameObject.SetActive(true);
+        return uid;
+      }
+    }
+
+    // Create two buttons on one line
+    private static GameObject customButtonPairPrefab;
+    public static UIDynamicButtonPair CreateButtonPair(UIColumn side, string leftLabel, UnityAction leftCallback, string rightLabel, UnityAction rightCallback)
+    {
+      if (customButtonPairPrefab == null)
+      {
+        UIDynamicButtonPair uid = CreateUIDynamicPrefab<UIDynamicButtonPair>("ButtonPair", 50f);
+        customButtonPairPrefab = uid.gameObject;
+
+        RectTransform leftButtonRect = InstantiateButton(uid.transform);
+        leftButtonRect.anchorMax = new Vector2(0.5f, 1f);
+        leftButtonRect.offsetMax = new Vector2(-5f, 0f);
+        UIDynamicButton leftButton = leftButtonRect.GetComponent<UIDynamicButton>();
+        leftButton.buttonText.text = "";
+
+        RectTransform rightButtonRect = InstantiateButton(uid.transform);
+        rightButtonRect.anchorMin = new Vector2(0.5f, 0f);
+        rightButtonRect.offsetMin = new Vector2(5f, 0f);
+        UIDynamicButton rightButton = rightButtonRect.GetComponent<UIDynamicButton>();
+        rightButton.buttonText.text = "";
+
+        uid.leftButton = leftButton;
+        uid.rightButton = rightButton;
+      }
+      {
+        Transform t = createUIElement(customButtonPairPrefab.transform, side == UIColumn.RIGHT);
+        UIDynamicButtonPair uid = t.GetComponent<UIDynamicButtonPair>();
+        uid.leftButton.buttonText.text = leftLabel;
+        uid.leftButton.button.onClick.AddListener(leftCallback);
+        uid.rightButton.buttonText.text = rightLabel;
+        uid.rightButton.button.onClick.AddListener(rightCallback);
+        uid.gameObject.SetActive(true);
         return uid;
       }
     }
 
     // Create an info textbox with scrolling disabled
-    public static UIDynamicTextInfo CreateInfoTextNoScroll(UIColumn side, string text, float height)
+    private static GameObject customInfoTextPrefab;
+    public static UIDynamicInfoText CreateInfoTextNoScroll(UIColumn side, string text, float height, bool background = true)
     {
-      if (ourTextInfoPrefab == null)
+      if (customInfoTextPrefab == null)
       {
-        ourTextInfoPrefab = new GameObject("TextInfo");
-        ourTextInfoPrefab.SetActive(false);
-        RectTransform rt = ourTextInfoPrefab.AddComponent<RectTransform>();
-        rt.anchorMax = new Vector2(0, 1);
-        rt.anchorMin = new Vector2(0, 1);
-        rt.offsetMax = new Vector2(535, -500);
-        rt.offsetMin = new Vector2(10, -600);
-        LayoutElement le = ourTextInfoPrefab.AddComponent<LayoutElement>();
-        le.flexibleWidth = 1;
-        le.minHeight = 35;
-        le.minWidth = 350;
-        le.preferredHeight = 35;
-        le.preferredWidth = 500;
+        UIDynamicInfoText uid = CreateUIDynamicPrefab<UIDynamicInfoText>("InfoText", 120f);
+        customInfoTextPrefab = uid.gameObject;
 
-        RectTransform backgroundTransform = script.manager.configurableScrollablePopupPrefab.transform.Find("Background") as RectTransform;
-        backgroundTransform = UnityEngine.Object.Instantiate(backgroundTransform, ourTextInfoPrefab.transform);
-        backgroundTransform.name = "Background";
-        backgroundTransform.anchorMax = new Vector2(1, 1);
-        backgroundTransform.anchorMin = new Vector2(0, 0);
-        backgroundTransform.offsetMax = new Vector2(0, 0);
-        backgroundTransform.offsetMin = new Vector2(0, -10);
+        RectTransform backgroundRect = InstantiateBackground(uid.transform);
 
-        RectTransform labelTransform = script.manager.configurableScrollablePopupPrefab.transform.Find("Button/Text") as RectTransform; ;
-        labelTransform = UnityEngine.Object.Instantiate(labelTransform, ourTextInfoPrefab.transform);
-        labelTransform.name = "Text";
-        labelTransform.anchorMax = new Vector2(1, 1);
-        labelTransform.anchorMin = new Vector2(0, 0);
-        labelTransform.offsetMax = new Vector2(-5, 0);
-        labelTransform.offsetMin = new Vector2(5, 0);
-        Text labelText = labelTransform.GetComponent<Text>();
-        labelText.alignment = TextAnchor.UpperLeft;
+        RectTransform textRect = InstantiateLabel(uid.transform);
+        textRect.name = "Text";
+        textRect.offsetMin = new Vector2(8f, 4f);
+        textRect.offsetMax = new Vector2(-8f, -4f);
+        Text textComponent = textRect.GetComponent<Text>();
+        textComponent.alignment = TextAnchor.UpperLeft;
+        textComponent.text = "";
 
-        UIDynamicTextInfo uid = ourTextInfoPrefab.AddComponent<UIDynamicTextInfo>();
-        uid.text = labelText;
-        uid.layout = le;
-        uid.background = backgroundTransform;
-        uid.image = backgroundTransform.GetComponent<Image>();
+        uid.bgImage = backgroundRect.GetComponent<Image>();
+        uid.textRect = textRect;
+        uid.text = textComponent;
       }
       {
-        Transform t = ourCreateUIElement(ourTextInfoPrefab.transform, side == UIColumn.RIGHT);
-        UIDynamicTextInfo uid = t.gameObject.GetComponent<UIDynamicTextInfo>();
+        Transform t = createUIElement(customInfoTextPrefab.transform, side == UIColumn.RIGHT);
+        UIDynamicInfoText uid = t.GetComponent<UIDynamicInfoText>();
         uid.text.text = text;
         uid.layout.minHeight = height;
         uid.layout.preferredHeight = height;
-        t.gameObject.SetActive(true);
+        if (!background)
+        {
+          uid.bgImage.color = UIColor.TRANSPARENT;
+          uid.textRect.offsetMin = new Vector2(8f, 0f);
+          uid.textRect.offsetMax = new Vector2(-8f, 0f);
+        }
+        uid.gameObject.SetActive(true);
         return uid;
       }
     }
 
-    // Create an info textbox with scrolling disabled with a specified number of lines
-    public static UIDynamicTextInfo CreateInfoTextNoScroll(UIColumn side, string text, int lines)
+    // Create an info textbox with scrolling disabled with a specified number of lines (default text size only)
+    public static UIDynamicInfoText CreateInfoTextNoScroll(UIColumn side, string text, int lines, bool background = true)
     {
-      UIDynamicTextInfo uid = CreateInfoTextNoScroll(side, text, lines * 32f);
-      return uid;
+      return CreateInfoTextNoScroll(side, text, lines * 32f + 8f, background);
     }
 
-    // Create an info textbox with scrolling disabled with a specified number of lines
-    public static UIDynamicTextInfo CreateInfoTextNoBackground(UIColumn side, string text, float height = 40f)
+    // Creates a one-line header with automatic styling
+    public static UIDynamicInfoText CreateHeaderText(UIColumn side, string text, float size = 50f)
     {
-      UIDynamicTextInfo uid = CreateInfoTextNoScroll(side, text, height);
-      uid.image.color = UIColor.TRANSPARENT;
+      UIDynamicInfoText uid = CreateInfoTextNoScroll(side, $"<size={size * 0.85f}><b>{text}</b></size>", size, background: false);
       return uid;
-    }
-
-    public static UIDynamicTextInfo CreateHeaderText(UIColumn side, string text, float size = 45f)
-    {
-      UIDynamicTextInfo uid = CreateInfoTextNoBackground(side, $"<size={size * 0.85f}><b>{text}</b></size>", size);
-      return uid;
-    }
-
-    // Create two buttons on one line
-    public static UIDynamicTwinButton CreateTwinButton(UIColumn side, string leftLabel, UnityAction leftCallback, string rightLabel, UnityAction rightCallback)
-    {
-      if (ourTwinButtonPrefab == null)
-      {
-        ourTwinButtonPrefab = new GameObject("TwinButton");
-        ourTwinButtonPrefab.SetActive(false);
-        RectTransform rt = ourTwinButtonPrefab.AddComponent<RectTransform>();
-        rt.anchorMax = new Vector2(0, 1);
-        rt.anchorMin = new Vector2(0, 1);
-        rt.offsetMax = new Vector2(535, -500);
-        rt.offsetMin = new Vector2(10, -600);
-        LayoutElement le = ourTwinButtonPrefab.AddComponent<LayoutElement>();
-        le.flexibleWidth = 1;
-        le.minHeight = 50;
-        le.minWidth = 350;
-        le.preferredHeight = 50;
-        le.preferredWidth = 500;
-
-        RectTransform buttonTransform = script.manager.configurableScrollablePopupPrefab.transform.Find("Button") as RectTransform;
-        buttonTransform = UnityEngine.Object.Instantiate(buttonTransform, ourTwinButtonPrefab.transform);
-        buttonTransform.name = "ButtonLeft";
-        buttonTransform.anchorMax = new Vector2(0.5f, 1.0f);
-        buttonTransform.anchorMin = new Vector2(0.0f, 0.0f);
-        buttonTransform.offsetMax = new Vector2(-3, 0);
-        buttonTransform.offsetMin = new Vector2(0, 0);
-        Button buttonLeft = buttonTransform.GetComponent<Button>();
-        Text labelLeft = buttonTransform.Find("Text").GetComponent<Text>();
-
-        buttonTransform = UnityEngine.Object.Instantiate(buttonTransform, ourTwinButtonPrefab.transform);
-        buttonTransform.name = "ButtonRight";
-        buttonTransform.anchorMax = new Vector2(1.0f, 1.0f);
-        buttonTransform.anchorMin = new Vector2(0.5f, 0.0f);
-        buttonTransform.offsetMax = new Vector2(0, 0);
-        buttonTransform.offsetMin = new Vector2(3, 0);
-        Button buttonRight = buttonTransform.GetComponent<Button>();
-        Text labelRight = buttonTransform.Find("Text").GetComponent<Text>();
-
-        UIDynamicTwinButton uid = ourTwinButtonPrefab.AddComponent<UIDynamicTwinButton>();
-        uid.labelLeft = labelLeft;
-        uid.labelRight = labelRight;
-        uid.buttonLeft = buttonLeft;
-        uid.buttonRight = buttonRight;
-      }
-      {
-        Transform t = ourCreateUIElement(ourTwinButtonPrefab.transform, side == UIColumn.RIGHT);
-        UIDynamicTwinButton uid = t.GetComponent<UIDynamicTwinButton>();
-        uid.labelLeft.text = leftLabel;
-        uid.labelRight.text = rightLabel;
-        uid.buttonLeft.onClick.AddListener(leftCallback);
-        uid.buttonRight.onClick.AddListener(rightCallback);
-        t.gameObject.SetActive(true);
-        return uid;
-      }
     }
 
     // Create a list of buttons that spans both columns
-    public static UIDynamicTabBar CreateTabBar(UIColumn anchorSide, string[] menuItems, TabClickCallback callback, int tabsPerRow = 6)
+    // NOTE that this creates a prefab, which you should clean up when your script exits
+    // NOTE that this also means the tab bar is not dynamic -- it is setup once and the same prefab is reused
+    public static UIDynamicTabBar CreateTabBar(ref GameObject prefab, UIColumn anchorSide, string[] menuItems, TabClickCallback callback, int tabsPerRow = 6)
     {
-      GameObject tabBarPrefab;
+      if (prefab == null)
       {
         float rowHeight = 50f;
         float rowWidth = 1060f;
@@ -543,13 +445,11 @@ namespace VaMUtils
         float tabWidth = ((rowWidth + spacing) / tabsPerRow) - spacing;
         float tabHeight = rowHeight;
 
-        tabBarPrefab = new GameObject("TabBar");
-        LayoutElement le = tabBarPrefab.AddComponent<LayoutElement>();
-        le.minHeight = totalHeight;
-        le.minWidth = rowWidth;
+        UIDynamicTabBar uid = CreateUIDynamicPrefab<UIDynamicTabBar>("TabBar", 0f);
+        prefab = uid.gameObject;
 
-        UIDynamicTabBar uid = tabBarPrefab.AddComponent<UIDynamicTabBar>();
-        RectTransform buttonPrefab = script.manager.configurableScrollablePopupPrefab.transform.Find("Button") as RectTransform;
+        uid.layout.minHeight = uid.layout.preferredHeight = totalHeight;
+        uid.layout.minWidth = uid.layout.preferredWidth = rowWidth;
 
         for (int i = 0; i < menuItems.Length; i++)
         {
@@ -557,36 +457,35 @@ namespace VaMUtils
           int row = i / tabsPerRow;
 
           float xOffset = col * (tabWidth + spacing);
-          if (anchorSide == UIColumn.RIGHT) {
+          if (anchorSide == UIColumn.RIGHT)
+          {
             xOffset -= rowWidth / 2 + 9f;
           }
           float yOffset = -row * (rowHeight + spacing);
 
-          RectTransform tabRect = InstantiateBasicRectTransform(
-            "TabButton",
-            buttonPrefab,
-            tabBarPrefab.transform,
-            new float[] { 0f, 1f, 0f, 1f },
-            new float[] { xOffset, yOffset - tabHeight, xOffset + tabWidth, yOffset }
-          );
+          RectTransform tabRect = InstantiateButton(prefab.transform);
+          tabRect.name = "TabButton";
+          tabRect.anchorMin = new Vector2(0f, 1f);
+          tabRect.anchorMax = new Vector2(0f, 1f);
+          tabRect.offsetMin = new Vector2(xOffset, yOffset - tabHeight);
+          tabRect.offsetMax = new Vector2(xOffset + tabWidth, yOffset);
 
-          Button tabButton = tabRect.GetComponent<Button>();
+          UIDynamicButton tabButton = tabRect.GetComponent<UIDynamicButton>();
           uid.buttons.Add(tabButton);
-          Text tabText = tabRect.Find("Text").GetComponent<Text>();
-          tabText.text = menuItems[i];
+          tabButton.buttonText.text = menuItems[i];
         }
       }
       {
-        Transform t = ourCreateUIElement(tabBarPrefab.transform, anchorSide == UIColumn.RIGHT);
-        UIDynamicTabBar uid = t.gameObject.GetComponent<UIDynamicTabBar>();
+        Transform t = createUIElement(prefab.transform, anchorSide == UIColumn.RIGHT);
+        UIDynamicTabBar uid = t.GetComponent<UIDynamicTabBar>();
         for (int i = 0; i < uid.buttons.Count; i++)
         {
           string item = menuItems[i];
-          uid.buttons[i].onClick.AddListener(
+          uid.buttons[i].button.onClick.AddListener(
             () => { callback(item); }
           );
         }
-        UnityEngine.Object.Destroy(tabBarPrefab);
+        uid.gameObject.SetActive(true);
         return uid;
       }
     }
@@ -622,7 +521,7 @@ namespace VaMUtils
           UIDynamic uid = menuElements[i] as UIDynamic;
           if (uid is UIDynamicButton)
             script.RemoveButton(uid as UIDynamicButton);
-          else if (uid is UIDynamicUtils)
+          else if (uid is UIDynamicBase)
             script.RemoveSpacer(uid);
           else if (uid is UIDynamicSlider)
             script.RemoveSlider(uid as UIDynamicSlider);
@@ -649,15 +548,119 @@ namespace VaMUtils
       menuElements.Clear();
     }
 
-    private static RectTransform InstantiateBasicRectTransform(string prefabName, RectTransform original, Transform parent, float[] anchorCoords, float[] offsetCoords)
+
+    // ======================================================================================================= //
+    // ========================================== CUSTOM UI HELPERS ========================================== //
+    // ======================================================================================================= //
+    // These methods instantiate basic UI elements to make building custom components easier
+    // See custom UI methods above for examples
+
+    // Creates a basic object with a RectTransform and a LayoutElement for building UI prefabs
+    public static T CreateUIDynamicPrefab<T>(string name, float height = 50f) where T : UIDynamicBase
     {
-      RectTransform rt = UnityEngine.Object.Instantiate(original, parent);
-      rt.name = prefabName;
-      rt.anchorMin = new Vector2(anchorCoords[0], anchorCoords[1]);
-      rt.anchorMax = new Vector2(anchorCoords[2], anchorCoords[3]);
-      rt.offsetMin = new Vector2(offsetCoords[0], offsetCoords[1]);
-      rt.offsetMax = new Vector2(offsetCoords[2], offsetCoords[3]);
-      return rt;
+      GameObject obj = new GameObject(name);
+      obj.SetActive(false);
+      RectTransform rectTransform = obj.AddComponent<RectTransform>();
+      ResetRectTransform(rectTransform);
+      LayoutElement layout = obj.AddComponent<LayoutElement>();
+      ResetLayoutElement(layout, height);
+      T uid = obj.AddComponent<T>();
+      uid.rectTransform = rectTransform;
+      uid.layout = layout;
+      return uid;
+    }
+
+    // Creates a semi-opaque background element
+    private static GameObject backgroundElementPrefab;
+    public static RectTransform InstantiateBackground(Transform parent)
+    {
+      if (backgroundElementPrefab == null)
+      {
+        Transform basePrefab = script.manager.configurableScrollablePopupPrefab.transform.Find("Background");
+        backgroundElementPrefab = UnityEngine.Object.Instantiate(basePrefab.gameObject);
+        backgroundElementPrefab.name = "Background";
+        ResetRectTransform(backgroundElementPrefab.transform as RectTransform);
+      }
+      return InstantiateWithSameName(backgroundElementPrefab.transform as RectTransform, parent);
+    }
+
+    // Creates a label element
+    private static GameObject labelElementPrefab;
+    public static RectTransform InstantiateLabel(Transform parent)
+    {
+      if (labelElementPrefab == null)
+      {
+        Transform basePrefab = script.manager.configurableScrollablePopupPrefab.transform.Find("Button/Text");
+        labelElementPrefab = UnityEngine.Object.Instantiate(basePrefab.gameObject);
+        labelElementPrefab.name = "Label";
+        ResetRectTransform(labelElementPrefab.transform as RectTransform);
+      }
+      return InstantiateWithSameName(labelElementPrefab.transform as RectTransform, parent);
+    }
+
+    // Creates a text input element
+    private static GameObject textFieldElementPrefab;
+    public static RectTransform InstantiateTextField(Transform parent)
+    {
+      if (textFieldElementPrefab == null)
+      {
+        Transform basePrefab = script.manager.configurableTextFieldPrefab.transform as RectTransform;
+        textFieldElementPrefab = UnityEngine.Object.Instantiate(basePrefab.gameObject);
+        textFieldElementPrefab.name = "TextField";
+        ResetRectTransform(textFieldElementPrefab.transform as RectTransform);
+        UnityEngine.Object.DestroyImmediate(textFieldElementPrefab.GetComponent<LayoutElement>());
+
+        UIDynamicTextField textField = textFieldElementPrefab.GetComponent<UIDynamicTextField>();
+        textField.backgroundColor = Color.white;
+        InputField inputfield = textFieldElementPrefab.gameObject.AddComponent<InputField>();
+        inputfield.textComponent = textField.UItext;
+
+        RectTransform textRect = textFieldElementPrefab.transform.Find("Scroll View/Viewport/Content/Text") as RectTransform;
+        textRect.offsetMin = new Vector2(10f, 0f);
+        textRect.offsetMax = new Vector2(-10f, -5f);
+      }
+      return InstantiateWithSameName(textFieldElementPrefab.transform as RectTransform, parent);
+    }
+
+    // Creates a button element
+    private static GameObject buttonElementPrefab;
+    public static RectTransform InstantiateButton(Transform parent)
+    {
+      if (buttonElementPrefab == null)
+      {
+        Transform basePrefab = script.manager.configurableButtonPrefab;
+        buttonElementPrefab = UnityEngine.Object.Instantiate(basePrefab.gameObject);
+        buttonElementPrefab.name = "Button";
+        ResetRectTransform(buttonElementPrefab.transform as RectTransform);
+      }
+      return InstantiateWithSameName(buttonElementPrefab.transform as RectTransform, parent);
+    }
+
+    private static void ResetRectTransform(RectTransform transform)
+    {
+      transform.anchoredPosition = new Vector2(0f, 0f);
+      transform.anchorMin = new Vector2(0f, 0f);
+      transform.anchorMax = new Vector2(1f, 1f);
+      transform.offsetMin = new Vector2(0f, 0f);
+      transform.offsetMax = new Vector2(0f, 0f);
+      transform.pivot = new Vector2(0.5f, 0.5f);
+    }
+
+    private static void ResetLayoutElement(LayoutElement layout, float height = 0f)
+    {
+      layout.flexibleWidth = 1f;
+      layout.flexibleHeight = -1f;
+      layout.minWidth = -1f;
+      layout.minHeight = height;
+      layout.preferredWidth = -1f;
+      layout.preferredHeight = height;
+    }
+
+    private static T InstantiateWithSameName<T>(T original, Transform parent) where T : UnityEngine.Object
+    {
+      T obj = UnityEngine.Object.Instantiate(original, parent);
+      obj.name = original.name;
+      return obj;
     }
 
     private static void QueueLoadTexture(string url, TextureSettings settings, TextureSetCallback callback)
@@ -667,43 +670,41 @@ namespace VaMUtils
       if (string.IsNullOrEmpty(url))
         return;
 
-      ImageLoaderThreaded.QueuedImage queuedImage = new ImageLoaderThreaded.QueuedImage();
-      queuedImage.imgPath = url;
-      queuedImage.forceReload = true;
-      queuedImage.skipCache = true;
-      queuedImage.compress = settings.compress;
-      queuedImage.createMipMaps = settings.createMipMaps;
-      queuedImage.isNormalMap = settings.isNormalMap;
-      queuedImage.linear = settings.linearColor;
-      queuedImage.createAlphaFromGrayscale = settings.createAlphaFromGrayscale;
-      queuedImage.createNormalFromBump = settings.createNormalFromBump;
-      queuedImage.bumpStrength = settings.bumpStrength;
-      queuedImage.isThumbnail = false;
-      queuedImage.fillBackground = false;
-      queuedImage.invert = false;
-      queuedImage.callback = (ImageLoaderThreaded.QueuedImage qi) =>
+      ImageLoaderThreaded.QueuedImage queuedImage = new ImageLoaderThreaded.QueuedImage()
       {
-        Texture2D tex = qi.tex;
-        if (tex != null)
+        imgPath = url,
+        forceReload = true,
+        skipCache = true,
+        compress = settings.compress,
+        createMipMaps = settings.createMipMaps,
+        isNormalMap = settings.isNormalMap,
+        linear = settings.linearColor,
+        createAlphaFromGrayscale = settings.createAlphaFromGrayscale,
+        createNormalFromBump = settings.createNormalFromBump,
+        bumpStrength = settings.bumpStrength,
+        isThumbnail = false,
+        fillBackground = false,
+        invert = false,
+        callback = (ImageLoaderThreaded.QueuedImage qi) =>
         {
-          tex.wrapMode = settings.wrapMode;
-          tex.filterMode = settings.filterMode;
-          tex.anisoLevel = settings.anisoLevel;
-        }
-        if (callback != null)
-        {
-          callback(tex);
+          Texture2D tex = qi.tex;
+          if (tex != null)
+          {
+            tex.wrapMode = settings.wrapMode;
+            tex.filterMode = settings.filterMode;
+            tex.anisoLevel = settings.anisoLevel;
+          }
+          if (callback != null)
+          {
+            callback(tex);
+          }
         }
       };
       ImageLoaderThreaded.singleton.QueueImage(queuedImage);
     }
 
     private static MVRScript script;
-    private static CreateUIElement ourCreateUIElement;
-    private static GameObject ourLabelWithInputPrefab;
-    private static GameObject ourLabelWithXButtonPrefab;
-    private static GameObject ourTextInfoPrefab;
-    private static GameObject ourTwinButtonPrefab;
+    private static CreateUIElement createUIElement;
   }
 
   // =================================================================================================== //
@@ -1070,7 +1071,8 @@ namespace VaMUtils
       return t;
     }
 
-    private const string IDAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; 
+    // Generate a random id
+    private const string IDAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     public static string GenerateRandomID(int length = 16)
     {
       StringBuilder str = new StringBuilder();
@@ -1084,6 +1086,7 @@ namespace VaMUtils
       return str.ToString();
     }
 
+    // Select the first value of a string chooser
     public static void SelectStringChooserFirstValue(JSONStorableStringChooser storable, bool noCallback = false)
     {
       string newVal = "";
@@ -1101,6 +1104,7 @@ namespace VaMUtils
       }
     }
 
+    // Reset a string chooser if its current value doesn't match any of its choices
     public static void EnsureStringChooserValue(JSONStorableStringChooser storable, bool defaultToFirstChoice = false, bool noCallback = false)
     {
       if (storable.choices.Contains(storable.val))
@@ -1144,77 +1148,100 @@ namespace VaMUtils
     }
 
     // Destroy a potentially null game object safely
-    public static void SafeDestroy(ref GameObject go)
+    public static void SafeDestroy(ref GameObject obj)
     {
-      if (go != null)
+      if (obj != null)
       {
-        UnityEngine.Object.Destroy(go);
-        go = null;
+        UnityEngine.Object.Destroy(obj);
+        obj = null;
       }
     }
 
-    public static void LogTransform(string message, Transform t)
+    // Recursively log a gameobject and its children
+    public static void LogGameObjectTree(GameObject obj, bool logComponents = true, bool logProps = false)
     {
-      StringBuilder b = new StringBuilder();
-      b.Append(message).Append("\n");
-      LogTransformInternal(t, 0, b);
-      SuperController.LogMessage(b.ToString());
+      StringBuilder str = new StringBuilder();
+      LogGameObjectTreeInternal(obj, 0, str, logComponents, logProps);
+      str.Append("\n");
+      SuperController.LogMessage(str.ToString());
+    }
+    public static void LogGameObjectTree(Transform obj, bool logComponents = true, bool logProps = false)
+    {
+      LogGameObjectTree(obj.gameObject, logComponents, logProps);
     }
 
-    private static void LogTransformInternal(Transform t, int indent, StringBuilder b)
+    private static void LogGameObjectTreeInternal(GameObject obj, int depth, StringBuilder str, bool logComponents, bool logProps)
     {
-      b.Append(' ', indent * 4).Append(t.name).Append(" (active: ").Append(t.gameObject.activeSelf).Append(")\n");
+      LogGameObjectTreeChildLineStart(depth, str);
+      str.Append(obj.name).Append("\n");
 
-      Component[] comps = t.GetComponents<Component>();
-      if (comps.Length > 0)
+      if (logComponents)
       {
-        b.Append(' ', indent * 4 + 2).Append("Components:\n");
-        for (int i = 0; i < comps.Length; ++i)
+        Component[] components = obj.GetComponents<Component>();
+        foreach (Component component in components)
         {
-          Component c = comps[i];
-          b.Append(' ', indent * 4 + 4).Append(c.GetType().FullName).Append("\n");
+          LogGameObjectTreeComponentLineStart(depth, str);
+          str.Append(component.GetType().ToString()).Append("\n");
 
-          if (c is RectTransform)
+          if (!logProps) continue;
+
+          if (component is RectTransform)
           {
-            RectTransform rt = c as RectTransform;
-            b.Append(' ', indent * 4 + 8).Append("anchoredPosition=").Append(rt.anchoredPosition).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("anchorMax=").Append(rt.anchorMax).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("anchorMin=").Append(rt.anchorMin).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("offsetMax=").Append(rt.offsetMax).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("offsetMin=").Append(rt.offsetMin).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("pivot=").Append(rt.pivot).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("rect=").Append(rt.rect).Append("\n");
+            RectTransform rt = component as RectTransform;
+            LogGameObjectTreeProp(depth, str, "anchoredPosition", rt.anchoredPosition);
+            LogGameObjectTreeProp(depth, str, "anchorMin", rt.anchorMin);
+            LogGameObjectTreeProp(depth, str, "anchorMax", rt.anchorMax);
+            LogGameObjectTreeProp(depth, str, "offsetMin", rt.offsetMin);
+            LogGameObjectTreeProp(depth, str, "offsetMax", rt.offsetMax);
+            LogGameObjectTreeProp(depth, str, "pivot", rt.pivot);
+            LogGameObjectTreeProp(depth, str, "rect", rt.rect);
           }
-          else if (c is LayoutElement)
+          else if (component is LayoutElement)
           {
-            LayoutElement le = c as LayoutElement;
-            b.Append(' ', indent * 4 + 8).Append("flexibleHeight=").Append(le.flexibleHeight).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("flexibleWidth=").Append(le.flexibleWidth).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("ignoreLayout=").Append(le.ignoreLayout).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("layoutPriority=").Append(le.layoutPriority).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("minHeight=").Append(le.minHeight).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("minWidth=").Append(le.minWidth).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("preferredHeight=").Append(le.preferredHeight).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("preferredWidth=").Append(le.preferredWidth).Append("\n");
+            LayoutElement le = component as LayoutElement;
+            LogGameObjectTreeProp(depth, str, "flexibleWidth", le.flexibleWidth);
+            LogGameObjectTreeProp(depth, str, "flexibleHeight", le.flexibleHeight);
+            LogGameObjectTreeProp(depth, str, "minWidth", le.minWidth);
+            LogGameObjectTreeProp(depth, str, "minHeight", le.minHeight);
+            LogGameObjectTreeProp(depth, str, "preferredWidth", le.preferredWidth);
+            LogGameObjectTreeProp(depth, str, "preferredHeight", le.preferredHeight);
+            LogGameObjectTreeProp(depth, str, "ignoreLayout", le.ignoreLayout);
+            LogGameObjectTreeProp(depth, str, "layoutPriority", le.layoutPriority);
           }
-          else if (c is Image)
+          else if (component is Image)
           {
-            Image img = c as Image;
-            b.Append(' ', indent * 4 + 8).Append("mainTexture=").Append(img.mainTexture?.name).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("sprite=").Append(img.sprite?.name).Append("\n");
-            b.Append(' ', indent * 4 + 8).Append("color=").Append(img.color).Append("\n");
+            Image img = component as Image;
+            LogGameObjectTreeProp(depth, str, "mainTexture", img.mainTexture?.name);
+            LogGameObjectTreeProp(depth, str, "sprite", img.sprite?.name);
+            LogGameObjectTreeProp(depth, str, "color", img.color);
           }
         }
       }
-      if (t.childCount > 0)
+
+      for (int i = 0; i < obj.transform.childCount; i++)
       {
-        b.Append(' ', indent * 4 + 2).Append("Children:\n");
-        for (int i = 0; i < t.childCount; ++i)
-        {
-          Transform c = t.GetChild(i);
-          LogTransformInternal(c, indent + 1, b);
-        }
+        Transform child = obj.transform.GetChild(i);
+        LogGameObjectTreeInternal(child.gameObject, depth + 1, str, logComponents, logProps);
       }
+    }
+
+    private static void LogGameObjectTreeChildLineStart(int depth, StringBuilder str)
+    {
+      for (int i = 0; i < depth - 1; i++) { str.Append("│   "); }
+      if (depth > 0) { str.Append("├─"); }
+      str.Append("┬");
+    }
+
+    private static void LogGameObjectTreeComponentLineStart(int depth, StringBuilder str)
+    {
+      for (int i = 0; i < depth; i++) { str.Append("│   "); }
+      str.Append("│   ");
+    }
+
+    private static void LogGameObjectTreeProp(int depth, StringBuilder str, string name, object val)
+    {
+      LogGameObjectTreeComponentLineStart(depth, str);
+      str.Append("    ").Append(name).Append("=").Append(val.ToString()).Append("\n");
     }
   }
 
@@ -1222,7 +1249,6 @@ namespace VaMUtils
   // ========================================== HELPER TYPES ========================================== //
   // ================================================================================================== //
   public delegate Transform CreateUIElement(Transform prefab, bool rightSide);
-  public delegate void EnumSetCallback<TEnum>(TEnum v);
   public delegate void TextureSetCallback(Texture2D tex);
   public delegate void TabClickCallback(string tabName);
 
@@ -1292,40 +1318,39 @@ namespace VaMUtils
     }
   }
 
-  public class UIDynamicUtils : UIDynamic
+  public class UIDynamicBase : UIDynamic
   {
+    public RectTransform rectTransform;
+    public LayoutElement layout;
   }
 
-  public class UIDynamicTextInput : UIDynamicUtils
+  public class UIDynamicOnelineTextInput : UIDynamicBase
   {
     public Text label;
     public InputField input;
   }
 
-  public class UIDynamicLabelXButton : UIDynamicUtils
+  public class UIDynamicLabelWithX : UIDynamicBase
   {
     public Text label;
-    public Button button;
+    public UIDynamicButton button;
   }
 
-  public class UIDynamicTwinButton : UIDynamicUtils
+  public class UIDynamicButtonPair : UIDynamicBase
   {
-    public Text labelLeft;
-    public Text labelRight;
-    public Button buttonLeft;
-    public Button buttonRight;
+    public UIDynamicButton leftButton;
+    public UIDynamicButton rightButton;
   }
 
-  public class UIDynamicTextInfo : UIDynamicUtils
+  public class UIDynamicInfoText : UIDynamicBase
   {
+    public RectTransform textRect;
     public Text text;
-    public LayoutElement layout;
-    public RectTransform background;
-    public Image image;
+    public Image bgImage;
   }
 
-  public class UIDynamicTabBar : UIDynamicUtils
+  public class UIDynamicTabBar : UIDynamicBase
   {
-    public List<Button> buttons = new List<Button>();
+    public List<UIDynamicButton> buttons = new List<UIDynamicButton>();
   }
 }
