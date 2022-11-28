@@ -32,19 +32,23 @@ namespace ThatsLewd
         Animation.list.Add(this);
       }
 
-      public Animation(Layer layer, Animation source) : this(layer)
+      public Animation Clone(Layer layer = null)
       {
-        foreach (Transition transition in source.fromTransitions)
+        if (layer == null)
         {
-          new Transition(this, transition.to);
+          layer = this.layer;
         }
-        foreach (Transition transition in source.toTransitions)
+        Animation newAnimation = new Animation(layer);
+        foreach (Transition transition in fromTransitions)
         {
-          new Transition(transition.from, this);
+          transition.Clone(from: newAnimation);
         }
+        foreach (Transition transition in toTransitions)
+        {
+          transition.Clone(to: newAnimation);
+        }
+        return newAnimation;
       }
-
-      public Animation(Animation source) : this(source.layer, source) { }
 
       public void Delete()
       {

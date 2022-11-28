@@ -7,17 +7,33 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    Atom person = null;
+    public static CharacterStateManager instance { get; private set; }
+
+    public Atom person { get; private set; }
+    public DAZCharacterSelector geometry { get; private set; }
+    public List<FreeControllerV3> controllers { get; private set; }
 
     public override void Init()
     {
-      if (containingAtom == null)
+      CharacterStateManager.instance = this;
+      person = containingAtom;
+      geometry = containingAtom?.GetStorableByID("geometry") as DAZCharacterSelector;
+      if (person == null || geometry == null)
       {
         SuperController.LogError("CharacterStateManager must be attached to a Person atom!");
+        this.enabled = false;
         return;
       }
-      person = containingAtom;
-      
+      controllers = new List<FreeControllerV3>();
+      foreach (FreeControllerV3 controller in GetAllControllers())
+      {
+        if (controller.name.StartsWith("hair"))
+        {
+          continue;
+        }
+        controllers.Add(controller);
+      }
+
       UIInit();
     }
 
@@ -26,7 +42,7 @@ namespace ThatsLewd
       UIDestroy();
     }
 
-    protected void Update()
+    void Update()
     {
       UIUpdate();
     }

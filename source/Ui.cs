@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using VaMUtils;
@@ -247,6 +248,31 @@ namespace ThatsLewd
       InvalidateUI();
     }
 
+    void CreateBasicFunctionsUI(string category, bool showNewOnly, Action createNameInput, UnityAction newHandler, UnityAction duplicateHandler, UnityAction deleteHandler)
+    {
+      if (showNewOnly)
+      {
+        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 50f));
+        UI(UIBuilder.CreateButton(UIColumn.RIGHT, $"New {category}", newHandler));
+      }
+      else
+      {
+        createNameInput();
+        UI(UIBuilder.CreateButtonPair(UIColumn.RIGHT, $"New {category}", newHandler, $"Duplicate {category}", duplicateHandler));
+        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
+        UIDynamicButton deleteButton = UIBuilder.CreateButton(UIColumn.RIGHT, $"Delete {category}", deleteHandler);
+        deleteButton.buttonColor = UIColor.RED;
+        UI(deleteButton);
+        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
+      }
+    }
+
+    void CreateBottomPadding()
+    {
+      UI(UIBuilder.CreateSpacer(UIColumn.LEFT, 100f));
+      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 100f));
+    }
+
 
     // ========================================================================== //
     // ================================ INFO TAB ================================ //
@@ -261,6 +287,9 @@ namespace ThatsLewd
         @"Info tab",
         1
       ));
+
+
+      CreateBottomPadding();
     }
 
 
@@ -270,36 +299,25 @@ namespace ThatsLewd
     void BuildGroupsTabUI()
     {
       UI(UIBuilder.CreateHeaderText(UIColumn.LEFT, "Groups"));
-
-      if (activeGroup == null)
-      {
-        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 45f));
-      }
-      else
-      {
-        UI(UIBuilder.CreateOnelineTextInput(ref groupNameStorable, UIColumn.RIGHT, "Name", activeGroup?.name ?? "", callback: HandleRenameGroup));
-      }
-
       UI(UIBuilder.CreateInfoTextNoScroll(
         UIColumn.LEFT,
         @"A <b>Group</b> is a collection of states that operate independently of other groups. For example, you may have a primary group of main states like idle, sitting, etc, and a secondary group of gestures.",
-        5
+        185f
       ));
 
-      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "New Group", HandleNewGroup));
+      CreateBasicFunctionsUI(
+        "Group",
+        activeGroup == null,
+        () => { UI(UIBuilder.CreateOnelineTextInput(ref groupNameStorable, UIColumn.RIGHT, "Name", activeGroup?.name ?? "", callback: HandleRenameGroup)); },
+        HandleNewGroup,
+        HandleDuplicateGroup,
+        HandleDeleteGroup
+      );
 
-      if (activeGroup == null)
-      {
-        return;
-      }
+      if (activeGroup == null) return;
 
-      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "Duplicate Group", HandleDuplicateGroup));
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
 
-      var deleteButton = UIBuilder.CreateButton(UIColumn.RIGHT, "Delete Group", HandleDeleteGroup);
-      deleteButton.buttonColor = UIColor.RED;
-      UI(deleteButton);
-
+      CreateBottomPadding();
     }
 
     void HandleNewGroup()
@@ -313,7 +331,7 @@ namespace ThatsLewd
     {
       if (activeGroup != null)
       {
-        Group group = new Group(activeGroup);
+        Group group = activeGroup.Clone();
         RefreshGroupList();
         selectGroupStorable.val = group.name;
       }
@@ -346,16 +364,15 @@ namespace ThatsLewd
     void BuildStatesTabUI()
     {
       UI(UIBuilder.CreateHeaderText(UIColumn.LEFT, "States"));
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 45f));
-
       UI(UIBuilder.CreateInfoTextNoScroll(
         UIColumn.LEFT,
-        @"A <b>State</b> defines what a character is currently doing (idle, sitting, etc). A state assigns animations to layers that can be played either sequentially or randomly. For example, a dance may be composed of sequential animations, or an idle may be composed of random animations.",
-        8
+        @"A <b>State</b> defines what a character is currently doing (idle, sitting, etc). A state assigns animations to layers that can be played either sequentially or randomly.",
+        185f
       ));
 
       if (activeGroup == null)
       {
+        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 50f));
         UI(UIBuilder.CreateInfoTextNoScroll(
           UIColumn.RIGHT,
           @"You must select a <b>Group</b> before you can create any <b>States</b>.",
@@ -364,20 +381,19 @@ namespace ThatsLewd
         return;
       }
 
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "New State", HandleNewState));
+      CreateBasicFunctionsUI(
+        "State",
+        activeState == null,
+        () => { UI(UIBuilder.CreateOnelineTextInput(ref stateNameStorable, UIColumn.RIGHT, "Name", activeState?.name ?? "", callback: HandleRenameState)); },
+        HandleNewState,
+        HandleDuplicateState,
+        HandleDeleteState
+      );
 
-      if (activeState == null)
-      {
-        return;
-      }
+      if (activeState == null) return;
 
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate State", HandleDuplicateState));
-      UI(UIBuilder.CreateOnelineTextInput(ref stateNameStorable, UIColumn.LEFT, "Name", activeState?.name ?? "", callback: HandleRenameState));
-      UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
 
-      var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete State", HandleDeleteState);
-      deleteButton.buttonColor = UIColor.RED;
-      UI(deleteButton);
+      CreateBottomPadding();
     }
 
     void HandleNewState()
@@ -394,7 +410,7 @@ namespace ThatsLewd
     {
       if (activeState != null)
       {
-        State state = new State(activeState);
+        State state = activeState.Clone();
         RefreshStateList();
         selectStateStorable.val = state.name;
       }
@@ -424,45 +440,73 @@ namespace ThatsLewd
     // ============================================================================ //
     // ================================ LAYERS TAB ================================ //
     // ============================================================================ //
+    JSONStorableStringChooser morphChooserStorable;
+    JSONStorableBool morphChooserUseFavoritesStorable;
+
     void BuildLayersTabUI()
     {
       UI(UIBuilder.CreateHeaderText(UIColumn.LEFT, "Layers"));
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 45f));
-
       UI(UIBuilder.CreateInfoTextNoScroll(
         UIColumn.LEFT,
         @"A <b>Layer</b> is a set of controls and/or morphs that are acted upon by an animation. Layers allow a character to have several independently animated parts.",
-        5
+        185f
       ));
 
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "New Layer", HandleNewLayer));
+      CreateBasicFunctionsUI(
+        "Layer",
+        activeLayer == null,
+        () => { UI(UIBuilder.CreateOnelineTextInput(ref layerNameStorable, UIColumn.RIGHT, "Name", activeLayer?.name ?? "", callback: HandleRenameLayer)); },
+        HandleNewLayer,
+        HandleDuplicateLayer,
+        HandleDeleteLayer
+      );
 
-      if (activeLayer == null)
+      if (activeLayer == null) return;
+
+      UI(UIBuilder.CreateHeaderText(UIColumn.LEFT, "Controllers", 38f));
+      UI(UIBuilder.CreateButtonPair(UIColumn.LEFT, "Select All Position", () => { HandleSelectAllControllers(true, false); }, "Select All Rotation", () => { HandleSelectAllControllers(false, true); }));
+      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Deselect All", HandleDeselectAllControllers));
+      foreach (TrackedControllerStorable storable in activeLayer.trackedControllers)
       {
-        return;
+        UI(CreateControllerSelector(storable, UIColumn.LEFT, callback: HandleControllerSelection));
       }
 
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate Layer", HandleDuplicateLayer));
-      UI(UIBuilder.CreateOnelineTextInput(ref layerNameStorable, UIColumn.LEFT, "Name", activeLayer?.name ?? "", callback: HandleRenameLayer));
-      UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
+      UI(UIBuilder.CreateHeaderText(UIColumn.RIGHT, "Morphs", 38f));
+      UI(UIBuilder.CreateToggle(ref morphChooserUseFavoritesStorable, UIColumn.RIGHT, "Favorites Only", true, callback: HandleToggleMorphChooserFavorites, register: false));
+      UIDynamicButton refreshMorphButton = UIBuilder.CreateButton(UIColumn.RIGHT, "Force Refresh Morph List", () => { SetMorphChooserChoices(true); });
+      refreshMorphButton.buttonColor = UIColor.YELLOW;
+      UI(refreshMorphButton);
+      UI(UIBuilder.CreateStringChooser(ref morphChooserStorable, UIColumn.RIGHT, "Select Morph", filterable: true, noDefaultSelection: true, register: false));
+      SetMorphChooserChoices();
+      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "Add Morph", HandleAddMorph));
+      foreach (DAZMorph morph in activeLayer.trackedMorphs)
+      {
+        UI(UIBuilder.CreateLabelWithX(UIColumn.RIGHT, morph.displayName, () => { HandleDeleteMorph(morph); }));
+      }
 
-      var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete Layer", HandleDeleteLayer);
-      deleteButton.buttonColor = UIColor.RED;
-      UI(deleteButton);
+
+      CreateBottomPadding();
     }
 
     void HandleNewLayer()
     {
-      Layer layer = new Layer();
-      RefreshLayerList();
-      selectLayerStorable.val = layer.name;
+      try
+      {
+        Layer layer = new Layer();
+        RefreshLayerList();
+        selectLayerStorable.val = layer.name;
+      }
+      catch (Exception e)
+      {
+        SuperController.LogError(e.ToString());
+      }
     }
 
     void HandleDuplicateLayer()
     {
       if (activeLayer != null)
       {
-        Layer layer = new Layer(activeLayer);
+        Layer layer = activeLayer.Clone();
         RefreshLayerList();
         selectLayerStorable.val = layer.name;
       }
@@ -488,6 +532,92 @@ namespace ThatsLewd
       }
     }
 
+    void HandleControllerSelection(FreeControllerV3 controller, bool posValue, bool rotValue)
+    {
+      // Nothing for now
+    }
+
+    void HandleSelectAllControllers(bool pos, bool rot)
+    {
+      foreach (TrackedControllerStorable storable in activeLayer.trackedControllers)
+      {
+        if (pos)
+        {
+          storable.trackPositionStorable.val = true;
+        }
+        if (rot)
+        {
+          storable.trackRotationStorable.val = true;
+        }
+      }
+    }
+
+    void HandleDeselectAllControllers()
+    {
+      foreach (TrackedControllerStorable storable in activeLayer.trackedControllers)
+      {
+        storable.trackPositionStorable.val = false;
+        storable.trackRotationStorable.val = false;
+      }
+    }
+
+    void HandleAddMorph()
+    {
+      if (activeLayer == null || morphChooserStorable == null) return;
+      DAZMorph morph = geometry.morphsControlUI.GetMorphByDisplayName(morphChooserStorable.val);
+      if (morph == null) return;
+      if (activeLayer.trackedMorphs.Contains(morph)) return;
+      activeLayer.trackedMorphs.Add(morph);
+      activeLayer.trackedMorphs.Sort((a, b) => String.Compare(a.displayName, b.displayName));
+
+      morphChooserStorable.valNoCallback = "";
+      InvalidateUI();
+    }
+
+    void HandleDeleteMorph(DAZMorph morph)
+    {
+      if (activeLayer == null) return;
+      activeLayer.trackedMorphs.Remove(morph);
+      InvalidateUI();
+    }
+
+    void HandleToggleMorphChooserFavorites(bool val)
+    {
+      SetMorphChooserChoices();
+    }
+
+    List<string> cachedChoices = null;
+    List<string> cachedFavoritesChoices = null;
+    bool? cachedUseFavorites = null;
+    void SetMorphChooserChoices(bool force = false)
+    {
+      if (morphChooserStorable == null || morphChooserUseFavoritesStorable == null) return;
+      if (force || cachedChoices == null || cachedFavoritesChoices == null)
+      {
+        cachedChoices = new List<string>();
+        cachedFavoritesChoices = new List<string>();
+        List<DAZMorph> morphs = geometry.morphsControlUI.GetMorphs();
+        foreach (DAZMorph morph in morphs)
+        {
+          cachedChoices.Add(morph.displayName);
+          if (morph.favorite)
+          {
+            cachedFavoritesChoices.Add(morph.displayName);
+          }
+        }
+        cachedChoices.Sort();
+        cachedFavoritesChoices.Sort();
+        cachedUseFavorites = null;
+      }
+
+      bool needsRefresh = morphChooserUseFavoritesStorable.val != cachedUseFavorites;
+      if (needsRefresh)
+      {
+        morphChooserStorable.choices = morphChooserUseFavoritesStorable.val ? cachedFavoritesChoices : cachedChoices;
+        cachedUseFavorites = morphChooserUseFavoritesStorable.val;
+      }
+    }
+
 
     // ================================================================================ //
     // ================================ ANIMATIONS TAB ================================ //
@@ -495,16 +625,15 @@ namespace ThatsLewd
     void BuildAnimationsTabUI()
     {
       UI(UIBuilder.CreateHeaderText(UIColumn.LEFT, "Animations"));
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 45f));
-
       UI(UIBuilder.CreateInfoTextNoScroll(
         UIColumn.LEFT,
         @"An <b>Animation</b> defines what a layer should do. An animation is composed of one or more <b>Keyframes</b>, which are snapshots of a layer's state.",
-        4
+        185f
       ));
 
       if (activeLayer == null)
       {
+        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 50f));
         UI(UIBuilder.CreateInfoTextNoScroll(
           UIColumn.RIGHT,
           @"You must select a <b>Layer</b> before you can create any <b>Animations</b>.",
@@ -513,20 +642,19 @@ namespace ThatsLewd
         return;
       }
 
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "New Animation", HandleNewAnimation));
+      CreateBasicFunctionsUI(
+        "Animation",
+        activeAnimation == null,
+        () => { UI(UIBuilder.CreateOnelineTextInput(ref animationNameStorable, UIColumn.RIGHT, "Name", activeAnimation?.name ?? "", callback: HandleRenameAnimation)); },
+        HandleNewAnimation,
+        HandleDuplicateAnimation,
+        HandleDeleteAnimation
+      );
 
-      if (activeAnimation == null)
-      {
-        return;
-      }
+      if (activeAnimation == null) return;
 
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate Animation", HandleDuplicateAnimation));
-      UI(UIBuilder.CreateOnelineTextInput(ref animationNameStorable, UIColumn.LEFT, "Name", activeAnimation?.name ?? "", callback: HandleRenameAnimation));
-      UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
 
-      var deleteButton = UIBuilder.CreateButton(UIColumn.LEFT, "Delete Animation", HandleDeleteAnimation);
-      deleteButton.buttonColor = UIColor.RED;
-      UI(deleteButton);
+      CreateBottomPadding();
     }
 
     void HandleNewAnimation()
@@ -543,7 +671,7 @@ namespace ThatsLewd
     {
       if (activeAnimation != null)
       {
-        Animation animation = new Animation(activeAnimation);
+        Animation animation = activeAnimation.Clone();
         RefreshAnimationList();
         selectAnimationStorable.val = animation.name;
       }
@@ -583,6 +711,9 @@ namespace ThatsLewd
         @"A <b>Transition</b> defines how to move from one animation to another. The default transition is a simple tween, but if more control is needed <b>Keyframes</b> may be added for precision.",
         5
       ));
+
+
+      CreateBottomPadding();
     }
 
 
@@ -599,6 +730,107 @@ namespace ThatsLewd
         @"A <b>Trigger</b> is a custom event that can be called from other atoms in your scene using the 'Call Trigger' action. Triggers allow external management of the character's state.",
         5
       ));
+
+
+      CreateBottomPadding();
+    }
+
+
+    // ================================================================================ //
+    // ================================ CUSTOM PREFABS ================================ //
+    // ================================================================================ //
+    public class UIDynamicControllerSelector : UIDynamicBase
+    {
+      public Text label;
+      public Toggle posToggle;
+      public Toggle rotToggle;
+    }
+
+    private GameObject controllerSelectorPrefab;
+    public UIDynamicControllerSelector CreateControllerSelector(TrackedControllerStorable storable, UIColumn side, TrackedControllerStorable.SetValueCallback callback = null)
+    {
+      if (controllerSelectorPrefab == null)
+      {
+        const float bgSize = 105f;
+        const float bgSpacing = 10f;
+        const float labelOffsetX = 8f;
+        const float labelOffsetY = 2f;
+        const float checkSize = 43f;
+        const float checkOffsetX = 4f;
+        const float checkOffsetY = -3.5f;
+
+        UIDynamicControllerSelector uid = UIBuilder.CreateUIDynamicPrefab<UIDynamicControllerSelector>("LabelWithToggle", 50f);
+        controllerSelectorPrefab = uid.gameObject;
+
+        RectTransform background = UIBuilder.InstantiateBackground(uid.transform);
+
+        RectTransform labelRect = UIBuilder.InstantiateLabel(uid.transform);
+        labelRect.offsetMin = new Vector2(5f, 0f);
+        Text labelText = labelRect.GetComponent<Text>();
+        labelText.alignment = TextAnchor.MiddleLeft;
+        labelText.text = "";
+
+        // == POS == //
+        RectTransform posBackgroundRect = UIBuilder.InstantiateBackground(uid.transform);
+        posBackgroundRect.anchorMin = new Vector2(1f, 0f);
+        posBackgroundRect.anchorMax = new Vector2(1f, 1f);
+        posBackgroundRect.offsetMin = new Vector2(-(2f * bgSize + bgSpacing), 0f);
+        posBackgroundRect.offsetMax = new Vector2(-(bgSize + bgSpacing), 0f);
+        Image posBackgroundImg = posBackgroundRect.GetComponent<Image>();
+        posBackgroundImg.color = new Color(1f, 1f, 1f, 1f);
+
+        RectTransform posToggleRect = UIBuilder.InstantiateToggle(posBackgroundRect, checkSize);
+        posToggleRect.anchorMin = new Vector2(1f, 0f);
+        posToggleRect.anchorMax = new Vector2(1f, 1f);
+        posToggleRect.offsetMin = new Vector2(-checkSize - checkOffsetX, checkOffsetY);
+        posToggleRect.offsetMax = new Vector2(-checkOffsetX, checkOffsetY);
+
+        RectTransform posLabelRect = UIBuilder.InstantiateLabel(posBackgroundRect);
+        posLabelRect.offsetMin = new Vector2(labelOffsetX, labelOffsetY);
+        posLabelRect.offsetMax = new Vector2(labelOffsetX, labelOffsetY);
+        Text posLabel = posLabelRect.GetComponent<Text>();
+        posLabel.alignment = TextAnchor.MiddleLeft;
+        posLabel.text = "<size=20><b>POS</b></size>";
+
+        // == ROT == //
+        RectTransform rotBackgroundRect = UIBuilder.InstantiateBackground(uid.transform);
+        rotBackgroundRect.anchorMin = new Vector2(1f, 0f);
+        rotBackgroundRect.anchorMax = new Vector2(1f, 1f);
+        rotBackgroundRect.offsetMin = new Vector2(-bgSize, 0f);
+        rotBackgroundRect.offsetMax = new Vector2(0f, 0f);
+        Image rotBackgroundImg = rotBackgroundRect.GetComponent<Image>();
+        rotBackgroundImg.color = new Color(1f, 1f, 1f, 1f);
+
+        RectTransform rotToggleRect = UIBuilder.InstantiateToggle(rotBackgroundRect, checkSize);
+        rotToggleRect.anchorMin = new Vector2(1f, 0f);
+        rotToggleRect.anchorMax = new Vector2(1f, 1f);
+        rotToggleRect.offsetMin = new Vector2(-checkSize - checkOffsetX, checkOffsetY);
+        rotToggleRect.offsetMax = new Vector2(-checkOffsetX, checkOffsetY);
+
+        RectTransform rotLabelRect = UIBuilder.InstantiateLabel(rotBackgroundRect);
+        rotLabelRect.offsetMin = new Vector2(labelOffsetX, labelOffsetY);
+        rotLabelRect.offsetMax = new Vector2(labelOffsetX, labelOffsetY);
+        Text rotLabel = rotLabelRect.GetComponent<Text>();
+        rotLabel.alignment = TextAnchor.MiddleLeft;
+        rotLabel.text = "<size=20><b>ROT</b></size>";
+
+        uid.label = labelText;
+        uid.posToggle = posToggleRect.GetComponent<Toggle>();
+        uid.rotToggle = rotToggleRect.GetComponent<Toggle>();
+      }
+      {
+        if (callback != null)
+        {
+          storable.setCallbackFunction = callback;
+        }
+        Transform t = CreateUIElement(controllerSelectorPrefab.transform, side == UIColumn.RIGHT);
+        UIDynamicControllerSelector uid = t.GetComponent<UIDynamicControllerSelector>();
+        uid.label.text = storable.controller.name;
+        storable.trackPositionStorable.RegisterToggle(uid.posToggle);
+        storable.trackRotationStorable.RegisterToggle(uid.rotToggle);
+        uid.gameObject.SetActive(true);
+        return uid;
+      }
     }
   }
 }

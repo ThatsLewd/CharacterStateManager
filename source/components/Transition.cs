@@ -22,6 +22,20 @@ namespace ThatsLewd
         Transition.list.Add(this);
       }
 
+      public Transition Clone(Animation from = null, Animation to = null)
+      {
+        if (from == null)
+        {
+          from = this.from;
+        }
+        if (to == null)
+        {
+          to = this.to;
+        }
+        Transition newTransition = new Transition(from, to);
+        return newTransition;
+      }
+
       public void Delete()
       {
         Transition.list.Remove(this);

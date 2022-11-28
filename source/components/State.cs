@@ -22,12 +22,15 @@ namespace ThatsLewd
         State.list.Add(this);
       }
 
-      public State(Group group, State source) : this(group)
+      public State Clone(Group group = null)
       {
-
+        if (group == null)
+        {
+          group = this.group;
+        }
+        State newState = new State(group);
+        return newState;
       }
-
-      public State(State source) : this(source.group, source) { }
 
       public void Delete()
       {

@@ -85,7 +85,7 @@ namespace VaMUtils
         }
         if (callback != null)
         {
-          storable.setCallbackFunction += callback;
+          storable.setCallbackFunction = callback;
         }
       }
       UIDynamicToggle toggle = script.CreateToggle(storable, side == UIColumn.RIGHT);
@@ -105,7 +105,7 @@ namespace VaMUtils
         }
         if (callback != null)
         {
-          storable.setCallbackFunction += callback;
+          storable.setCallbackFunction = callback;
         }
       }
       UIDynamicSlider slider = script.CreateSlider(storable, side == UIColumn.RIGHT);
@@ -119,7 +119,7 @@ namespace VaMUtils
     }
 
     // Create VaM-UI ColorPicker
-    public static UIDynamicColorPicker CreateColor(ref JSONStorableColor storable, UIColumn side, string label, Color defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = true)
+    public static UIDynamicColorPicker CreateColorPicker(ref JSONStorableColor storable, UIColumn side, string label, Color defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = true)
     {
       if (storable == null)
       {
@@ -132,7 +132,7 @@ namespace VaMUtils
         }
         if (callback != null)
         {
-          storable.setCallbackFunction += callback;
+          storable.setCallbackFunction = callback;
         }
       }
       UIDynamicColorPicker picker = script.CreateColorPicker(storable, side == UIColumn.RIGHT);
@@ -140,7 +140,7 @@ namespace VaMUtils
     }
 
     // Create VaM-UI StringChooser
-    public static UIDynamicPopup CreateStringChooser(ref JSONStorableStringChooser storable, UIColumn side, string label, List<string> initialChoices, bool noDefaultSelection = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = true)
+    public static UIDynamicPopup CreateStringChooser(ref JSONStorableStringChooser storable, UIColumn side, string label, List<string> initialChoices = null, bool noDefaultSelection = false, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = true)
     {
       if (storable == null)
       {
@@ -157,10 +157,18 @@ namespace VaMUtils
         }
         if (callback != null)
         {
-          storable.setCallbackFunction += callback;
+          storable.setCallbackFunction = callback;
         }
       }
-      UIDynamicPopup popup = script.CreateScrollablePopup(storable, side == UIColumn.RIGHT);
+      UIDynamicPopup popup;
+      if (filterable)
+      {
+        popup = script.CreateFilterablePopup(storable, side == UIColumn.RIGHT);
+      }
+      else
+      {
+        popup = script.CreateScrollablePopup(storable, side == UIColumn.RIGHT);
+      }
       return popup;
     }
 
@@ -208,7 +216,7 @@ namespace VaMUtils
         }
         if (callback != null)
         {
-          storable.setCallbackFunction += callback;
+          storable.setCallbackFunction = callback;
         }
       }
       UIDynamicButton button = script.CreateButton("Select " + label, side == UIColumn.RIGHT);
@@ -294,7 +302,7 @@ namespace VaMUtils
           }
           if (callback != null)
           {
-            storable.setCallbackFunction += callback;
+            storable.setCallbackFunction = callback;
           }
         }
         Transform t = createUIElement(customOnelineTextInputPrefab.transform, side == UIColumn.RIGHT);
@@ -335,6 +343,53 @@ namespace VaMUtils
         UIDynamicLabelWithX uid = t.GetComponent<UIDynamicLabelWithX>();
         uid.label.text = label;
         uid.button.button.onClick.AddListener(callback);
+        uid.gameObject.SetActive(true);
+        return uid;
+      }
+    }
+
+    // Create label that has a toggle on the right side
+    // Not much different than a normal toggle -- but a good example of how to do a custom toggle
+    private static GameObject customLabelWithTogglePrefab;
+    public static UIDynamicLabelWithToggle CreateLabelWithToggle(ref JSONStorableBool storable, UIColumn side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = true)
+    {
+      if (customLabelWithTogglePrefab == null)
+      {
+        UIDynamicLabelWithToggle uid = CreateUIDynamicPrefab<UIDynamicLabelWithToggle>("LabelWithToggle", 50f);
+        customLabelWithTogglePrefab = uid.gameObject;
+
+        RectTransform background = InstantiateBackground(uid.transform);
+
+        RectTransform labelRect = InstantiateLabel(uid.transform);
+        Text labelText = labelRect.GetComponent<Text>();
+        labelText.text = "";
+
+        RectTransform toggleRect = InstantiateToggle(uid.transform, 45f);
+        toggleRect.anchorMin = new Vector2(1f, 0f);
+        toggleRect.offsetMin = new Vector2(-45f, 0f);
+        toggleRect.offsetMax = new Vector2(0f, -2.5f);
+
+        uid.label = labelText;
+        uid.toggle = toggleRect.GetComponent<Toggle>();
+      }
+      {
+        if (storable == null)
+        {
+          storable = new JSONStorableBool(label, defaultValue);
+          if (register)
+          {
+            storable.storeType = JSONStorableParam.StoreType.Full;
+            script.RegisterBool(storable);
+          }
+          if (callback != null)
+          {
+            storable.setCallbackFunction = callback;
+          }
+        }
+        Transform t = createUIElement(customLabelWithTogglePrefab.transform, side == UIColumn.RIGHT);
+        UIDynamicLabelWithToggle uid = t.GetComponent<UIDynamicLabelWithToggle>();
+        uid.label.text = label;
+        storable.RegisterToggle(uid.toggle);
         uid.gameObject.SetActive(true);
         return uid;
       }
@@ -436,9 +491,9 @@ namespace VaMUtils
     {
       if (prefab == null)
       {
-        float rowHeight = 50f;
-        float rowWidth = 1060f;
-        float spacing = 5f;
+        const float rowHeight = 50f;
+        const float rowWidth = 1060f;
+        const float spacing = 5f;
 
         int numRows = Mathf.CeilToInt((float)menuItems.Length / (float)tabsPerRow);
         float totalHeight = numRows * (rowHeight + spacing);
@@ -570,6 +625,20 @@ namespace VaMUtils
       return uid;
     }
 
+    // Creates an empty rect element
+    private static GameObject rectElementPrefab;
+    public static RectTransform InstantiateEmptyRect(Transform parent)
+    {
+      if (rectElementPrefab == null)
+      {
+        rectElementPrefab = UnityEngine.Object.Instantiate(new GameObject(""));
+        rectElementPrefab.name = "Container";
+        RectTransform rect = rectElementPrefab.AddComponent<RectTransform>();
+        ResetRectTransform(rect);
+      }
+      return InstantiateWithSameName(rectElementPrefab.transform as RectTransform, parent);
+    }
+
     // Creates a semi-opaque background element
     private static GameObject backgroundElementPrefab;
     public static RectTransform InstantiateBackground(Transform parent)
@@ -634,6 +703,42 @@ namespace VaMUtils
         ResetRectTransform(buttonElementPrefab.transform as RectTransform);
       }
       return InstantiateWithSameName(buttonElementPrefab.transform as RectTransform, parent);
+    }
+
+    // Creates a toggle element
+    private static GameObject toggleElementPrefab;
+    public static RectTransform InstantiateToggle(Transform parent, float size = 50f)
+    {
+      if (toggleElementPrefab == null)
+      {
+        Transform basePrefab = script.manager.configurableTogglePrefab;
+        toggleElementPrefab = UnityEngine.Object.Instantiate(basePrefab.gameObject);
+        toggleElementPrefab.name = "Toggle";
+
+        UnityEngine.Object.DestroyImmediate(toggleElementPrefab.GetComponent<LayoutElement>());
+        UnityEngine.Object.DestroyImmediate(toggleElementPrefab.GetComponent<UIDynamicToggle>());
+        UnityEngine.Object.DestroyImmediate(toggleElementPrefab.transform.Find("Panel").gameObject);
+        UnityEngine.Object.DestroyImmediate(toggleElementPrefab.transform.Find("Label").gameObject);
+
+        RectTransform rect = toggleElementPrefab.transform as RectTransform;
+        RectTransform backgroundRect = toggleElementPrefab.transform.Find("Background") as RectTransform;
+        RectTransform checkmarkRect = toggleElementPrefab.transform.Find("Background/Checkmark") as RectTransform;
+
+        ResetRectTransform(rect);
+        ResetRectTransform(backgroundRect);
+        ResetRectTransform(checkmarkRect);
+        backgroundRect.anchorMin = new Vector2(0f, 1f);
+        backgroundRect.anchorMax = new Vector2(0f, 1f);
+        backgroundRect.offsetMin = new Vector2(0f, -50f);
+        backgroundRect.offsetMax = new Vector2(50f, 0f);
+      }
+      {
+        RectTransform toggle = InstantiateWithSameName(toggleElementPrefab.transform as RectTransform, parent);
+        RectTransform backgroundRect = toggle.Find("Background") as RectTransform;
+        backgroundRect.offsetMin = new Vector2(0f, -size);
+        backgroundRect.offsetMax = new Vector2(size, 0f);
+        return toggle;
+      }
     }
 
     private static void ResetRectTransform(RectTransform transform)
@@ -1334,6 +1439,12 @@ namespace VaMUtils
   {
     public Text label;
     public UIDynamicButton button;
+  }
+
+  public class UIDynamicLabelWithToggle : UIDynamicBase
+  {
+    public Text label;
+    public Toggle toggle;
   }
 
   public class UIDynamicButtonPair : UIDynamicBase

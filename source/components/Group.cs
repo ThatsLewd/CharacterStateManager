@@ -25,12 +25,14 @@ namespace ThatsLewd
         Group.list.Add(this);
       }
 
-      public Group(Group source) : this()
+      public Group Clone()
       {
-        foreach (State state in source.states)
+        Group newGroup = new Group();
+        foreach (State state in states)
         {
-          new State(this, state);
+          state.Clone(newGroup);
         }
+        return newGroup;
       }
 
       public void Delete()
