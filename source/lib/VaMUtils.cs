@@ -66,6 +66,7 @@ namespace VaMUtils
       Utils.SafeDestroy(ref customLabelWithXPrefab);
       Utils.SafeDestroy(ref customButtonPairPrefab);
       Utils.SafeDestroy(ref customInfoTextPrefab);
+      Utils.SafeDestroy(ref customSliderPrefab);
       Utils.SafeDestroy(ref backgroundElementPrefab);
       Utils.SafeDestroy(ref labelElementPrefab);
       Utils.SafeDestroy(ref textFieldElementPrefab);
@@ -90,32 +91,6 @@ namespace VaMUtils
       }
       UIDynamicToggle toggle = script.CreateToggle(storable, side == UIColumn.RIGHT);
       return toggle;
-    }
-
-    // Create VaM-UI Float slider (hint: use c# named parameters for optional arguments)
-    public static UIDynamicSlider CreateSlider(ref JSONStorableFloat storable, UIColumn side, string label, float defaultValue, float minValue, float maxValue, bool fixedRange = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = true)
-    {
-      if (storable == null)
-      {
-        storable = new JSONStorableFloat(label, defaultValue, minValue, maxValue, fixedRange, interactable);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterFloat(storable);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      UIDynamicSlider slider = script.CreateSlider(storable, side == UIColumn.RIGHT);
-      slider.rangeAdjustEnabled = !fixedRange;
-      if (integer)
-      {
-        slider.slider.wholeNumbers = true;
-        slider.valueFormat = "F0";
-      }
-      return slider;
     }
 
     // Create VaM-UI ColorPicker
@@ -248,10 +223,14 @@ namespace VaMUtils
     }
 
     // Create VaM-UI button
-    public static UIDynamicButton CreateButton(UIColumn side, string label, UnityAction callback)
+    public static UIDynamicButton CreateButton(UIColumn side, string label, UnityAction callback, Color? color = null)
     {
       UIDynamicButton button = script.CreateButton(label, side == UIColumn.RIGHT);
       button.button.onClick.AddListener(callback);
+      if (color != null)
+      {
+        button.buttonColor = color.Value;
+      }
       return button;
     }
 
@@ -260,6 +239,149 @@ namespace VaMUtils
     {
       action = new JSONStorableAction(name, callback);
       script.RegisterAction(action);
+    }
+
+    // Create a custom slider with less sucky behavior
+    // Hint: use C# named params to customize props
+    private static GameObject customSliderPrefab;
+    public static UIDynamicCustomSlider CreateSlider
+    (
+      ref JSONStorableFloat storable,
+      UIColumn side,
+      string label,
+      float defaultValue,
+      float defaultRange,
+      bool allowNegative = false,
+      bool fixedRange = false,
+      bool exponentialRangeIncrement = false,
+      bool integer = false,
+      bool interactable = true,
+      JSONStorableFloat.SetFloatCallback callback = null,
+      bool register = true
+    )
+    {
+      float minValue = allowNegative ? -defaultRange : 0f;
+      float maxValue = defaultRange;
+      return CreateSlider(ref storable, side, label, defaultValue, minValue, maxValue, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
+    }
+    public static UIDynamicCustomSlider CreateSlider
+    (
+      ref JSONStorableFloat storable,
+      UIColumn side,
+      string label,
+      float defaultValue,
+      float minValue,
+      float maxValue,
+      bool fixedRange = false,
+      bool exponentialRangeIncrement = false,
+      bool integer = false,
+      bool interactable = true,
+      JSONStorableFloat.SetFloatCallback callback = null,
+      bool register = true
+    )
+    {
+      if (customSliderPrefab == null)
+      {
+        Transform basePrefab = script.manager.configurableSliderPrefab;
+        customSliderPrefab = UnityEngine.Object.Instantiate(basePrefab.gameObject);
+        customSliderPrefab.name = "Slider";
+
+        UnityEngine.Object.DestroyImmediate(customSliderPrefab.GetComponent<UIDynamicSlider>());
+        UnityEngine.Object.DestroyImmediate(customSliderPrefab.transform.Find("RangePanel").gameObject);
+
+        Slider slider = customSliderPrefab.transform.Find("Slider").GetComponent<Slider>();
+        Text sliderLabel = customSliderPrefab.transform.Find("Text").GetComponent<Text>();
+        RectTransform sliderRect = customSliderPrefab.transform.Find("Slider") as RectTransform;
+        sliderRect.offsetMax = new Vector2(-10f, 70f);
+
+        SetTextFromFloat textFormatter = customSliderPrefab.transform.Find("ValueInputField").GetComponent<SetTextFromFloat>();
+
+        Button defaultButton = customSliderPrefab.transform.Find("DefaultValueButton").GetComponent<Button>();
+
+        Button m1Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M1Button").GetComponent<Button>();
+        Text m1ButtonText = m1Button.transform.Find("Text").GetComponent<Text>();
+        m1ButtonText.text = "-";
+
+        Button m2Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M2Button").GetComponent<Button>();
+        Text m2ButtonText = m2Button.transform.Find("Text").GetComponent<Text>();
+        m2ButtonText.text = "--";
+
+        Button m3Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M3Button").GetComponent<Button>();
+        Text m3ButtonText = m3Button.transform.Find("Text").GetComponent<Text>();
+        m3ButtonText.text = "---";
+
+        Button mRangeButton = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M4Button").GetComponent<Button>();
+        Text mRangeButtonText = mRangeButton.transform.Find("Text").GetComponent<Text>();
+        mRangeButton.gameObject.name = "MRangeButton";
+        mRangeButtonText.text = "- Rng";
+
+        Button p1Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P1Button").GetComponent<Button>();
+        Text p1ButtonText = p1Button.transform.Find("Text").GetComponent<Text>();
+        p1ButtonText.text = "+";
+
+        Button p2Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P2Button").GetComponent<Button>();
+        Text p2ButtonText = p2Button.transform.Find("Text").GetComponent<Text>();
+        p2ButtonText.text = "++";
+
+        Button p3Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P3Button").GetComponent<Button>();
+        Text p3ButtonText = p3Button.transform.Find("Text").GetComponent<Text>();
+        p3ButtonText.text = "+++";
+
+        Button pRangeButton = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P4Button").GetComponent<Button>();
+        Text pRangeButtonText = pRangeButton.transform.Find("Text").GetComponent<Text>();
+        pRangeButtonText.gameObject.name = "PRangeButton";
+        pRangeButtonText.text = "+ Rng";
+
+        UIDynamicCustomSlider uid = customSliderPrefab.AddComponent<UIDynamicCustomSlider>();
+        uid.slider = slider;
+        uid.label = sliderLabel;
+        uid.textFormatter = textFormatter;
+        uid.m1ButtonText = m1ButtonText;
+        uid.m2ButtonText = m2ButtonText;
+        uid.m3ButtonText = m3ButtonText;
+        uid.p1ButtonText = p1ButtonText;
+        uid.p2ButtonText = p2ButtonText;
+        uid.p3ButtonText = p3ButtonText;
+        uid.mRangeButtonText = mRangeButtonText;
+        uid.pRangeButtonText = pRangeButtonText;
+        uid.defaultButton = defaultButton;
+        uid.m1Button = m1Button;
+        uid.m2Button = m2Button;
+        uid.m3Button = m3Button;
+        uid.p1Button = p1Button;
+        uid.p2Button = p2Button;
+        uid.p3Button = p3Button;
+        uid.mRangeButton = mRangeButton;
+        uid.pRangeButton = pRangeButton;
+      }
+      {
+        if (storable == null)
+        {
+          storable = new JSONStorableFloat(label, defaultValue, minValue, maxValue, true, interactable);
+          if (register)
+          {
+            storable.storeType = JSONStorableParam.StoreType.Full;
+            script.RegisterFloat(storable);
+          }
+          if (callback != null)
+          {
+            storable.setCallbackFunction = callback;
+          }
+        }
+        Transform t = createUIElement(customSliderPrefab.transform, side == UIColumn.RIGHT);
+        UIDynamicCustomSlider uid = t.GetComponent<UIDynamicCustomSlider>();
+        storable.RegisterSlider(uid.slider);
+        uid.storable = storable;
+        uid.fixedRange = fixedRange;
+        uid.exponentialRangeIncrement = exponentialRangeIncrement;
+        uid.integer = integer;
+        uid.interactable = interactable;
+        uid.defaultValue = defaultValue;
+        uid.defaultMin = minValue;
+        uid.defaultMax = maxValue;
+        uid.gameObject.SetActive(true);
+        return uid;
+      }
     }
 
     // Create one-line text input with a label
@@ -1231,25 +1353,71 @@ namespace VaMUtils
       }
     }
 
-    // Adjust slider max range to next power of 10 (1, 10, 100, 1000, ...) from slider value
-    public static void AdjustSliderRange(JSONStorableFloat slider)
+    // Get next power of 10 strictly larger than n
+    public static float NextPowerOf10(float n)
     {
-      float m = Mathf.Log10(slider.val);
-      m = Mathf.Max(Mathf.Ceil(m), 1);
-      slider.max = Mathf.Pow(10, m);
+      if (n <= 0f) return 0;
+      float p = Mathf.Log10(n);
+      if (p % 1f == 0f)
+      {
+        p += 1f;
+      }
+      return Mathf.Pow(10, Mathf.Ceil(p));
     }
 
-    // Adjust maxSlider value and max range after minSlider was changed to ensure minSlider <= maxSlider.
-    public static void AdjustMaxSliderFromMin(float minValue, JSONStorableFloat maxSlider)
+    // Get next power of 10 strictly smaller than n
+    public static float PrevPowerOf10(float n)
     {
-      if (maxSlider.slider != null)
-        maxSlider.max = maxSlider.slider.maxValue; // slider sometimes does not update the storable
+      if (n <= 0f) return 0;
+      float p = Mathf.Log10(n);
+      if (p % 1f == 0f)
+      {
+        p -= 1f;
+      }
+      return Mathf.Pow(10, Mathf.Floor(p));
+    }
 
-      float v = Mathf.Max(minValue, maxSlider.val);
-      float m = Mathf.Max(v, maxSlider.max);
-      m = Mathf.Max(Mathf.Ceil(Mathf.Log10(m)), 1);
-      maxSlider.max = Mathf.Pow(10, m);
-      maxSlider.valNoCallback = v;
+    // Get magnitude of current number
+    public static float CurrentPowerOf10(float n)
+    {
+      if (n <= 0f) return 0;
+      float p = Mathf.Log10(n);
+      return Mathf.Pow(10f, Mathf.Floor(p));
+    }
+
+    // Add/Subtract slider range by current power of 10, clamping within range 1 - 100000
+    public static void AddSliderRange(JSONStorableFloat storable, bool invert)
+    {
+      float maxRange = Mathf.Max(Math.Abs(storable.max), Math.Abs(storable.min));
+      float newRange;
+      float pow10 = CurrentPowerOf10(maxRange);
+      if (pow10 < 1f) newRange = 1f;
+      else
+      {
+        int maxDigit = (int)maxRange / (int)pow10;
+        if (invert)
+        {
+          if (maxRange > maxDigit * pow10) maxDigit++;
+          if (maxDigit <= 1) newRange = 0.9f * pow10;
+          else newRange = (maxDigit - 1) * pow10;
+        }
+        else newRange = (maxDigit + 1) * pow10;
+      }
+      newRange = Mathf.Clamp(newRange, 1f, 100000f);
+      if (storable.min > 0f) storable.min = 0f;
+      if (storable.min != 0f) storable.min = -newRange;
+      storable.max = newRange;
+    }
+
+    // Multiply/divide slider range by 10, clamping to power of 10 within range 1 - 100000
+    public static void MultiplySliderRange(JSONStorableFloat storable, bool invert)
+    {
+      float maxRange = Mathf.Max(Math.Abs(storable.max), Math.Abs(storable.min));
+      float newRange = invert ? PrevPowerOf10(maxRange) : NextPowerOf10(maxRange);
+      newRange = Mathf.Clamp(newRange, 1f, 100000f);
+      if (storable.min > 0f) storable.min = 0f;
+      if (storable.min != 0f) storable.min = -newRange;
+      storable.max = newRange;
     }
 
     // Destroy a potentially null game object safely
@@ -1427,6 +1595,139 @@ namespace VaMUtils
   {
     public RectTransform rectTransform;
     public LayoutElement layout;
+  }
+
+  public class UIDynamicCustomSlider : UIDynamicBase
+  {
+    public Slider slider;
+    public Text label;
+    public SetTextFromFloat textFormatter;
+    public Text m1ButtonText;
+    public Text m2ButtonText;
+    public Text m3ButtonText;
+    public Text p1ButtonText;
+    public Text p2ButtonText;
+    public Text p3ButtonText;
+    public Text mRangeButtonText;
+    public Text pRangeButtonText;
+    public Button defaultButton;
+    public Button m1Button;
+    public Button m2Button;
+    public Button m3Button;
+    public Button p1Button;
+    public Button p2Button;
+    public Button p3Button;
+    public Button mRangeButton;
+    public Button pRangeButton;
+
+    public JSONStorableFloat storable = null;
+    public bool fixedRange = false;
+    public bool exponentialRangeIncrement = false;
+    public bool integer = false;
+    public bool interactable = true;
+
+    public float defaultValue;
+    public float defaultMin;
+    public float defaultMax;
+
+    float incrementRange;
+
+    void Start()
+    {
+      textFormatter.floatFormat = integer ? "F0" : "F3";
+      textFormatter.enabled = false;
+      textFormatter.enabled = true;
+      slider.wholeNumbers = integer;
+
+      if (fixedRange)
+      {
+        mRangeButton.gameObject.SetActive(false);
+        pRangeButton.gameObject.SetActive(false);
+      }
+
+      if (!interactable)
+      {
+        mRangeButton.gameObject.SetActive(false);
+        pRangeButton.gameObject.SetActive(false);
+        defaultButton.gameObject.SetActive(false);
+        m1Button.gameObject.SetActive(false);
+        m2Button.gameObject.SetActive(false);
+        m3Button.gameObject.SetActive(false);
+        p1Button.gameObject.SetActive(false);
+        p2Button.gameObject.SetActive(false);
+        p3Button.gameObject.SetActive(false);
+      }
+
+      if (storable == null) return;
+      RecalculateIncrementRange();
+      AssignLabels();
+      AssignCallbacks();
+    }
+
+    void RecalculateIncrementRange()
+    {
+      float maxRange = Mathf.Max(Math.Abs(storable.max), Math.Abs(storable.min));
+      incrementRange = Utils.NextPowerOf10(maxRange) / 10f;
+      incrementRange = Mathf.Clamp(incrementRange, 1f, 10000f);
+    }
+
+    void AssignLabels()
+    {
+      label.text = storable.name;
+      m1ButtonText.text = $"-{incrementRange / 100f}";
+      m2ButtonText.text = $"-{incrementRange / 10f}";
+      m3ButtonText.text = $"-{incrementRange}";
+      p1ButtonText.text = $"+{incrementRange / 100f}";
+      p2ButtonText.text = $"+{incrementRange / 10f}";
+      p3ButtonText.text = $"+{incrementRange}";
+    }
+
+    void AssignCallbacks()
+    {
+      m1Button.onClick.AddListener(() => { storable.val -= incrementRange / 100f; });
+      m2Button.onClick.AddListener(() => { storable.val -= incrementRange / 10f; });
+      m3Button.onClick.AddListener(() => { storable.val -= incrementRange; });
+      p1Button.onClick.AddListener(() => { storable.val += incrementRange / 100f; });
+      p2Button.onClick.AddListener(() => { storable.val += incrementRange / 10f; });
+      p3Button.onClick.AddListener(() => { storable.val += incrementRange; });
+
+      mRangeButton.onClick.AddListener(() =>
+      {
+        if (exponentialRangeIncrement)
+        {
+          Utils.MultiplySliderRange(storable, true);
+        }
+        else
+        {
+          Utils.AddSliderRange(storable, true);
+        }
+        RecalculateIncrementRange();
+        AssignLabels();
+      });
+
+      pRangeButton.onClick.AddListener(() =>
+      {
+        if (exponentialRangeIncrement)
+        {
+          Utils.MultiplySliderRange(storable, false);
+        }
+        else
+        {
+          Utils.AddSliderRange(storable, false);
+        }
+        RecalculateIncrementRange();
+        AssignLabels();
+      });
+
+      defaultButton.onClick.AddListener(() =>
+      {
+        storable.min = defaultMin;
+        storable.max = defaultMax;
+        storable.val = defaultValue;
+        RecalculateIncrementRange();
+        AssignLabels();
+      });
+    }
   }
 
   public class UIDynamicOnelineTextInput : UIDynamicBase
