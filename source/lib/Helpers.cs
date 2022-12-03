@@ -17,15 +17,5 @@ namespace ThatsLewd
     {
       return $"{morph.resolvedDisplayName} {morph.version}";
     }
-
-    public static Vector3 GetPositionDifference(Transform from, Transform to)
-    {
-      return to.position - from.position;
-    }
-
-    public static Quaternion GetRotationDifference(Transform from, Transform to)
-    {
-      return Quaternion.Inverse(to.rotation) * from.rotation;
-    }
   }
 }

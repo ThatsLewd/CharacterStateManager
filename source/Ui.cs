@@ -485,9 +485,9 @@ namespace ThatsLewd
       Draw(VaMUI.CreateStringChooserKeyVal(ref morphChooserStorable, VaMUI.RIGHT, "Select Morph", filterable: true, noDefaultSelection: true));
       SetMorphChooserChoices();
       Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Add Morph", HandleAddMorph));
-      foreach (DAZMorph morph in activeLayer.trackedMorphs)
+      foreach (TrackedMorph tm in activeLayer.trackedMorphs)
       {
-        Draw(VaMUI.CreateLabelWithX(VaMUI.RIGHT, Helpers.GetStandardMorphName(morph), () => { HandleDeleteMorph(morph); }));
+        Draw(VaMUI.CreateLabelWithX(VaMUI.RIGHT, tm.standardName, () => { HandleDeleteMorph(tm); }));
       }
 
 
@@ -554,18 +554,16 @@ namespace ThatsLewd
       if (activeLayer == null || morphChooserStorable == null) return;
       DAZMorph morph = geometry.morphsControlUI.GetMorphByUid(morphChooserStorable.val);
       if (morph == null) return;
-      if (activeLayer.trackedMorphs.Contains(morph)) return;
-      activeLayer.trackedMorphs.Add(morph);
-      activeLayer.trackedMorphs.Sort((a, b) => String.Compare(Helpers.GetStandardMorphName(a), Helpers.GetStandardMorphName(b)));
+      activeLayer.TrackMorph(morph);
 
       morphChooserStorable.valNoCallback = "";
       InvalidateUI();
     }
 
-    void HandleDeleteMorph(DAZMorph morph)
+    void HandleDeleteMorph(TrackedMorph tm)
     {
       if (activeLayer == null) return;
-      activeLayer.trackedMorphs.Remove(morph);
+      activeLayer.trackedMorphs.Remove(tm);
       InvalidateUI();
     }
 
@@ -754,7 +752,7 @@ namespace ThatsLewd
       // KEYFRAME DETAILS
       CreateSubHeader(VaMUI.RIGHT, "Keyframe Details");
       Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Capture Current State", HandleCaptureKeyframe, color: VaMUI.YELLOW));
-      Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Go To Keyframe", HandleCaptureKeyframe));
+      Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Go To Keyframe", HandleGoToKeyframe));
       Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
       Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Delete Keyframe", HandleDeleteKeyframe, color: VaMUI.RED));
       Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
@@ -765,13 +763,12 @@ namespace ThatsLewd
 
       // MORPHS
       CreateSubHeader(VaMUI.RIGHT, "Morph Captures");
-      foreach (DAZMorph morph in activeKeyframe.animation.layer.trackedMorphs)
+      foreach (TrackedMorph tm in activeKeyframe.animation.layer.trackedMorphs)
       {
-        CapturedMorph capture = activeKeyframe.GetCapturedMorph(morph.uid);
-        if (morph.jsonFloat.min >= 0f) morph.jsonFloat.min = -1f;
-        if (morph.jsonFloat.max <= 0f) morph.jsonFloat.max = 1f;
-        Draw(VaMUI.CreateSliderFromStorable(morph.jsonFloat, VaMUI.RIGHT, morph.jsonFloat.defaultVal, -1f, 1f));
-        string str = capture?.value == null ? "<b>Val</b>: <NO DATA>" : $"<b>Val</b>: {capture.value}";
+        CapturedMorph capture = activeKeyframe.GetCapturedMorph(tm.morph.uid);
+        tm.UpdateStorableToMorph();
+        Draw(VaMUI.CreateSliderFromStorable(tm.storable, VaMUI.RIGHT, tm.defaultValue, tm.defaultMin, tm.defaultMax));
+        string str = capture == null ? "<b>Val</b>: <NO DATA>" : $"<b>Val</b>: {capture.value}";
         Draw(VaMUI.CreateInfoTextNoScroll(VaMUI.RIGHT, $"<size=24>{str}</size>", 1, background: false));
       }
       if (activeKeyframe.animation.layer.trackedMorphs.Count == 0)
@@ -925,6 +922,37 @@ namespace ThatsLewd
       InvalidateUI();
     }
 
+    void HandleGoToKeyframe()
+    {
+      if (activeKeyframe == null) return;
+
+      Transform mainTransform = person.mainController.transform;
+      foreach (TrackedController tc in activeKeyframe.animation.layer.trackedControllers)
+      {
+        if (!tc.isTracked) continue;
+        Transform controllerTransform = tc.controller.transform;
+        CapturedController capture = activeKeyframe.GetCapturedController(tc.controller.name);
+        if (tc.trackPositionStorable.val && capture?.position != null)
+        {
+          controllerTransform.position = mainTransform.TransformPoint(capture.position.Value);
+        }
+        if (tc.trackRotationStorable.val && capture?.rotation != null)
+        {
+          controllerTransform.rotation = mainTransform.rotation * capture.rotation.Value;
+        }
+      }
+
+      foreach (TrackedMorph tm in activeKeyframe.animation.layer.trackedMorphs)
+      {
+        CapturedMorph capture = activeKeyframe.GetCapturedMorph(tm.morph.uid);
+        if (capture != null)
+        {
+          tm.morph.SetValue(capture.value);
+          tm.UpdateStorableToMorph();
+        }
+      }
+    }
+
 
     // ================================================================================= //
     // ================================ TRANSITIONS TAB ================================ //
@@ -976,7 +1004,7 @@ namespace ThatsLewd
     }
 
     private GameObject controllerSelectorPrefab;
-    public UIDynamicControllerSelector CreateControllerSelector(TrackedController tc, VaMUI.Column side, TrackedController.SetValueCallback callback = null)
+    public UIDynamicControllerSelector CreateControllerSelector(TrackedController tc, VaMUI.Column side)
     {
       if (controllerSelectorPrefab == null)
       {
@@ -1048,10 +1076,6 @@ namespace ThatsLewd
         uid.rotToggle = rotToggleRect.GetComponent<Toggle>();
       }
       {
-        if (callback != null)
-        {
-          tc.setCallbackFunction = callback;
-        }
         Transform t = CreateUIElement(controllerSelectorPrefab.transform, side == VaMUI.RIGHT);
         UIDynamicControllerSelector uid = t.GetComponent<UIDynamicControllerSelector>();
         uid.label.text = tc.controller.name;

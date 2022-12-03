@@ -17,7 +17,7 @@ namespace ThatsLewd
       public List<Animation> animations { get; private set; } = new List<Animation>();
 
       public List<TrackedController> trackedControllers { get; private set; } = new List<TrackedController>();
-      public List<DAZMorph> trackedMorphs { get; private set; } = new List<DAZMorph>();
+      public List<TrackedMorph> trackedMorphs { get; private set; } = new List<TrackedMorph>();
 
       public Layer(string name = null)
       {
@@ -35,9 +35,9 @@ namespace ThatsLewd
           TrackedController target = newLayer.trackedControllers.Find((tc) => tc.controller.name == source.controller.name);
           target.CopyFrom(source);
         }
-        foreach (DAZMorph morph in trackedMorphs)
+        foreach (TrackedMorph tm in trackedMorphs)
         {
-          newLayer.trackedMorphs.Add(morph);
+          newLayer.trackedMorphs.Add(tm.Clone());
         }
         foreach (Animation animation in animations)
         {
@@ -55,6 +55,13 @@ namespace ThatsLewd
         }
       }
 
+      public void TrackMorph(DAZMorph morph)
+      {
+        if (trackedMorphs.Exists((tm) => tm.morph == morph)) return;
+        trackedMorphs.Add(new TrackedMorph(morph));
+        trackedMorphs.Sort((a, b) => String.Compare(a.standardName, b.standardName));
+      }
+
       private void InitializeControllers()
       {
         trackedControllers.Clear();
@@ -68,21 +75,16 @@ namespace ThatsLewd
     public class TrackedController
     {
       public FreeControllerV3 controller { get; private set; }
-      public JSONStorableBool trackPositionStorable;
-      public JSONStorableBool trackRotationStorable;
+      public JSONStorableBool trackPositionStorable { get; private set; }
+      public JSONStorableBool trackRotationStorable { get; private set; }
 
-      public bool isTracked { get { return trackPositionStorable.val || trackRotationStorable.val; }} 
-
-      public SetValueCallback setCallbackFunction;
-      public delegate void SetValueCallback(TrackedController trackedController);
+      public bool isTracked { get { return trackPositionStorable.val || trackRotationStorable.val; }}
 
       public TrackedController(FreeControllerV3 controller)
       {
         this.controller = controller;
         this.trackPositionStorable = new JSONStorableBool($"Track {controller.name} Position", false);
         this.trackRotationStorable = new JSONStorableBool($"Track {controller.name} Rotation", false);
-        this.trackPositionStorable.setCallbackFunction += OnValueChanged;
-        this.trackRotationStorable.setCallbackFunction += OnValueChanged;
       }
 
       public void CopyFrom(TrackedController source)
@@ -94,12 +96,49 @@ namespace ThatsLewd
         }
         trackPositionStorable.valNoCallback = source.trackPositionStorable.val;
         trackRotationStorable.valNoCallback = source.trackRotationStorable.val;
-        setCallbackFunction = source.setCallbackFunction;
+      }
+    }
+
+    public class TrackedMorph
+    {
+      public string standardName { get; private set; }
+      public DAZMorph morph { get; private set; }
+      public JSONStorableFloat storable { get; private set; }
+
+      public float defaultValue { get; private set; } = 0f;
+      public float defaultMin { get; private set; } = -1f;
+      public float defaultMax { get; private set; } = 1f;
+
+      public TrackedMorph(DAZMorph morph)
+      {
+        this.morph = morph;
+        this.standardName = Helpers.GetStandardMorphName(morph);
+        this.defaultValue = morph.jsonFloat.defaultVal;
+        this.storable = new JSONStorableFloat(standardName, defaultValue, defaultMin, defaultMax, true, true);
+        this.storable.setCallbackFunction = HandleValueChange;
+        UpdateStorableToMorph();
       }
 
-      private void OnValueChanged(bool val)
+      public TrackedMorph Clone()
       {
-        setCallbackFunction?.Invoke(this);
+        return new TrackedMorph(morph);
+      }
+
+      public void UpdateStorableToMorph()
+      {
+        float value = morph.morphValue;
+        float currMin = storable.min;
+        float currMax = storable.max;
+        float range = Mathf.Max(new float[] { 1f, Mathf.Abs(value), Mathf.Abs(currMin), Mathf.Abs(currMin) });
+
+        storable.min = -range;
+        storable.max = range;
+        storable.valNoCallback = value;
+      }
+
+      private void HandleValueChange(float val)
+      {
+        morph.SetValue(val);
       }
     }
   }

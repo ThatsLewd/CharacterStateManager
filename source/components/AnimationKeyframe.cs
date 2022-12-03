@@ -79,21 +79,21 @@ namespace ThatsLewd
             capture.name = tc.controller.name;
             if (tc.trackPositionStorable.val)
             {
-              capture.position = Helpers.GetPositionDifference(controllerTransform, mainTransform);
+              capture.position = mainTransform.InverseTransformPoint(controllerTransform.position);
             }
             if (tc.trackRotationStorable.val)
             {
-              capture.rotation = Helpers.GetRotationDifference(controllerTransform, mainTransform);
+              capture.rotation = Quaternion.Inverse(mainTransform.rotation) * controllerTransform.rotation;
             }
             capturedControllers.Add(capture);
           }
 
           capturedMorphs.Clear();
-          foreach (DAZMorph morph in animation.layer.trackedMorphs)
+          foreach (TrackedMorph tm in animation.layer.trackedMorphs)
           {
             CapturedMorph capture = new CapturedMorph();
-            capture.uid = morph.uid;
-            capture.value = morph.appliedValue;
+            capture.uid = tm.morph.uid;
+            capture.value = tm.morph.morphValue;
             capturedMorphs.Add(capture);
           }
         }
