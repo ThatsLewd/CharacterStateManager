@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using SimpleJSON;
-using VaMUtils;
+using VaMLib;
 
 namespace ThatsLewd
 {
@@ -21,7 +21,7 @@ namespace ThatsLewd
 
       public Layer(string name = null)
       {
-        this.id = Utils.GenerateRandomID();
+        this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "layer";
         InitializeControllers();
         Layer.list.Add(this);

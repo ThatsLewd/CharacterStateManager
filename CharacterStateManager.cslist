@@ -7,6 +7,6 @@ source/components/State.cs
 source/components/Transition.cs
 source/lib/Easing.cs
 source/lib/Helpers.cs
-source/lib/VaMUtils.cs
+source/lib/VaMLib.cs
 source/Core.cs
 source/Ui.cs

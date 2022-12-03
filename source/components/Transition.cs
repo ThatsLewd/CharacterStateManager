@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using SimpleJSON;
-using VaMUtils;
+using VaMLib;
 
 namespace ThatsLewd
 {
@@ -18,7 +18,7 @@ namespace ThatsLewd
 
       public Transition(Animation from, Animation to)
       {
-        this.id = Utils.GenerateRandomID();
+        this.id = VaMUtils.GenerateRandomID();
         this.from = from;
         this.to = to;
         Transition.list.Add(this);

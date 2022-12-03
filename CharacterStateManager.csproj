@@ -78,7 +78,7 @@
     <Compile Include="source/components/Transition.cs" />
     <Compile Include="source/lib/Easing.cs" />
     <Compile Include="source/lib/Helpers.cs" />
-    <Compile Include="source/lib/VaMUtils.cs" />
+    <Compile Include="source/lib/VaMLib.cs" />
     <Compile Include="source/Core.cs" />
     <Compile Include="source/Ui.cs" />
   </ItemGroup>

@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using SimpleJSON;
-using VaMUtils;
+using VaMLib;
 
 namespace ThatsLewd
 {
@@ -19,12 +19,16 @@ namespace ThatsLewd
         public JSONStorableStringChooser easingStorable;
         public JSONStorableFloat durationStorable;
 
+        public EventTrigger onEnterTrigger = VaMTrigger.Create<EventTrigger>("On Enter Keyframe");
+        public FloatTrigger onPlayingTrigger = VaMTrigger.Create<FloatTrigger>("On Keyframe Playing");
+        public EventTrigger onExitTrigger = VaMTrigger.Create<EventTrigger>("On Exit Keyframe");
+
         public List<CapturedController> capturedControllers = new List<CapturedController>();
         public List<CapturedMorph> capturedMorphs = new List<CapturedMorph>();
 
         public Keyframe(Animation animation, int index = -1)
         {
-          this.id = Utils.GenerateRandomID();
+          this.id = VaMUtils.GenerateRandomID();
           this.animation = animation;
           this.colorStorable = CreateColorStorable();
           this.easingStorable = CreateEasingStorable(Easing.EasingType.Linear);
@@ -43,6 +47,9 @@ namespace ThatsLewd
           newKeyframe.colorStorable = CreateColorStorable(colorStorable.val);
           newKeyframe.easingStorable = CreateEasingStorable(easingStorable.val);
           newKeyframe.durationStorable = CreateDurationStorable(durationStorable.val, durationStorable.min, durationStorable.max);
+          newKeyframe.onEnterTrigger = VaMTrigger.Clone(onEnterTrigger);
+          newKeyframe.onPlayingTrigger = VaMTrigger.Clone(onPlayingTrigger);
+          newKeyframe.onExitTrigger = VaMTrigger.Clone(onExitTrigger);
           foreach (CapturedController capture in capturedControllers)
           {
             newKeyframe.capturedControllers.Add(capture.Clone());

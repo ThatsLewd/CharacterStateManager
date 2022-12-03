@@ -20,13 +20,18 @@ using Request = MeshVR.AssetLoader.AssetBundleFromFileRequest;
 using AssetBundles;
 using SimpleJSON;
 
-namespace VaMUtils
+namespace VaMLib
 {
   // ================================================================================================== //
   // ========================================== ENUMS/CONSTS ========================================== //
   // ================================================================================================== //
-  public static class UIColor
+  public static partial class VaMUI
   {
+    // Columns
+    public readonly static Column LEFT = Column.LEFT;
+    public readonly static Column RIGHT = Column.RIGHT;
+
+    // Colors
     public readonly static Color GREEN = new Color(0.5f, 1.0f, 0.5f);
     public readonly static Color RED = new Color(1.0f, 0.5f, 0.5f);
     public readonly static Color BLUE = new Color(0.5f, 0.5f, 1.0f);
@@ -36,41 +41,34 @@ namespace VaMUtils
     public readonly static Color TRANSPARENT = new Color(0.0f, 0.0f, 0.0f, 0.0f);
   }
 
-  // Custom enums don't work in VaM, so here is a hack
-  public partial struct UIColumn
-  {
-    public readonly static UIColumn LEFT = new UIColumn(0);
-    public readonly static UIColumn RIGHT = new UIColumn(1);
-  }
-
   // ============================================================================================== //
   // ========================================== UI UTILS ========================================== //
   // ============================================================================================== //
   // Usage:
   // - In script Init(), call:
-  //       UIBuilder.Init(this, CreateUIElement);
+  //       VaMUI.Init(this, CreateUIElement);
   // - In script OnDestroy(), call:
-  //       UIBuilder.Destroy();
+  //       VaMUI.Destroy();
 
-  public static class UIBuilder
+  public static partial class VaMUI
   {
     public static void Init(MVRScript script, CreateUIElement createUIElementCallback)
     {
-      UIBuilder.script = script;
+      VaMUI.script = script;
       createUIElement = createUIElementCallback;
     }
 
     public static void Destroy()
     {
-      Utils.SafeDestroy(ref customOnelineTextInputPrefab);
-      Utils.SafeDestroy(ref customLabelWithXPrefab);
-      Utils.SafeDestroy(ref customButtonPairPrefab);
-      Utils.SafeDestroy(ref customInfoTextPrefab);
-      Utils.SafeDestroy(ref customSliderPrefab);
-      Utils.SafeDestroy(ref backgroundElementPrefab);
-      Utils.SafeDestroy(ref labelElementPrefab);
-      Utils.SafeDestroy(ref textFieldElementPrefab);
-      Utils.SafeDestroy(ref buttonElementPrefab);
+      VaMUtils.SafeDestroy(ref customOnelineTextInputPrefab);
+      VaMUtils.SafeDestroy(ref customLabelWithXPrefab);
+      VaMUtils.SafeDestroy(ref customButtonPairPrefab);
+      VaMUtils.SafeDestroy(ref customInfoTextPrefab);
+      VaMUtils.SafeDestroy(ref customSliderPrefab);
+      VaMUtils.SafeDestroy(ref backgroundElementPrefab);
+      VaMUtils.SafeDestroy(ref labelElementPrefab);
+      VaMUtils.SafeDestroy(ref textFieldElementPrefab);
+      VaMUtils.SafeDestroy(ref buttonElementPrefab);
     }
 
     // Create an action that other objects can see
@@ -82,7 +80,7 @@ namespace VaMUtils
     }
 
     // Create default VaM toggle
-    public static UIDynamicToggle CreateToggle(ref JSONStorableBool storable, UIColumn side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
+    public static UIDynamicToggle CreateToggle(ref JSONStorableBool storable, Column side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -99,9 +97,9 @@ namespace VaMUtils
       }
       return CreateToggleFromStorable(storable, side);
     }
-    public static UIDynamicToggle CreateToggleFromStorable(JSONStorableBool storable, UIColumn side)
+    public static UIDynamicToggle CreateToggleFromStorable(JSONStorableBool storable, Column side)
     {
-      UIDynamicToggle toggle = script.CreateToggle(storable, side == UIColumn.RIGHT);
+      UIDynamicToggle toggle = script.CreateToggle(storable, side == Column.RIGHT);
       return toggle;
     }
 
@@ -109,7 +107,7 @@ namespace VaMUtils
     public static UIDynamicPopup CreateStringChooser
     (
       ref JSONStorableStringChooser storable,
-      UIColumn side,
+      Column side,
       string label,
       List<string> initialChoices = null,
       bool noDefaultSelection = false,
@@ -141,7 +139,7 @@ namespace VaMUtils
     public static UIDynamicPopup CreateStringChooserKeyVal
     (
       ref JSONStorableStringChooser storable,
-      UIColumn side,
+      Column side,
       string label,
       List<KeyValuePair<string, string>> initialKeyValues = null,
       bool noDefaultSelection = false,
@@ -177,24 +175,24 @@ namespace VaMUtils
       }
       return CreateStringChooserFromStorable(storable, side, filterable);
     }
-    public static UIDynamicPopup CreateStringChooserFromStorable(JSONStorableStringChooser storable, UIColumn side, bool filterable = false)
+    public static UIDynamicPopup CreateStringChooserFromStorable(JSONStorableStringChooser storable, Column side, bool filterable = false)
     {
       UIDynamicPopup popup;
       if (filterable)
       {
-        popup = script.CreateFilterablePopup(storable, side == UIColumn.RIGHT);
+        popup = script.CreateFilterablePopup(storable, side == Column.RIGHT);
       }
       else
       {
-        popup = script.CreateScrollablePopup(storable, side == UIColumn.RIGHT);
+        popup = script.CreateScrollablePopup(storable, side == Column.RIGHT);
       }
       return popup;
     }
 
     // Create default VaM Button
-    public static UIDynamicButton CreateButton(UIColumn side, string label, UnityAction callback, Color? color = null)
+    public static UIDynamicButton CreateButton(Column side, string label, UnityAction callback, Color? color = null)
     {
-      UIDynamicButton button = script.CreateButton(label, side == UIColumn.RIGHT);
+      UIDynamicButton button = script.CreateButton(label, side == Column.RIGHT);
       button.button.onClick.AddListener(callback);
       if (color != null)
       {
@@ -204,25 +202,25 @@ namespace VaMUtils
     }
 
     // Create default VaM text field with scrolling
-    public static UIDynamicTextField CreateInfoText(UIColumn side, string text, float height)
+    public static UIDynamicTextField CreateInfoText(Column side, string text, float height)
     {
       JSONStorableString storable = new JSONStorableString("Info", text);
-      UIDynamicTextField textfield = script.CreateTextField(storable, side == UIColumn.RIGHT);
+      UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
       LayoutElement layout = textfield.GetComponent<LayoutElement>();
       layout.minHeight = height;
       return textfield;
     }
 
     // Create spacer
-    public static UIDynamic CreateSpacer(UIColumn side, float height = 20f)
+    public static UIDynamic CreateSpacer(Column side, float height = 20f)
     {
-      UIDynamic spacer = script.CreateSpacer(side == UIColumn.RIGHT);
+      UIDynamic spacer = script.CreateSpacer(side == Column.RIGHT);
       spacer.height = height;
       return spacer;
     }
 
     // Create default VaM color picker
-    public static UIDynamicColorPicker CreateColorPicker(ref JSONStorableColor storable, UIColumn side, string label, Color defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = false)
+    public static UIDynamicColorPicker CreateColorPicker(ref JSONStorableColor storable, Column side, string label, Color defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -240,14 +238,14 @@ namespace VaMUtils
       }
       return CreateColorPickerFromStorable(storable, side);
     }
-    public static UIDynamicColorPicker CreateColorPickerFromStorable(JSONStorableColor storable, UIColumn side)
+    public static UIDynamicColorPicker CreateColorPickerFromStorable(JSONStorableColor storable, Column side)
     {
-      UIDynamicColorPicker picker = script.CreateColorPicker(storable, side == UIColumn.RIGHT);
+      UIDynamicColorPicker picker = script.CreateColorPicker(storable, side == Column.RIGHT);
       return picker;
     }
 
     // Create texture chooser -- note that you are responsible for destroying the texture when you don't need it anymore.
-    public static void CreateTextureChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = false)
+    public static void CreateTextureChooser(ref JSONStorableUrl storable, Column side, string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -264,11 +262,11 @@ namespace VaMUtils
       }
       CreateTextureChooserFromStorable(storable, side);
     }
-    public static void CreateTextureChooserFromStorable(JSONStorableUrl storable, UIColumn side)
+    public static void CreateTextureChooserFromStorable(JSONStorableUrl storable, Column side)
     {
       string label = storable.name;
-      UIDynamicButton button = script.CreateButton("Browse " + label, side == UIColumn.RIGHT);
-      UIDynamicTextField textfield = script.CreateTextField(storable, side == UIColumn.RIGHT);
+      UIDynamicButton button = script.CreateButton("Browse " + label, side == Column.RIGHT);
+      UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
       textfield.UItext.alignment = TextAnchor.MiddleRight;
       textfield.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
       textfield.UItext.verticalOverflow = VerticalWrapMode.Truncate;
@@ -279,7 +277,7 @@ namespace VaMUtils
     }
 
     // Create asset bundle chooser
-    public static void CreateAssetBundleChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = false)
+    public static void CreateAssetBundleChooser(ref JSONStorableUrl storable, Column side, string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -300,11 +298,11 @@ namespace VaMUtils
       }
       CreateAssetBundleChooserFromStorable(storable, side);
     }
-    public static void CreateAssetBundleChooserFromStorable(JSONStorableUrl storable, UIColumn side)
+    public static void CreateAssetBundleChooserFromStorable(JSONStorableUrl storable, Column side)
     {
       string label = storable.name;
-      UIDynamicButton button = script.CreateButton("Select " + label, side == UIColumn.RIGHT);
-      UIDynamicTextField textfield = script.CreateTextField(storable, side == UIColumn.RIGHT);
+      UIDynamicButton button = script.CreateButton("Select " + label, side == Column.RIGHT);
+      UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
       textfield.UItext.alignment = TextAnchor.MiddleRight;
       textfield.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
       textfield.UItext.verticalOverflow = VerticalWrapMode.Truncate;
@@ -319,7 +317,7 @@ namespace VaMUtils
     public static UIDynamicCustomSlider CreateSlider
     (
       ref JSONStorableFloat storable,
-      UIColumn side,
+      Column side,
       string label,
       float defaultValue,
       float defaultRange,
@@ -339,7 +337,7 @@ namespace VaMUtils
     public static UIDynamicCustomSlider CreateSlider
     (
       ref JSONStorableFloat storable,
-      UIColumn side,
+      Column side,
       string label,
       float defaultValue,
       float defaultMin,
@@ -367,7 +365,7 @@ namespace VaMUtils
       }
       return CreateSliderFromStorable(storable, side, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable);
     }
-    public static UIDynamicCustomSlider CreateSliderFromStorable(JSONStorableFloat storable, UIColumn side, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true)
+    public static UIDynamicCustomSlider CreateSliderFromStorable(JSONStorableFloat storable, Column side, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true)
     {
       if (customSliderPrefab == null)
       {
@@ -444,7 +442,7 @@ namespace VaMUtils
         uid.pRangeButton = pRangeButton;
       }
       {
-        Transform t = createUIElement(customSliderPrefab.transform, side == UIColumn.RIGHT);
+        Transform t = createUIElement(customSliderPrefab.transform, side == Column.RIGHT);
         UIDynamicCustomSlider uid = t.GetComponent<UIDynamicCustomSlider>();
         storable.RegisterSlider(uid.slider);
         uid.storable = storable;
@@ -462,7 +460,7 @@ namespace VaMUtils
 
     // Create one-line text input with a label
     private static GameObject customOnelineTextInputPrefab;
-    public static UIDynamicOnelineTextInput CreateOnelineTextInput(ref JSONStorableString storable, UIColumn side, string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
+    public static UIDynamicOnelineTextInput CreateOnelineTextInput(ref JSONStorableString storable, Column side, string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -479,7 +477,7 @@ namespace VaMUtils
       }
       return CreateOnelineTextInputFromStorable(storable, side);
     }
-    public static UIDynamicOnelineTextInput CreateOnelineTextInputFromStorable(JSONStorableString storable, UIColumn side)
+    public static UIDynamicOnelineTextInput CreateOnelineTextInputFromStorable(JSONStorableString storable, Column side)
     {
       if (customOnelineTextInputPrefab == null)
       {
@@ -508,7 +506,7 @@ namespace VaMUtils
       }
       {
         string label = storable.name;
-        Transform t = createUIElement(customOnelineTextInputPrefab.transform, side == UIColumn.RIGHT);
+        Transform t = createUIElement(customOnelineTextInputPrefab.transform, side == Column.RIGHT);
         UIDynamicOnelineTextInput uid = t.GetComponent<UIDynamicOnelineTextInput>();
         uid.label.text = label;
         storable.inputField = uid.input;
@@ -519,7 +517,7 @@ namespace VaMUtils
 
     // Create label that has an X button on the right side
     private static GameObject customLabelWithXPrefab;
-    public static UIDynamicLabelWithX CreateLabelWithX(UIColumn side, string label, UnityAction callback)
+    public static UIDynamicLabelWithX CreateLabelWithX(Column side, string label, UnityAction callback)
     {
       if (customLabelWithXPrefab == null)
       {
@@ -542,7 +540,7 @@ namespace VaMUtils
         uid.button = button;
       }
       {
-        Transform t = createUIElement(customLabelWithXPrefab.transform, side == UIColumn.RIGHT);
+        Transform t = createUIElement(customLabelWithXPrefab.transform, side == Column.RIGHT);
         UIDynamicLabelWithX uid = t.GetComponent<UIDynamicLabelWithX>();
         uid.label.text = label;
         uid.button.button.onClick.AddListener(callback);
@@ -554,7 +552,7 @@ namespace VaMUtils
     // Create label that has a toggle on the right side
     // Not much different than a normal toggle -- but a good example of how to do a custom toggle
     private static GameObject customLabelWithTogglePrefab;
-    public static UIDynamicLabelWithToggle CreateLabelWithToggle(ref JSONStorableBool storable, UIColumn side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
+    public static UIDynamicLabelWithToggle CreateLabelWithToggle(ref JSONStorableBool storable, Column side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -571,7 +569,7 @@ namespace VaMUtils
       }
       return CreateLabelWithToggleFromStorable(storable, side);
     }
-    public static UIDynamicLabelWithToggle CreateLabelWithToggleFromStorable(JSONStorableBool storable, UIColumn side)
+    public static UIDynamicLabelWithToggle CreateLabelWithToggleFromStorable(JSONStorableBool storable, Column side)
     {
       if (customLabelWithTogglePrefab == null)
       {
@@ -594,7 +592,7 @@ namespace VaMUtils
       }
       {
         string label = storable.name;
-        Transform t = createUIElement(customLabelWithTogglePrefab.transform, side == UIColumn.RIGHT);
+        Transform t = createUIElement(customLabelWithTogglePrefab.transform, side == Column.RIGHT);
         UIDynamicLabelWithToggle uid = t.GetComponent<UIDynamicLabelWithToggle>();
         uid.label.text = label;
         storable.RegisterToggle(uid.toggle);
@@ -605,7 +603,7 @@ namespace VaMUtils
 
     // Create two buttons on one line
     private static GameObject customButtonPairPrefab;
-    public static UIDynamicButtonPair CreateButtonPair(UIColumn side, string leftLabel, UnityAction leftCallback, string rightLabel, UnityAction rightCallback)
+    public static UIDynamicButtonPair CreateButtonPair(Column side, string leftLabel, UnityAction leftCallback, string rightLabel, UnityAction rightCallback)
     {
       if (customButtonPairPrefab == null)
       {
@@ -628,7 +626,7 @@ namespace VaMUtils
         uid.rightButton = rightButton;
       }
       {
-        Transform t = createUIElement(customButtonPairPrefab.transform, side == UIColumn.RIGHT);
+        Transform t = createUIElement(customButtonPairPrefab.transform, side == Column.RIGHT);
         UIDynamicButtonPair uid = t.GetComponent<UIDynamicButtonPair>();
         uid.leftButton.buttonText.text = leftLabel;
         uid.leftButton.button.onClick.AddListener(leftCallback);
@@ -641,7 +639,7 @@ namespace VaMUtils
 
     // Create an info textbox with scrolling disabled
     private static GameObject customInfoTextPrefab;
-    public static UIDynamicInfoText CreateInfoTextNoScroll(UIColumn side, string text, float height, bool background = true)
+    public static UIDynamicInfoText CreateInfoTextNoScroll(Column side, string text, float height, bool background = true)
     {
       if (customInfoTextPrefab == null)
       {
@@ -663,14 +661,14 @@ namespace VaMUtils
         uid.text = textComponent;
       }
       {
-        Transform t = createUIElement(customInfoTextPrefab.transform, side == UIColumn.RIGHT);
+        Transform t = createUIElement(customInfoTextPrefab.transform, side == Column.RIGHT);
         UIDynamicInfoText uid = t.GetComponent<UIDynamicInfoText>();
         uid.text.text = text;
         uid.layout.minHeight = height;
         uid.layout.preferredHeight = height;
         if (!background)
         {
-          uid.bgImage.color = UIColor.TRANSPARENT;
+          uid.bgImage.color = TRANSPARENT;
           uid.textRect.offsetMin = new Vector2(8f, 0f);
           uid.textRect.offsetMax = new Vector2(-8f, 0f);
         }
@@ -680,13 +678,13 @@ namespace VaMUtils
     }
 
     // Create an info textbox with scrolling disabled with a specified number of lines (default text size only)
-    public static UIDynamicInfoText CreateInfoTextNoScroll(UIColumn side, string text, int lines, bool background = true)
+    public static UIDynamicInfoText CreateInfoTextNoScroll(Column side, string text, int lines, bool background = true)
     {
       return CreateInfoTextNoScroll(side, text, lines * 32f + 8f, background);
     }
 
     // Creates a one-line header with automatic styling
-    public static UIDynamicInfoText CreateHeaderText(UIColumn side, string text, float size = 50f)
+    public static UIDynamicInfoText CreateHeaderText(Column side, string text, float size = 50f)
     {
       UIDynamicInfoText uid = CreateInfoTextNoScroll(side, $"<size={size * 0.85f}><b>{text}</b></size>", size, background: false);
       return uid;
@@ -695,7 +693,7 @@ namespace VaMUtils
     // Create a list of buttons that spans both columns
     // NOTE that this creates a prefab, which you should clean up when your script exits
     // NOTE that this also means the tab bar is not dynamic -- it is setup once and the same prefab is reused
-    public static UIDynamicTabBar CreateTabBar(ref GameObject prefab, UIColumn anchorSide, string[] menuItems, TabClickCallback callback, int tabsPerRow = 6)
+    public static UIDynamicTabBar CreateTabBar(ref GameObject prefab, Column anchorSide, string[] menuItems, TabClickCallback callback, int tabsPerRow = 6)
     {
       if (prefab == null)
       {
@@ -720,7 +718,7 @@ namespace VaMUtils
           int row = i / tabsPerRow;
 
           float xOffset = col * (tabWidth + spacing);
-          if (anchorSide == UIColumn.RIGHT)
+          if (anchorSide == Column.RIGHT)
           {
             xOffset -= rowWidth / 2 + 9f;
           }
@@ -739,7 +737,7 @@ namespace VaMUtils
         }
       }
       {
-        Transform t = createUIElement(prefab.transform, anchorSide == UIColumn.RIGHT);
+        Transform t = createUIElement(prefab.transform, anchorSide == Column.RIGHT);
         UIDynamicTabBar uid = t.GetComponent<UIDynamicTabBar>();
         for (int i = 0; i < uid.buttons.Count; i++)
         {
@@ -844,7 +842,7 @@ namespace VaMUtils
         RectTransform rect = rectElementPrefab.AddComponent<RectTransform>();
         ResetRectTransform(rect);
       }
-      return InstantiateWithSameName(rectElementPrefab.transform as RectTransform, parent);
+      return VaMUtils.InstantiateWithSameName(rectElementPrefab.transform as RectTransform, parent);
     }
 
     // Creates a semi-opaque background element
@@ -858,7 +856,7 @@ namespace VaMUtils
         backgroundElementPrefab.name = "Background";
         ResetRectTransform(backgroundElementPrefab.transform as RectTransform);
       }
-      return InstantiateWithSameName(backgroundElementPrefab.transform as RectTransform, parent);
+      return VaMUtils.InstantiateWithSameName(backgroundElementPrefab.transform as RectTransform, parent);
     }
 
     // Creates a label element
@@ -872,7 +870,7 @@ namespace VaMUtils
         labelElementPrefab.name = "Label";
         ResetRectTransform(labelElementPrefab.transform as RectTransform);
       }
-      return InstantiateWithSameName(labelElementPrefab.transform as RectTransform, parent);
+      return VaMUtils.InstantiateWithSameName(labelElementPrefab.transform as RectTransform, parent);
     }
 
     // Creates a text input element
@@ -896,7 +894,7 @@ namespace VaMUtils
         textRect.offsetMin = new Vector2(10f, 0f);
         textRect.offsetMax = new Vector2(-10f, -5f);
       }
-      return InstantiateWithSameName(textFieldElementPrefab.transform as RectTransform, parent);
+      return VaMUtils.InstantiateWithSameName(textFieldElementPrefab.transform as RectTransform, parent);
     }
 
     // Creates a button element
@@ -910,7 +908,7 @@ namespace VaMUtils
         buttonElementPrefab.name = "Button";
         ResetRectTransform(buttonElementPrefab.transform as RectTransform);
       }
-      return InstantiateWithSameName(buttonElementPrefab.transform as RectTransform, parent);
+      return VaMUtils.InstantiateWithSameName(buttonElementPrefab.transform as RectTransform, parent);
     }
 
     // Creates a toggle element
@@ -941,7 +939,7 @@ namespace VaMUtils
         backgroundRect.offsetMax = new Vector2(50f, 0f);
       }
       {
-        RectTransform toggle = InstantiateWithSameName(toggleElementPrefab.transform as RectTransform, parent);
+        RectTransform toggle = VaMUtils.InstantiateWithSameName(toggleElementPrefab.transform as RectTransform, parent);
         RectTransform backgroundRect = toggle.Find("Background") as RectTransform;
         backgroundRect.offsetMin = new Vector2(0f, -size);
         backgroundRect.offsetMax = new Vector2(size, 0f);
@@ -949,7 +947,8 @@ namespace VaMUtils
       }
     }
 
-    private static void ResetRectTransform(RectTransform transform)
+    // Reset a RectTransform to useful defaults
+    public static void ResetRectTransform(RectTransform transform)
     {
       transform.anchoredPosition = new Vector2(0f, 0f);
       transform.anchorMin = new Vector2(0f, 0f);
@@ -959,7 +958,8 @@ namespace VaMUtils
       transform.pivot = new Vector2(0.5f, 0.5f);
     }
 
-    private static void ResetLayoutElement(LayoutElement layout, float height = 0f, bool flexWidth = true)
+    // Reset a LayoutElement to useful defaults
+    public static void ResetLayoutElement(LayoutElement layout, float height = 0f, bool flexWidth = true)
     {
       layout.flexibleWidth = flexWidth ? 1f : -1f;
       layout.flexibleHeight = -1f;
@@ -967,13 +967,6 @@ namespace VaMUtils
       layout.minHeight = height;
       layout.preferredWidth = -1f;
       layout.preferredHeight = height;
-    }
-
-    private static T InstantiateWithSameName<T>(T original, Transform parent) where T : UnityEngine.Object
-    {
-      T obj = UnityEngine.Object.Instantiate(original, parent);
-      obj.name = original.name;
-      return obj;
     }
 
     private static void QueueLoadTexture(string url, TextureSettings settings, TextureSetCallback callback)
@@ -1025,26 +1018,21 @@ namespace VaMUtils
   // =================================================================================================== //
   // Usage:
   // - In script Init(), call:
-  //       TriggerUtil.Init(this);
+  //       VaMTrigger.Init(this);
   // - In script OnDestroy(), call:
-  //       TriggerUtil.Destroy();
+  //       VaMTrigger.Destroy();
   //
   // Credit to AcidBubbles for figuring out how to do custom triggers.
 
-  public static class TriggerUtil
+  public static class VaMTrigger
   {
     public static bool Loaded { get; private set; }
 
     public static void Init(MVRScript script)
     {
-      TriggerUtil.script = script;
+      VaMTrigger.script = script;
       handler = new SimpleTriggerHandler();
       SuperController.singleton.StartCoroutine(LoadAssets());
-    }
-
-    public static void Destroy()
-    {
-      // nothing for now
     }
 
     // Create a trigger
@@ -1063,15 +1051,18 @@ namespace VaMUtils
       return trigger;
     }
 
+    public static void Destroy()
+    {
+      // unused
+    }
+
     // Restore an existing trigger from JSON
-    // These restore methods are a little clunky because of the way triggers are stored
     public static void RestoreFromJSON<T>(ref T trigger, JSONClass jc, bool setMissingToDefault) where T : CustomTrigger, new()
     {
       trigger.RestoreFromJSON(jc, script.subScenePrefix, script.mergeRestore, setMissingToDefault);
     }
 
     // Restore a trigger from JSON by name
-    // These restore methods are a little clunky because of the way triggers are stored
     public static void RestoreFromJSON<T>(out T trigger, string name, JSONClass jc, bool setMissingToDefault) where T : CustomTrigger, new()
     {
       trigger = new T();
@@ -1160,7 +1151,7 @@ namespace VaMUtils
   // ============================================================================================================ //
   // ========================================== TRIGGER HELPER CLASSES ========================================== //
   // ============================================================================================================ //
-  // You shouldn't need to instantiate these directly -- use TriggerUtil.Create()
+  // You shouldn't need to instantiate these directly -- use VaMTrigger.Create()
 
   // Base class for easier handling of custom triggers.
   public abstract class CustomTrigger : Trigger
@@ -1208,14 +1199,14 @@ namespace VaMUtils
 
     public void OpenPanel()
     {
-      if (!TriggerUtil.Loaded)
+      if (!VaMTrigger.Loaded)
       {
-        SuperController.LogError("CustomTrigger: You need to call TriggerUtil.Init() before use.");
+        SuperController.LogError("CustomTrigger: You need to call VaMTrigger.Init() before use.");
         return;
       }
       if (!initialized)
       {
-        SuperController.LogError("CustomTrigger: Trigger is not initialized. Use TriggerUtil.Create() to instantiate triggers.");
+        SuperController.LogError("CustomTrigger: Trigger is not initialized correctly. Use VaMTrigger.Create() to instantiate triggers.");
         return;
       }
 
@@ -1321,7 +1312,7 @@ namespace VaMUtils
   // =================================================================================================== //
   // ========================================== GENERAL UTILS ========================================== //
   // =================================================================================================== //
-  public static class Utils
+  public static class VaMUtils
   {
     // VaM Plugins can contain multiple Scripts, if you load them via a *.cslist file. This function allows you to get
     // an instance of another script within the same plugin, allowing you directly interact with it by reading/writing
@@ -1453,44 +1444,12 @@ namespace VaMUtils
       }
     }
 
-    // Get next power of 10 strictly larger than n
-    public static float NextPowerOf10(float n)
-    {
-      if (n <= 0f) return 0;
-      float p = Mathf.Log10(n);
-      if (p % 1f == 0f)
-      {
-        p += 1f;
-      }
-      return Mathf.Pow(10, Mathf.Ceil(p));
-    }
-
-    // Get next power of 10 strictly smaller than n
-    public static float PrevPowerOf10(float n)
-    {
-      if (n <= 0f) return 0;
-      float p = Mathf.Log10(n);
-      if (p % 1f == 0f)
-      {
-        p -= 1f;
-      }
-      return Mathf.Pow(10, Mathf.Floor(p));
-    }
-
-    // Get magnitude of current number
-    public static float CurrentPowerOf10(float n)
-    {
-      if (n <= 0f) return 0;
-      float p = Mathf.Log10(n);
-      return Mathf.Pow(10f, Mathf.Floor(p));
-    }
-
     // Add/Subtract slider range by current power of 10, clamping within range 1 - 100000
     public static void AddSliderRange(JSONStorableFloat storable, bool invert)
     {
       float maxRange = Mathf.Max(Math.Abs(storable.max), Math.Abs(storable.min));
       float newRange;
-      float pow10 = CurrentPowerOf10(maxRange);
+      float pow10 = VaMMath.CurrentPowerOf10(maxRange);
       if (pow10 < 1f) newRange = 1f;
       else
       {
@@ -1513,7 +1472,7 @@ namespace VaMUtils
     public static void MultiplySliderRange(JSONStorableFloat storable, bool invert)
     {
       float maxRange = Mathf.Max(Math.Abs(storable.max), Math.Abs(storable.min));
-      float newRange = invert ? PrevPowerOf10(maxRange) : NextPowerOf10(maxRange);
+      float newRange = invert ? VaMMath.PrevPowerOf10(maxRange) : VaMMath.NextPowerOf10(maxRange);
       newRange = Mathf.Clamp(newRange, 1f, 100000f);
       if (storable.min > 0f) storable.min = 0f;
       if (storable.min != 0f) storable.min = -newRange;
@@ -1530,7 +1489,15 @@ namespace VaMUtils
       }
     }
 
-    // Recursively log a gameobject and its children
+    // Instantiate a game object but without the (Clone) affix
+    public static T InstantiateWithSameName<T>(T original, Transform parent) where T : UnityEngine.Object
+    {
+      T obj = UnityEngine.Object.Instantiate(original, parent);
+      obj.name = original.name;
+      return obj;
+    }
+
+    // Recursively log a game object and its children
     public static void LogGameObjectTree(GameObject obj, bool logComponents = true, bool logProps = false)
     {
       StringBuilder str = new StringBuilder();
@@ -1618,6 +1585,46 @@ namespace VaMUtils
     }
   }
 
+
+  // ================================================================================================ //
+  // ========================================== MATH UTILS ========================================== //
+  // ================================================================================================ //
+  public static class VaMMath
+  {
+    // Get next power of 10 strictly larger than n
+    public static float NextPowerOf10(float n)
+    {
+      if (n <= 0f) return 0;
+      float p = Mathf.Log10(n);
+      if (p % 1f == 0f)
+      {
+        p += 1f;
+      }
+      return Mathf.Pow(10, Mathf.Ceil(p));
+    }
+
+    // Get next power of 10 strictly smaller than n
+    public static float PrevPowerOf10(float n)
+    {
+      if (n <= 0f) return 0;
+      float p = Mathf.Log10(n);
+      if (p % 1f == 0f)
+      {
+        p -= 1f;
+      }
+      return Mathf.Pow(10, Mathf.Floor(p));
+    }
+
+    // Get magnitude of current number
+    public static float CurrentPowerOf10(float n)
+    {
+      if (n <= 0f) return 0;
+      float p = Mathf.Log10(n);
+      return Mathf.Pow(10f, Mathf.Floor(p));
+    }
+  }
+
+
   // ================================================================================================== //
   // ========================================== HELPER TYPES ========================================== //
   // ================================================================================================== //
@@ -1626,41 +1633,47 @@ namespace VaMUtils
   public delegate void TabClickCallback(string tabName);
 
   // dumb custom enum stuff
-  public partial struct UIColumn : IEquatable<UIColumn>
+  public static partial class VaMUI
   {
-    private int value;
-    private UIColumn(int value)
+    public struct Column : IEquatable<Column>
     {
-      this.value = value;
-    }
+      public readonly static Column LEFT = new Column(0);
+      public readonly static Column RIGHT = new Column(1);
 
-    public bool Equals(UIColumn other)
-    {
-      return other.value == this.value;
-    }
-
-    public override bool Equals(object obj)
-    {
-      if (obj is UIColumn)
+      private int value;
+      private Column(int value)
       {
-        return this.Equals((UIColumn)obj);
+        this.value = value;
       }
-      return false;
-    }
 
-    public override int GetHashCode()
-    {
-      return value;
-    }
+      public bool Equals(Column other)
+      {
+        return other.value == this.value;
+      }
 
-    public static bool operator ==(UIColumn a, UIColumn b)
-    {
-      return a.Equals(b);
-    }
+      public override bool Equals(object obj)
+      {
+        if (obj is Column)
+        {
+          return this.Equals((Column)obj);
+        }
+        return false;
+      }
 
-    public static bool operator !=(UIColumn a, UIColumn b)
-    {
-      return !a.Equals(b);
+      public override int GetHashCode()
+      {
+        return value;
+      }
+
+      public static bool operator ==(Column a, Column b)
+      {
+        return a.Equals(b);
+      }
+
+      public static bool operator !=(Column a, Column b)
+      {
+        return !a.Equals(b);
+      }
     }
   }
 
@@ -1767,7 +1780,7 @@ namespace VaMUtils
     void RecalculateIncrementRange()
     {
       float maxRange = Mathf.Max(Math.Abs(storable.max), Math.Abs(storable.min));
-      incrementRange = Utils.NextPowerOf10(maxRange) / 10f;
+      incrementRange = VaMMath.NextPowerOf10(maxRange) / 10f;
       incrementRange = Mathf.Clamp(incrementRange, 1f, 10000f);
     }
 
@@ -1795,11 +1808,11 @@ namespace VaMUtils
       {
         if (exponentialRangeIncrement)
         {
-          Utils.MultiplySliderRange(storable, true);
+          VaMUtils.MultiplySliderRange(storable, true);
         }
         else
         {
-          Utils.AddSliderRange(storable, true);
+          VaMUtils.AddSliderRange(storable, true);
         }
         RecalculateIncrementRange();
         AssignLabels();
@@ -1809,11 +1822,11 @@ namespace VaMUtils
       {
         if (exponentialRangeIncrement)
         {
-          Utils.MultiplySliderRange(storable, false);
+          VaMUtils.MultiplySliderRange(storable, false);
         }
         else
         {
-          Utils.AddSliderRange(storable, false);
+          VaMUtils.AddSliderRange(storable, false);
         }
         RecalculateIncrementRange();
         AssignLabels();

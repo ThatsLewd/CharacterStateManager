@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using SimpleJSON;
-using VaMUtils;
+using VaMLib;
 
 namespace ThatsLewd
 {
@@ -27,7 +27,7 @@ namespace ThatsLewd
 
       public Animation(Layer layer, string name = null)
       {
-        this.id = Utils.GenerateRandomID();
+        this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "animation";
         this.layer = layer;
         layer.animations.Add(this);

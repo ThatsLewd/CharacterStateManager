@@ -3,7 +3,7 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
-using VaMUtils;
+using VaMLib;
 
 namespace ThatsLewd
 {
@@ -49,14 +49,16 @@ namespace ThatsLewd
 
     void UIInit()
     {
-      UIBuilder.Init(this, CreateUIElement);
+      VaMTrigger.Init(this);
+      VaMUI.Init(this, CreateUIElement);
       RebuildUI();
     }
 
     void UIDestroy()
     {
-      UIBuilder.Destroy();
-      Utils.SafeDestroy(ref tabBarPrefab);
+      VaMUI.Destroy();
+      VaMUtils.SafeDestroy(ref tabBarPrefab);
+      VaMTrigger.Destroy();
     }
 
     void UIUpdate()
@@ -73,27 +75,27 @@ namespace ThatsLewd
       uiNeedsRebuilt = true;
     }
 
-    void UI(object item)
+    void Draw(object item)
     {
       uiItems.Add(item);
     }
 
     void RebuildUI()
     {
-      UIBuilder.RemoveUIElements(ref uiItems);
+      VaMUI.RemoveUIElements(ref uiItems);
 
-      UI(UIBuilder.CreateToggle(ref playbackEnabledStorable, UIColumn.LEFT, "Playback Enabled", true));
-      UI(UIBuilder.CreateToggle(ref hideTopUIStorable, UIColumn.RIGHT, "Hide Top UI", false, callback: HandleHideTopUI));
+      Draw(VaMUI.CreateToggle(ref playbackEnabledStorable, VaMUI.LEFT, "Playback Enabled", true));
+      Draw(VaMUI.CreateToggle(ref hideTopUIStorable, VaMUI.RIGHT, "Hide Top UI", false, callback: HandleHideTopUI));
 
       if (!hideTopUIStorable.val)
       {
-        UI(UIBuilder.CreateStringChooserKeyVal(ref activeGroupIdStorable, UIColumn.LEFT, "Group", callback: HandleSelectGroup));
-        UI(UIBuilder.CreateStringChooserKeyVal(ref activeStateIdStorable, UIColumn.RIGHT, "State", callback: HandleSelectState));
-        UI(UIBuilder.CreateStringChooserKeyVal(ref activeLayerIdStorable, UIColumn.LEFT, "Layer", callback: HandleSelectLayer));
-        UI(UIBuilder.CreateStringChooserKeyVal(ref activeAnimationIdStorable, UIColumn.RIGHT, "Animation", callback: HandleSelectAnimation));
+        Draw(VaMUI.CreateStringChooserKeyVal(ref activeGroupIdStorable, VaMUI.LEFT, "Group", callback: HandleSelectGroup));
+        Draw(VaMUI.CreateStringChooserKeyVal(ref activeStateIdStorable, VaMUI.RIGHT, "State", callback: HandleSelectState));
+        Draw(VaMUI.CreateStringChooserKeyVal(ref activeLayerIdStorable, VaMUI.LEFT, "Layer", callback: HandleSelectLayer));
+        Draw(VaMUI.CreateStringChooserKeyVal(ref activeAnimationIdStorable, VaMUI.RIGHT, "Animation", callback: HandleSelectAnimation));
 
-        UI(UIBuilder.CreateTabBar(ref tabBarPrefab, UIColumn.LEFT, Tabs.list, HandleTabSelect, 5));
-        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 2 * 55f));
+        Draw(VaMUI.CreateTabBar(ref tabBarPrefab, VaMUI.LEFT, Tabs.list, HandleTabSelect, 5));
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 2 * 55f));
       }
 
       BuildActiveTabUI();
@@ -146,11 +148,11 @@ namespace ThatsLewd
 
     void HandleSelectGroup(string val)
     {
-      Utils.EnsureStringChooserValue(activeGroupIdStorable, defaultToFirstChoice: true, noCallback: true);
+      VaMUtils.EnsureStringChooserValue(activeGroupIdStorable, defaultToFirstChoice: true, noCallback: true);
       activeGroup = Group.list.Find((g) => g.id == activeGroupIdStorable.val);
 
       RefreshStateList();
-      Utils.SelectStringChooserFirstValue(activeStateIdStorable);
+      VaMUtils.SelectStringChooserFirstValue(activeStateIdStorable);
 
       if (editGroupNameStorable != null)
       {
@@ -162,7 +164,7 @@ namespace ThatsLewd
 
     void HandleSelectState(string val)
     {
-      Utils.EnsureStringChooserValue(activeStateIdStorable, defaultToFirstChoice: true, noCallback: true);
+      VaMUtils.EnsureStringChooserValue(activeStateIdStorable, defaultToFirstChoice: true, noCallback: true);
       activeState = activeGroup?.states.Find((s) => s.id == activeStateIdStorable.val);
 
       if (editStateNameStorable != null)
@@ -175,11 +177,11 @@ namespace ThatsLewd
 
     void HandleSelectLayer(string val)
     {
-      Utils.EnsureStringChooserValue(activeLayerIdStorable, defaultToFirstChoice: true, noCallback: true);
+      VaMUtils.EnsureStringChooserValue(activeLayerIdStorable, defaultToFirstChoice: true, noCallback: true);
       activeLayer = Layer.list.Find((l) => l.id == activeLayerIdStorable.val);
 
       RefreshAnimationList();
-      Utils.SelectStringChooserFirstValue(activeAnimationIdStorable);
+      VaMUtils.SelectStringChooserFirstValue(activeAnimationIdStorable);
 
       if (editLayerNameStorable != null)
       {
@@ -191,7 +193,7 @@ namespace ThatsLewd
 
     void HandleSelectAnimation(string val)
     {
-      Utils.EnsureStringChooserValue(activeAnimationIdStorable, defaultToFirstChoice: true, noCallback: true);
+      VaMUtils.EnsureStringChooserValue(activeAnimationIdStorable, defaultToFirstChoice: true, noCallback: true);
       activeAnimation = activeLayer?.animations.Find((a) => a.id == activeAnimationIdStorable.val);
 
       if (editAnimationNameStorable != null)
@@ -210,7 +212,7 @@ namespace ThatsLewd
         entries.Add(new KeyValuePair<string, string>(group.id, group.name));
       }
       entries.Sort((a, b) => a.Value.CompareTo(b.Value));
-      Utils.SetStringChooserChoices(activeGroupIdStorable, entries);
+      VaMUtils.SetStringChooserChoices(activeGroupIdStorable, entries);
 
       InvalidateUI();
     }
@@ -226,7 +228,7 @@ namespace ThatsLewd
         }
       }
       entries.Sort((a, b) => a.Value.CompareTo(b.Value));
-      Utils.SetStringChooserChoices(activeStateIdStorable, entries);
+      VaMUtils.SetStringChooserChoices(activeStateIdStorable, entries);
 
       InvalidateUI();
     }
@@ -239,7 +241,7 @@ namespace ThatsLewd
         entries.Add(new KeyValuePair<string, string>(layer.id, layer.name));
       }
       entries.Sort((a, b) => a.Value.CompareTo(b.Value));
-      Utils.SetStringChooserChoices(activeLayerIdStorable, entries);
+      VaMUtils.SetStringChooserChoices(activeLayerIdStorable, entries);
 
       InvalidateUI();
     }
@@ -255,42 +257,42 @@ namespace ThatsLewd
         }
       }
       entries.Sort((a, b) => a.Value.CompareTo(b.Value));
-      Utils.SetStringChooserChoices(activeAnimationIdStorable, entries);
+      VaMUtils.SetStringChooserChoices(activeAnimationIdStorable, entries);
 
       InvalidateUI();
     }
 
-    void CreateMainHeader(UIColumn side, string text)
+    void CreateMainHeader(VaMUI.Column side, string text)
     {
-      UI(UIBuilder.CreateHeaderText(side, text, 50f));
+      Draw(VaMUI.CreateHeaderText(side, text, 50f));
     }
 
-    void CreateSubHeader(UIColumn side, string text)
+    void CreateSubHeader(VaMUI.Column side, string text)
     {
-      UI(UIBuilder.CreateHeaderText(side, text, 38f));
+      Draw(VaMUI.CreateHeaderText(side, text, 38f));
     }
 
     void CreateBasicFunctionsUI(string category, bool showNewOnly, Action createNameInput, UnityAction newHandler, UnityAction duplicateHandler, UnityAction deleteHandler)
     {
       if (showNewOnly)
       {
-        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 50f));
-        UI(UIBuilder.CreateButton(UIColumn.RIGHT, $"New {category}", newHandler));
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
+        Draw(VaMUI.CreateButton(VaMUI.RIGHT, $"New {category}", newHandler));
       }
       else
       {
         createNameInput();
-        UI(UIBuilder.CreateButtonPair(UIColumn.RIGHT, $"New {category}", newHandler, $"Duplicate {category}", duplicateHandler));
-        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
-        UI(UIBuilder.CreateButton(UIColumn.RIGHT, $"Delete {category}", deleteHandler, color: UIColor.RED));
-        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
+        Draw(VaMUI.CreateButtonPair(VaMUI.RIGHT, $"New {category}", newHandler, $"Duplicate {category}", duplicateHandler));
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
+        Draw(VaMUI.CreateButton(VaMUI.RIGHT, $"Delete {category}", deleteHandler, color: VaMUI.RED));
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
       }
     }
 
     void CreateBottomPadding()
     {
-      UI(UIBuilder.CreateSpacer(UIColumn.LEFT, 100f));
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 100f));
+      Draw(VaMUI.CreateSpacer(VaMUI.LEFT, 100f));
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 100f));
     }
 
 
@@ -299,11 +301,11 @@ namespace ThatsLewd
     // ========================================================================== //
     void BuildInfoTabUI()
     {
-      CreateMainHeader(UIColumn.LEFT, "Info");
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 45f));
+      CreateMainHeader(VaMUI.LEFT, "Info");
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
 
-      UI(UIBuilder.CreateInfoTextNoScroll(
-        UIColumn.LEFT,
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
         @"Info tab",
         1
       ));
@@ -318,9 +320,9 @@ namespace ThatsLewd
     // ============================================================================ //
     void BuildGroupsTabUI()
     {
-      CreateMainHeader(UIColumn.LEFT, "Groups");
-      UI(UIBuilder.CreateInfoTextNoScroll(
-        UIColumn.LEFT,
+      CreateMainHeader(VaMUI.LEFT, "Groups");
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
         @"A <b>Group</b> is a collection of <b>States</b> that are independent of other groups. Only one state can be active per group. For example, you might use one group for walking and one group for gestures.",
         185f
       ));
@@ -328,7 +330,7 @@ namespace ThatsLewd
       CreateBasicFunctionsUI(
         "Group",
         activeGroup == null,
-        () => { UI(UIBuilder.CreateOnelineTextInput(ref editGroupNameStorable, UIColumn.RIGHT, "Name", activeGroup?.name ?? "", callback: HandleRenameGroup)); },
+        () => { Draw(VaMUI.CreateOnelineTextInput(ref editGroupNameStorable, VaMUI.RIGHT, "Name", activeGroup?.name ?? "", callback: HandleRenameGroup)); },
         HandleNewGroup,
         HandleDuplicateGroup,
         HandleDeleteGroup
@@ -368,7 +370,7 @@ namespace ThatsLewd
       if (activeGroup == null) return;
       activeGroup.Delete();
       RefreshGroupList();
-      Utils.SelectStringChooserFirstValue(activeGroupIdStorable);
+      VaMUtils.SelectStringChooserFirstValue(activeGroupIdStorable);
     }
 
 
@@ -377,18 +379,18 @@ namespace ThatsLewd
     // ============================================================================ //
     void BuildStatesTabUI()
     {
-      CreateMainHeader(UIColumn.LEFT, "States");
-      UI(UIBuilder.CreateInfoTextNoScroll(
-        UIColumn.LEFT,
+      CreateMainHeader(VaMUI.LEFT, "States");
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
         @"A <b>State</b> defines what a character is currently doing (idle, sitting, etc). A state assigns <b>Animations</b> to layers that can be played either sequentially or randomly.",
         185f
       ));
 
       if (activeGroup == null)
       {
-        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 50f));
-        UI(UIBuilder.CreateInfoTextNoScroll(
-          UIColumn.RIGHT,
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
+        Draw(VaMUI.CreateInfoTextNoScroll(
+          VaMUI.RIGHT,
           @"You must select a <b>Group</b> before you can create any <b>States</b>.",
           2
         ));
@@ -398,7 +400,7 @@ namespace ThatsLewd
       CreateBasicFunctionsUI(
         "State",
         activeState == null,
-        () => { UI(UIBuilder.CreateOnelineTextInput(ref editStateNameStorable, UIColumn.RIGHT, "Name", activeState?.name ?? "", callback: HandleRenameState)); },
+        () => { Draw(VaMUI.CreateOnelineTextInput(ref editStateNameStorable, VaMUI.RIGHT, "Name", activeState?.name ?? "", callback: HandleRenameState)); },
         HandleNewState,
         HandleDuplicateState,
         HandleDeleteState
@@ -439,7 +441,7 @@ namespace ThatsLewd
       if (activeState == null) return;
       activeState.Delete();
       RefreshStateList();
-      Utils.SelectStringChooserFirstValue(activeStateIdStorable);
+      VaMUtils.SelectStringChooserFirstValue(activeStateIdStorable);
     }
 
 
@@ -451,9 +453,9 @@ namespace ThatsLewd
 
     void BuildLayersTabUI()
     {
-      CreateMainHeader(UIColumn.LEFT, "Layers");
-      UI(UIBuilder.CreateInfoTextNoScroll(
-        UIColumn.LEFT,
+      CreateMainHeader(VaMUI.LEFT, "Layers");
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
         @"A <b>Layer</b> is a set of controllers and/or morphs that are acted upon by an <b>Animation</b>. Layers allow a character to have several independently animated parts.",
         185f
       ));
@@ -461,7 +463,7 @@ namespace ThatsLewd
       CreateBasicFunctionsUI(
         "Layer",
         activeLayer == null,
-        () => { UI(UIBuilder.CreateOnelineTextInput(ref editLayerNameStorable, UIColumn.RIGHT, "Name", activeLayer?.name ?? "", callback: HandleRenameLayer)); },
+        () => { Draw(VaMUI.CreateOnelineTextInput(ref editLayerNameStorable, VaMUI.RIGHT, "Name", activeLayer?.name ?? "", callback: HandleRenameLayer)); },
         HandleNewLayer,
         HandleDuplicateLayer,
         HandleDeleteLayer
@@ -469,23 +471,23 @@ namespace ThatsLewd
 
       if (activeLayer == null) return;
 
-      CreateSubHeader(UIColumn.LEFT, "Controllers");
-      UI(UIBuilder.CreateButtonPair(UIColumn.LEFT, "Select All Position", () => { HandleSelectAllControllers(true, false); }, "Select All Rotation", () => { HandleSelectAllControllers(false, true); }));
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Deselect All", HandleDeselectAllControllers));
+      CreateSubHeader(VaMUI.LEFT, "Controllers");
+      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "Select All Position", () => { HandleSelectAllControllers(true, false); }, "Select All Rotation", () => { HandleSelectAllControllers(false, true); }));
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "Deselect All", HandleDeselectAllControllers));
       foreach (TrackedController tc in activeLayer.trackedControllers)
       {
-        UI(CreateControllerSelector(tc, UIColumn.LEFT));
+        Draw(CreateControllerSelector(tc, VaMUI.LEFT));
       }
 
-      CreateSubHeader(UIColumn.RIGHT, "Morphs");
-      UI(UIBuilder.CreateToggle(ref morphChooserUseFavoritesStorable, UIColumn.RIGHT, "Favorites Only", true, callback: HandleToggleMorphChooserFavorites));
-      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "Force Refresh Morph List", () => { SetMorphChooserChoices(true); }, color: UIColor.YELLOW));
-      UI(UIBuilder.CreateStringChooserKeyVal(ref morphChooserStorable, UIColumn.RIGHT, "Select Morph", filterable: true, noDefaultSelection: true));
+      CreateSubHeader(VaMUI.RIGHT, "Morphs");
+      Draw(VaMUI.CreateToggle(ref morphChooserUseFavoritesStorable, VaMUI.RIGHT, "Favorites Only", true, callback: HandleToggleMorphChooserFavorites));
+      Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Force Refresh Morph List", () => { SetMorphChooserChoices(true); }, color: VaMUI.YELLOW));
+      Draw(VaMUI.CreateStringChooserKeyVal(ref morphChooserStorable, VaMUI.RIGHT, "Select Morph", filterable: true, noDefaultSelection: true));
       SetMorphChooserChoices();
-      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "Add Morph", HandleAddMorph));
+      Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Add Morph", HandleAddMorph));
       foreach (DAZMorph morph in activeLayer.trackedMorphs)
       {
-        UI(UIBuilder.CreateLabelWithX(UIColumn.RIGHT, Helpers.GetStandardMorphName(morph), () => { HandleDeleteMorph(morph); }));
+        Draw(VaMUI.CreateLabelWithX(VaMUI.RIGHT, Helpers.GetStandardMorphName(morph), () => { HandleDeleteMorph(morph); }));
       }
 
 
@@ -520,7 +522,7 @@ namespace ThatsLewd
       if (activeLayer == null) return;
       activeLayer.Delete();
       RefreshLayerList();
-      Utils.SelectStringChooserFirstValue(activeLayerIdStorable);
+      VaMUtils.SelectStringChooserFirstValue(activeLayerIdStorable);
     }
 
     void HandleSelectAllControllers(bool pos, bool rot)
@@ -633,18 +635,18 @@ namespace ThatsLewd
     // ================================================================================ //
     void BuildAnimationsTabUI()
     {
-      CreateMainHeader(UIColumn.LEFT, "Animations");
-      UI(UIBuilder.CreateInfoTextNoScroll(
-        UIColumn.LEFT,
+      CreateMainHeader(VaMUI.LEFT, "Animations");
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
         @"An <b>Animation</b> defines how a <b>Layer</b> should evolve over time. An animation is composed of one or more <b>Keyframes</b> connected by tweens.",
         185f
       ));
 
       if (activeLayer == null)
       {
-        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 50f));
-        UI(UIBuilder.CreateInfoTextNoScroll(
-          UIColumn.RIGHT,
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
+        Draw(VaMUI.CreateInfoTextNoScroll(
+          VaMUI.RIGHT,
           @"You must select a <b>Layer</b> before you can create any <b>Animations</b>.",
           2
         ));
@@ -654,7 +656,7 @@ namespace ThatsLewd
       CreateBasicFunctionsUI(
         "Anim.",
         activeAnimation == null,
-        () => { UI(UIBuilder.CreateOnelineTextInput(ref editAnimationNameStorable, UIColumn.RIGHT, "Name", activeAnimation?.name ?? "", callback: HandleRenameAnimation)); },
+        () => { Draw(VaMUI.CreateOnelineTextInput(ref editAnimationNameStorable, VaMUI.RIGHT, "Name", activeAnimation?.name ?? "", callback: HandleRenameAnimation)); },
         HandleNewAnimation,
         HandleDuplicateAnimation,
         HandleDeleteAnimation
@@ -693,7 +695,7 @@ namespace ThatsLewd
       if (activeAnimation == null) return;
       activeAnimation.Delete();
       RefreshAnimationList();
-      Utils.SelectStringChooserFirstValue(activeAnimationIdStorable);
+      VaMUtils.SelectStringChooserFirstValue(activeAnimationIdStorable);
     }
 
 
@@ -704,18 +706,18 @@ namespace ThatsLewd
 
     void BuildKeyframesTabUI()
     {
-      CreateMainHeader(UIColumn.LEFT, "Keyframes");
-      UI(UIBuilder.CreateInfoTextNoScroll(
-        UIColumn.LEFT,
+      CreateMainHeader(VaMUI.LEFT, "Keyframes");
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
         @"A <b>Keyframe</b> is a snapshot of a <b>Layer</b>'s state that records morph and controller values. An <b>Animation</b> is composed of one or more keyframes.",
         185f
       ));
 
       if (activeAnimation == null)
       {
-        UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 50f));
-        UI(UIBuilder.CreateInfoTextNoScroll(
-          UIColumn.RIGHT,
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
+        Draw(VaMUI.CreateInfoTextNoScroll(
+          VaMUI.RIGHT,
           @"You must select an <b>Animation</b> before you can create any <b>Keyframes</b>.",
           2
         ));
@@ -725,62 +727,61 @@ namespace ThatsLewd
       EnsureSelectedKeyframe();
 
       // KEYFRAME SELECTOR
-      CreateSubHeader(UIColumn.LEFT, "Keyframe Selector");
+      CreateSubHeader(VaMUI.LEFT, "Keyframe Selector");
       if (activeAnimation.keyframes.Count == 0)
       {
-        UI(UIBuilder.CreateButton(UIColumn.LEFT, "New Keyframe", HandleAddKeyframeStart));
+        Draw(VaMUI.CreateButton(VaMUI.LEFT, "New Keyframe", HandleAddKeyframeStart));
         return;
       }
-      UI(UIBuilder.CreateButtonPair(UIColumn.LEFT, "<< New Keyframe", HandleAddKeyframeStart, "New Keyframe >>", HandleAddKeyframeEnd));
-      UI(UIBuilder.CreateButtonPair(UIColumn.LEFT, "< New Keyframe", HandleAddKeyframeAfter, "New Keyframe >", HandleAddKeyframeBefore));
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Duplicate Keyframe", HandleDuplicateKeyframe));
-      UI(UIBuilder.CreateButtonPair(UIColumn.LEFT, "< Move Keyframe", () => { HandleMoveKeyframe(-1); }, "Move Keyframe >", () => { HandleMoveKeyframe(1); }));
-      UI(CreateKeyframeSelector(activeAnimation.keyframes, activeKeyframe, UIColumn.LEFT, HandleSelectKeyframe));
+      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "<< New Keyframe", HandleAddKeyframeStart, "New Keyframe >>", HandleAddKeyframeEnd));
+      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "< New Keyframe", HandleAddKeyframeAfter, "New Keyframe >", HandleAddKeyframeBefore));
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "Duplicate Keyframe", HandleDuplicateKeyframe));
+      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "< Move Keyframe", () => { HandleMoveKeyframe(-1); }, "Move Keyframe >", () => { HandleMoveKeyframe(1); }));
+      Draw(CreateKeyframeSelector(activeAnimation.keyframes, activeKeyframe, VaMUI.LEFT, HandleSelectKeyframe));
 
       if (activeKeyframe == null) return;
 
-      UI(UIBuilder.CreateColorPickerFromStorable(activeKeyframe.colorStorable, UIColumn.LEFT));
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "Apply Color", () => { InvalidateUI(); }));
+      Draw(VaMUI.CreateColorPickerFromStorable(activeKeyframe.colorStorable, VaMUI.LEFT));
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "Apply Color", () => { InvalidateUI(); }));
 
       // ACTIONS
-      UI(UIBuilder.CreateSpacer(UIColumn.LEFT));
-      CreateSubHeader(UIColumn.LEFT, "Actions");
-      // TODO: ACTIONS
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "On Enter Keyframe", null));
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "On Keyframe Playing", null));
-      UI(UIBuilder.CreateButton(UIColumn.LEFT, "On Exit Keyframe", null));
+      Draw(VaMUI.CreateSpacer(VaMUI.LEFT));
+      CreateSubHeader(VaMUI.LEFT, "Actions");
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Enter Keyframe", activeKeyframe.onEnterTrigger.OpenPanel));
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Keyframe Playing", activeKeyframe.onPlayingTrigger.OpenPanel));
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Exit Keyframe", activeKeyframe.onExitTrigger.OpenPanel));
 
       // KEYFRAME DETAILS
-      CreateSubHeader(UIColumn.RIGHT, "Keyframe Details");
-      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "Capture Current State", HandleCaptureKeyframe, color: UIColor.YELLOW));
-      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "Go To Keyframe", HandleCaptureKeyframe));
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
-      UI(UIBuilder.CreateButton(UIColumn.RIGHT, "Delete Keyframe", HandleDeleteKeyframe, color: UIColor.RED));
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
+      CreateSubHeader(VaMUI.RIGHT, "Keyframe Details");
+      Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Capture Current State", HandleCaptureKeyframe, color: VaMUI.YELLOW));
+      Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Go To Keyframe", HandleCaptureKeyframe));
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
+      Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Delete Keyframe", HandleDeleteKeyframe, color: VaMUI.RED));
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
 
-      UI(UIBuilder.CreateSliderFromStorable(activeKeyframe.durationStorable, UIColumn.RIGHT, 5f, 0f, 10f));
-      UI(UIBuilder.CreateStringChooserFromStorable(activeKeyframe.easingStorable, UIColumn.RIGHT));
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
+      Draw(VaMUI.CreateSliderFromStorable(activeKeyframe.durationStorable, VaMUI.RIGHT, 5f, 0f, 10f));
+      Draw(VaMUI.CreateStringChooserFromStorable(activeKeyframe.easingStorable, VaMUI.RIGHT));
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
 
       // MORPHS
-      CreateSubHeader(UIColumn.RIGHT, "Morph Captures");
+      CreateSubHeader(VaMUI.RIGHT, "Morph Captures");
       foreach (DAZMorph morph in activeKeyframe.animation.layer.trackedMorphs)
       {
         CapturedMorph capture = activeKeyframe.GetCapturedMorph(morph.uid);
         if (morph.jsonFloat.min >= 0f) morph.jsonFloat.min = -1f;
         if (morph.jsonFloat.max <= 0f) morph.jsonFloat.max = 1f;
-        UI(UIBuilder.CreateSliderFromStorable(morph.jsonFloat, UIColumn.RIGHT, morph.jsonFloat.defaultVal, -1f, 1f));
+        Draw(VaMUI.CreateSliderFromStorable(morph.jsonFloat, VaMUI.RIGHT, morph.jsonFloat.defaultVal, -1f, 1f));
         string str = capture?.value == null ? "<b>Val</b>: <NO DATA>" : $"<b>Val</b>: {capture.value}";
-        UI(UIBuilder.CreateInfoTextNoScroll(UIColumn.RIGHT, $"<size=24>{str}</size>", 1, background: false));
+        Draw(VaMUI.CreateInfoTextNoScroll(VaMUI.RIGHT, $"<size=24>{str}</size>", 1, background: false));
       }
       if (activeKeyframe.animation.layer.trackedMorphs.Count == 0)
       {
-        UI(UIBuilder.CreateInfoTextNoScroll(UIColumn.RIGHT, "<none>", 1, background: false));
+        Draw(VaMUI.CreateInfoTextNoScroll(VaMUI.RIGHT, "<none>", 1, background: false));
       }
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT));
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
 
       // CONTROLLERS
-      CreateSubHeader(UIColumn.RIGHT, "Controller Captures");
+      CreateSubHeader(VaMUI.RIGHT, "Controller Captures");
       int controllerCount = 0;
       foreach (TrackedController tc in activeKeyframe.animation.layer.trackedControllers)
       {
@@ -804,11 +805,11 @@ namespace ThatsLewd
           joinStr = " ";
         }
         string str = $"<b>{nameStr}</b>\n<size=24>{posStr}{joinStr}{rotStr}</size>";
-        UI(UIBuilder.CreateInfoTextNoScroll(UIColumn.RIGHT, str, 2, background: false));
+        Draw(VaMUI.CreateInfoTextNoScroll(VaMUI.RIGHT, str, 2, background: false));
       }
       if (controllerCount == 0)
       {
-        UI(UIBuilder.CreateInfoTextNoScroll(UIColumn.RIGHT, "<none>", 1, background: false));
+        Draw(VaMUI.CreateInfoTextNoScroll(VaMUI.RIGHT, "<none>", 1, background: false));
       }
 
 
@@ -930,11 +931,11 @@ namespace ThatsLewd
     // ================================================================================= //
     void BuildTransitionsTabUI()
     {
-      CreateMainHeader(UIColumn.LEFT, "Transitions");
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 45f));
+      CreateMainHeader(VaMUI.LEFT, "Transitions");
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
 
-      UI(UIBuilder.CreateInfoTextNoScroll(
-        UIColumn.LEFT,
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
         @"A <b>Transition</b> defines how to move from one animation to another. The default transition is a simple tween, but if more control is needed <b>Keyframes</b> may be added for precision.",
         5
       ));
@@ -949,11 +950,11 @@ namespace ThatsLewd
     // ============================================================================== //
     void BuildTriggersTabUI()
     {
-      CreateMainHeader(UIColumn.LEFT, "Triggers");
-      UI(UIBuilder.CreateSpacer(UIColumn.RIGHT, 45f));
+      CreateMainHeader(VaMUI.LEFT, "Triggers");
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
 
-      UI(UIBuilder.CreateInfoTextNoScroll(
-        UIColumn.LEFT,
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
         @"A <b>Trigger</b> is a custom event that can be called from other atoms in your scene using the 'Call Trigger' action. Triggers allow external management of the character's state.",
         5
       ));
@@ -975,7 +976,7 @@ namespace ThatsLewd
     }
 
     private GameObject controllerSelectorPrefab;
-    public UIDynamicControllerSelector CreateControllerSelector(TrackedController tc, UIColumn side, TrackedController.SetValueCallback callback = null)
+    public UIDynamicControllerSelector CreateControllerSelector(TrackedController tc, VaMUI.Column side, TrackedController.SetValueCallback callback = null)
     {
       if (controllerSelectorPrefab == null)
       {
@@ -987,19 +988,19 @@ namespace ThatsLewd
         const float checkOffsetX = 4f;
         const float checkOffsetY = -3.5f;
 
-        UIDynamicControllerSelector uid = UIBuilder.CreateUIDynamicPrefab<UIDynamicControllerSelector>("LabelWithToggle", 50f);
+        UIDynamicControllerSelector uid = VaMUI.CreateUIDynamicPrefab<UIDynamicControllerSelector>("LabelWithToggle", 50f);
         controllerSelectorPrefab = uid.gameObject;
 
-        RectTransform background = UIBuilder.InstantiateBackground(uid.transform);
+        RectTransform background = VaMUI.InstantiateBackground(uid.transform);
 
-        RectTransform labelRect = UIBuilder.InstantiateLabel(uid.transform);
+        RectTransform labelRect = VaMUI.InstantiateLabel(uid.transform);
         labelRect.offsetMin = new Vector2(5f, 0f);
         Text labelText = labelRect.GetComponent<Text>();
         labelText.alignment = TextAnchor.MiddleLeft;
         labelText.text = "";
 
         // == POS == //
-        RectTransform posBackgroundRect = UIBuilder.InstantiateBackground(uid.transform);
+        RectTransform posBackgroundRect = VaMUI.InstantiateBackground(uid.transform);
         posBackgroundRect.anchorMin = new Vector2(1f, 0f);
         posBackgroundRect.anchorMax = new Vector2(1f, 1f);
         posBackgroundRect.offsetMin = new Vector2(-(2f * bgSize + bgSpacing), 0f);
@@ -1007,13 +1008,13 @@ namespace ThatsLewd
         Image posBackgroundImg = posBackgroundRect.GetComponent<Image>();
         posBackgroundImg.color = new Color(1f, 1f, 1f, 1f);
 
-        RectTransform posToggleRect = UIBuilder.InstantiateToggle(posBackgroundRect, checkSize);
+        RectTransform posToggleRect = VaMUI.InstantiateToggle(posBackgroundRect, checkSize);
         posToggleRect.anchorMin = new Vector2(1f, 0f);
         posToggleRect.anchorMax = new Vector2(1f, 1f);
         posToggleRect.offsetMin = new Vector2(-checkSize - checkOffsetX, checkOffsetY);
         posToggleRect.offsetMax = new Vector2(-checkOffsetX, checkOffsetY);
 
-        RectTransform posLabelRect = UIBuilder.InstantiateLabel(posBackgroundRect);
+        RectTransform posLabelRect = VaMUI.InstantiateLabel(posBackgroundRect);
         posLabelRect.offsetMin = new Vector2(labelOffsetX, labelOffsetY);
         posLabelRect.offsetMax = new Vector2(labelOffsetX, labelOffsetY);
         Text posLabel = posLabelRect.GetComponent<Text>();
@@ -1021,7 +1022,7 @@ namespace ThatsLewd
         posLabel.text = "<size=20><b>POS</b></size>";
 
         // == ROT == //
-        RectTransform rotBackgroundRect = UIBuilder.InstantiateBackground(uid.transform);
+        RectTransform rotBackgroundRect = VaMUI.InstantiateBackground(uid.transform);
         rotBackgroundRect.anchorMin = new Vector2(1f, 0f);
         rotBackgroundRect.anchorMax = new Vector2(1f, 1f);
         rotBackgroundRect.offsetMin = new Vector2(-bgSize, 0f);
@@ -1029,13 +1030,13 @@ namespace ThatsLewd
         Image rotBackgroundImg = rotBackgroundRect.GetComponent<Image>();
         rotBackgroundImg.color = new Color(1f, 1f, 1f, 1f);
 
-        RectTransform rotToggleRect = UIBuilder.InstantiateToggle(rotBackgroundRect, checkSize);
+        RectTransform rotToggleRect = VaMUI.InstantiateToggle(rotBackgroundRect, checkSize);
         rotToggleRect.anchorMin = new Vector2(1f, 0f);
         rotToggleRect.anchorMax = new Vector2(1f, 1f);
         rotToggleRect.offsetMin = new Vector2(-checkSize - checkOffsetX, checkOffsetY);
         rotToggleRect.offsetMax = new Vector2(-checkOffsetX, checkOffsetY);
 
-        RectTransform rotLabelRect = UIBuilder.InstantiateLabel(rotBackgroundRect);
+        RectTransform rotLabelRect = VaMUI.InstantiateLabel(rotBackgroundRect);
         rotLabelRect.offsetMin = new Vector2(labelOffsetX, labelOffsetY);
         rotLabelRect.offsetMax = new Vector2(labelOffsetX, labelOffsetY);
         Text rotLabel = rotLabelRect.GetComponent<Text>();
@@ -1051,7 +1052,7 @@ namespace ThatsLewd
         {
           tc.setCallbackFunction = callback;
         }
-        Transform t = CreateUIElement(controllerSelectorPrefab.transform, side == UIColumn.RIGHT);
+        Transform t = CreateUIElement(controllerSelectorPrefab.transform, side == VaMUI.RIGHT);
         UIDynamicControllerSelector uid = t.GetComponent<UIDynamicControllerSelector>();
         uid.label.text = tc.controller.name;
         tc.trackPositionStorable.RegisterToggle(uid.posToggle);
@@ -1088,7 +1089,7 @@ namespace ThatsLewd
           int y = i / 5;
           float yOffset = (buttonHeight + buttonSpacing) * y;
 
-          RectTransform buttonRect = UIBuilder.InstantiateButton(buttonContainer);
+          RectTransform buttonRect = VaMUI.InstantiateButton(buttonContainer);
           buttonRect.anchorMin = new Vector2(0.2f * x, 1f);
           buttonRect.anchorMax = new Vector2(0.2f * x + 0.2f, 1f);
           buttonRect.offsetMin = new Vector2(buttonSpacing / 2f, -buttonHeight - yOffset);
@@ -1121,20 +1122,20 @@ namespace ThatsLewd
     public delegate void SelectKeyframeCallback(Animation.Keyframe keyframe);
 
     private GameObject keyframeSelectorPrefab;
-    public UIDynamicKeyframeSelector CreateKeyframeSelector(List<Animation.Keyframe> keyframes, Animation.Keyframe activeKeyframe, UIColumn side, SelectKeyframeCallback callback = null)
+    public UIDynamicKeyframeSelector CreateKeyframeSelector(List<Animation.Keyframe> keyframes, Animation.Keyframe activeKeyframe, VaMUI.Column side, SelectKeyframeCallback callback = null)
     {
       if (keyframeSelectorPrefab == null)
       {
-        UIDynamicKeyframeSelector uid = UIBuilder.CreateUIDynamicPrefab<UIDynamicKeyframeSelector>("KeyframeSelector", 0f);
+        UIDynamicKeyframeSelector uid = VaMUI.CreateUIDynamicPrefab<UIDynamicKeyframeSelector>("KeyframeSelector", 0f);
         keyframeSelectorPrefab = uid.gameObject;
-        RectTransform background = UIBuilder.InstantiateBackground(uid.transform);
-        RectTransform buttonContainer = UIBuilder.InstantiateEmptyRect(uid.transform);
+        RectTransform background = VaMUI.InstantiateBackground(uid.transform);
+        RectTransform buttonContainer = VaMUI.InstantiateEmptyRect(uid.transform);
         buttonContainer.offsetMin = new Vector2(0f, 5f);
         buttonContainer.offsetMax = new Vector2(0f, -5f);
         uid.buttonContainer = buttonContainer;
       }
       {
-        Transform t = CreateUIElement(keyframeSelectorPrefab.transform, side == UIColumn.RIGHT);
+        Transform t = CreateUIElement(keyframeSelectorPrefab.transform, side == VaMUI.RIGHT);
         UIDynamicKeyframeSelector uid = t.GetComponent<UIDynamicKeyframeSelector>();
         uid.activeKeyframe = activeKeyframe;
         uid.keyframes = keyframes;

@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using SimpleJSON;
-using VaMUtils;
+using VaMLib;
 
 namespace ThatsLewd
 {

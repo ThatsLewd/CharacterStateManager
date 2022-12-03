@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using SimpleJSON;
-using VaMUtils;
+using VaMLib;
 
 namespace ThatsLewd
 {
@@ -16,7 +16,7 @@ namespace ThatsLewd
 
       public State(Group group, string name = null)
       {
-        this.id = Utils.GenerateRandomID();
+        this.id = VaMUtils.GenerateRandomID();
         this.group = group;
         this.name = name ?? "state";
         this.group.states.Add(this);
