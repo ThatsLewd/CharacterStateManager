@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using SimpleJSON;
 using VaMUtils;
@@ -7,64 +8,31 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class State
+    public class State : BaseComponentWithId
     {
-      public static List<State> list = new List<State>();
-
-      public string id { get { return $"{group.name}::{name}"; } }
-      public string name { get; private set; }
+      public override string id { get; protected set; }
+      public string name { get; set; }
       public Group group { get; private set; }
 
       public State(Group group, string name = null)
       {
+        this.id = Utils.GenerateRandomID();
         this.group = group;
-        SetNameUnique(name ?? "state");
-        State.list.Add(this);
+        this.name = name ?? "state";
+        this.group.states.Add(this);
       }
 
       public State Clone(Group group = null)
       {
-        if (group == null)
-        {
-          group = this.group;
-        }
-        State newState = new State(group);
+        string name = group == null ? Helpers.GetCopyName(this.name) : this.name;
+        group = group ?? this.group;
+        State newState = new State(group, name);
         return newState;
       }
 
       public void Delete()
       {
-        State.list.Remove(this);
-      }
-
-      public void SetNameUnique(string name)
-      {
-        for (int i = 0; true; i++)
-        {
-          if (i == 0)
-          {
-            this.name = $"{name}";
-          }
-          else
-          {
-            this.name = $"{name} copy{i.ToString().PadLeft(3, '0')}";
-          }
-
-          bool matchFound = false;
-          foreach (State state in State.list)
-          {
-            if (state != this && state.id == this.id)
-            {
-              matchFound = true;
-              break;
-            }
-          }
-
-          if (!matchFound)
-          {
-            break;
-          }
-        }
+        group.states.Remove(this);
       }
     }
   }

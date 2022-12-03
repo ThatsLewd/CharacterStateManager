@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using SimpleJSON;
 using VaMUtils;
@@ -27,6 +28,10 @@ namespace ThatsLewd
       controllers = new List<FreeControllerV3>();
       foreach (FreeControllerV3 controller in GetAllControllers())
       {
+        if (controller == person.mainController)
+        {
+          continue;
+        }
         if (controller.name.StartsWith("hair"))
         {
           continue;

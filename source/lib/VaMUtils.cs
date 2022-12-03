@@ -2,15 +2,15 @@
 Original utils 2021-03-13 by MacGruber
 Collection of various utility functions.
 https://www.patreon.com/MacGruber_Laboratory
+(Note from ThatsLewd: seriously, support MacGruber -- they have done a ton for the VaM community)
 
 Licensed under CC BY-SA after EarlyAccess ended. (see https://creativecommons.org/licenses/by-sa/4.0/)
 
-Refactored, expanded 2022-10-24 by ThatsLewd
+Massively reworked + expanded in 2022 by ThatsLewd to fit my workflow
 ///////////////////////////////////////////////////////////////////////////////////////////////// */
 
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.XR;
 using UnityEngine.Events;
 using System;
 using System.Text;
@@ -73,8 +73,16 @@ namespace VaMUtils
       Utils.SafeDestroy(ref buttonElementPrefab);
     }
 
-    // Create VaM-UI Toggle button
-    public static UIDynamicToggle CreateToggle(ref JSONStorableBool storable, UIColumn side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = true)
+    // Create an action that other objects can see
+    public static JSONStorableAction CreateAction(string name, JSONStorableAction.ActionCallback callback)
+    {
+      JSONStorableAction action = new JSONStorableAction(name, callback);
+      script.RegisterAction(action);
+      return action;
+    }
+
+    // Create default VaM toggle
+    public static UIDynamicToggle CreateToggle(ref JSONStorableBool storable, UIColumn side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -89,12 +97,132 @@ namespace VaMUtils
           storable.setCallbackFunction = callback;
         }
       }
+      return CreateToggleFromStorable(storable, side);
+    }
+    public static UIDynamicToggle CreateToggleFromStorable(JSONStorableBool storable, UIColumn side)
+    {
       UIDynamicToggle toggle = script.CreateToggle(storable, side == UIColumn.RIGHT);
       return toggle;
     }
 
-    // Create VaM-UI ColorPicker
-    public static UIDynamicColorPicker CreateColorPicker(ref JSONStorableColor storable, UIColumn side, string label, Color defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = true)
+    // Create default VaM string chooser
+    public static UIDynamicPopup CreateStringChooser
+    (
+      ref JSONStorableStringChooser storable,
+      UIColumn side,
+      string label,
+      List<string> initialChoices = null,
+      bool noDefaultSelection = false,
+      bool filterable = false,
+      JSONStorableStringChooser.SetStringCallback callback = null,
+      bool register = false
+    )
+    {
+      if (storable == null)
+      {
+        if (initialChoices == null)
+        {
+          initialChoices = new List<string>();
+        }
+        string defaultValue = (!noDefaultSelection && initialChoices.Count > 0) ? initialChoices[0] : "";
+        storable = new JSONStorableStringChooser(label, initialChoices, defaultValue, label);
+        if (register)
+        {
+          storable.storeType = JSONStorableParam.StoreType.Full;
+          script.RegisterStringChooser(storable);
+        }
+        if (callback != null)
+        {
+          storable.setCallbackFunction = callback;
+        }
+      }
+      return CreateStringChooserFromStorable(storable, side, filterable);
+    }
+    public static UIDynamicPopup CreateStringChooserKeyVal
+    (
+      ref JSONStorableStringChooser storable,
+      UIColumn side,
+      string label,
+      List<KeyValuePair<string, string>> initialKeyValues = null,
+      bool noDefaultSelection = false,
+      bool filterable = false,
+      JSONStorableStringChooser.SetStringCallback callback = null,
+      bool register = false
+    )
+    {
+      if (storable == null)
+      {
+        if (initialKeyValues == null)
+        {
+          initialKeyValues = new List<KeyValuePair<string, string>>();
+        }
+        List<string> initialChoices = new List<string>();
+        List<string> initialDisplayChoices = new List<string>();
+        foreach (KeyValuePair<string, string> entry in initialKeyValues)
+        {
+          initialChoices.Add(entry.Key);
+          initialDisplayChoices.Add(entry.Value);
+        }
+        string defaultValue = (!noDefaultSelection && initialChoices.Count > 0) ? initialChoices[0] : "";
+        storable = new JSONStorableStringChooser(label, initialChoices, initialDisplayChoices, defaultValue, label);
+        if (register)
+        {
+          storable.storeType = JSONStorableParam.StoreType.Full;
+          script.RegisterStringChooser(storable);
+        }
+        if (callback != null)
+        {
+          storable.setCallbackFunction = callback;
+        }
+      }
+      return CreateStringChooserFromStorable(storable, side, filterable);
+    }
+    public static UIDynamicPopup CreateStringChooserFromStorable(JSONStorableStringChooser storable, UIColumn side, bool filterable = false)
+    {
+      UIDynamicPopup popup;
+      if (filterable)
+      {
+        popup = script.CreateFilterablePopup(storable, side == UIColumn.RIGHT);
+      }
+      else
+      {
+        popup = script.CreateScrollablePopup(storable, side == UIColumn.RIGHT);
+      }
+      return popup;
+    }
+
+    // Create default VaM Button
+    public static UIDynamicButton CreateButton(UIColumn side, string label, UnityAction callback, Color? color = null)
+    {
+      UIDynamicButton button = script.CreateButton(label, side == UIColumn.RIGHT);
+      button.button.onClick.AddListener(callback);
+      if (color != null)
+      {
+        button.buttonColor = color.Value;
+      }
+      return button;
+    }
+
+    // Create default VaM text field with scrolling
+    public static UIDynamicTextField CreateInfoText(UIColumn side, string text, float height)
+    {
+      JSONStorableString storable = new JSONStorableString("Info", text);
+      UIDynamicTextField textfield = script.CreateTextField(storable, side == UIColumn.RIGHT);
+      LayoutElement layout = textfield.GetComponent<LayoutElement>();
+      layout.minHeight = height;
+      return textfield;
+    }
+
+    // Create spacer
+    public static UIDynamic CreateSpacer(UIColumn side, float height = 20f)
+    {
+      UIDynamic spacer = script.CreateSpacer(side == UIColumn.RIGHT);
+      spacer.height = height;
+      return spacer;
+    }
+
+    // Create default VaM color picker
+    public static UIDynamicColorPicker CreateColorPicker(ref JSONStorableColor storable, UIColumn side, string label, Color defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -110,45 +238,16 @@ namespace VaMUtils
           storable.setCallbackFunction = callback;
         }
       }
+      return CreateColorPickerFromStorable(storable, side);
+    }
+    public static UIDynamicColorPicker CreateColorPickerFromStorable(JSONStorableColor storable, UIColumn side)
+    {
       UIDynamicColorPicker picker = script.CreateColorPicker(storable, side == UIColumn.RIGHT);
       return picker;
     }
 
-    // Create VaM-UI StringChooser
-    public static UIDynamicPopup CreateStringChooser(ref JSONStorableStringChooser storable, UIColumn side, string label, List<string> initialChoices = null, bool noDefaultSelection = false, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = true)
-    {
-      if (storable == null)
-      {
-        if (initialChoices == null)
-        {
-          initialChoices = new List<string>();
-        }
-        string defaultEntry = (!noDefaultSelection && initialChoices.Count > 0) ? initialChoices[0] : "";
-        storable = new JSONStorableStringChooser(label, initialChoices, defaultEntry, label);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterStringChooser(storable);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      UIDynamicPopup popup;
-      if (filterable)
-      {
-        popup = script.CreateFilterablePopup(storable, side == UIColumn.RIGHT);
-      }
-      else
-      {
-        popup = script.CreateScrollablePopup(storable, side == UIColumn.RIGHT);
-      }
-      return popup;
-    }
-
-    // Create VaM-UI TextureChooser. Note that you are responsible for destroying the texture when you don't need it anymore.
-    public static void CreateTexture2DChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = true)
+    // Create texture chooser -- note that you are responsible for destroying the texture when you don't need it anymore.
+    public static void CreateTextureChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -163,6 +262,11 @@ namespace VaMUtils
           storable.SetFilePath(defaultValue);
         }
       }
+      CreateTextureChooserFromStorable(storable, side);
+    }
+    public static void CreateTextureChooserFromStorable(JSONStorableUrl storable, UIColumn side)
+    {
+      string label = storable.name;
       UIDynamicButton button = script.CreateButton("Browse " + label, side == UIColumn.RIGHT);
       UIDynamicTextField textfield = script.CreateTextField(storable, side == UIColumn.RIGHT);
       textfield.UItext.alignment = TextAnchor.MiddleRight;
@@ -174,8 +278,8 @@ namespace VaMUtils
       storable.RegisterFileBrowseButton(button.button);
     }
 
-    // Create VaM-UI AssetBundleChooser.
-    public static void CreateAssetBundleChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = true)
+    // Create asset bundle chooser
+    public static void CreateAssetBundleChooser(ref JSONStorableUrl storable, UIColumn side, string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = false)
     {
       if (storable == null)
       {
@@ -194,6 +298,11 @@ namespace VaMUtils
           storable.setCallbackFunction = callback;
         }
       }
+      CreateAssetBundleChooserFromStorable(storable, side);
+    }
+    public static void CreateAssetBundleChooserFromStorable(JSONStorableUrl storable, UIColumn side)
+    {
+      string label = storable.name;
       UIDynamicButton button = script.CreateButton("Select " + label, side == UIColumn.RIGHT);
       UIDynamicTextField textfield = script.CreateTextField(storable, side == UIColumn.RIGHT);
       textfield.UItext.alignment = TextAnchor.MiddleRight;
@@ -205,44 +314,7 @@ namespace VaMUtils
       storable.RegisterFileBrowseButton(button.button);
     }
 
-    // Create VaM-UI InfoText field
-    public static UIDynamicTextField CreateInfoText(UIColumn side, string text, float height)
-    {
-      JSONStorableString storable = new JSONStorableString("Info", text);
-      UIDynamicTextField textfield = script.CreateTextField(storable, side == UIColumn.RIGHT);
-      LayoutElement layout = textfield.GetComponent<LayoutElement>();
-      layout.minHeight = height;
-      return textfield;
-    }
-
-    public static UIDynamic CreateSpacer(UIColumn side, float height = 20f)
-    {
-      UIDynamic spacer = script.CreateSpacer(side == UIColumn.RIGHT);
-      spacer.height = height;
-      return spacer;
-    }
-
-    // Create VaM-UI button
-    public static UIDynamicButton CreateButton(UIColumn side, string label, UnityAction callback, Color? color = null)
-    {
-      UIDynamicButton button = script.CreateButton(label, side == UIColumn.RIGHT);
-      button.button.onClick.AddListener(callback);
-      if (color != null)
-      {
-        button.buttonColor = color.Value;
-      }
-      return button;
-    }
-
-    // Create input action trigger
-    public static void CreateAction(out JSONStorableAction action, string name, JSONStorableAction.ActionCallback callback)
-    {
-      action = new JSONStorableAction(name, callback);
-      script.RegisterAction(action);
-    }
-
-    // Create a custom slider with less sucky behavior
-    // Hint: use C# named params to customize props
+    // Create a custom slider with less sucky behavior (Hint: use C# named params for optional args)
     private static GameObject customSliderPrefab;
     public static UIDynamicCustomSlider CreateSlider
     (
@@ -257,12 +329,12 @@ namespace VaMUtils
       bool integer = false,
       bool interactable = true,
       JSONStorableFloat.SetFloatCallback callback = null,
-      bool register = true
+      bool register = false
     )
     {
-      float minValue = allowNegative ? -defaultRange : 0f;
-      float maxValue = defaultRange;
-      return CreateSlider(ref storable, side, label, defaultValue, minValue, maxValue, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
+      float defaultMin = allowNegative ? -defaultRange : 0f;
+      float defaultMax = defaultRange;
+      return CreateSlider(ref storable, side, label, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
     }
     public static UIDynamicCustomSlider CreateSlider
     (
@@ -270,15 +342,32 @@ namespace VaMUtils
       UIColumn side,
       string label,
       float defaultValue,
-      float minValue,
-      float maxValue,
+      float defaultMin,
+      float defaultMax,
       bool fixedRange = false,
       bool exponentialRangeIncrement = false,
       bool integer = false,
       bool interactable = true,
       JSONStorableFloat.SetFloatCallback callback = null,
-      bool register = true
+      bool register = false
     )
+    {
+      if (storable == null)
+      {
+        storable = new JSONStorableFloat(label, defaultValue, defaultMin, defaultMax, true, interactable);
+        if (register)
+        {
+          storable.storeType = JSONStorableParam.StoreType.Full;
+          script.RegisterFloat(storable);
+        }
+        if (callback != null)
+        {
+          storable.setCallbackFunction = callback;
+        }
+      }
+      return CreateSliderFromStorable(storable, side, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable);
+    }
+    public static UIDynamicCustomSlider CreateSliderFromStorable(JSONStorableFloat storable, UIColumn side, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true)
     {
       if (customSliderPrefab == null)
       {
@@ -355,19 +444,6 @@ namespace VaMUtils
         uid.pRangeButton = pRangeButton;
       }
       {
-        if (storable == null)
-        {
-          storable = new JSONStorableFloat(label, defaultValue, minValue, maxValue, true, interactable);
-          if (register)
-          {
-            storable.storeType = JSONStorableParam.StoreType.Full;
-            script.RegisterFloat(storable);
-          }
-          if (callback != null)
-          {
-            storable.setCallbackFunction = callback;
-          }
-        }
         Transform t = createUIElement(customSliderPrefab.transform, side == UIColumn.RIGHT);
         UIDynamicCustomSlider uid = t.GetComponent<UIDynamicCustomSlider>();
         storable.RegisterSlider(uid.slider);
@@ -377,8 +453,8 @@ namespace VaMUtils
         uid.integer = integer;
         uid.interactable = interactable;
         uid.defaultValue = defaultValue;
-        uid.defaultMin = minValue;
-        uid.defaultMax = maxValue;
+        uid.defaultMin = defaultMin;
+        uid.defaultMax = defaultMax;
         uid.gameObject.SetActive(true);
         return uid;
       }
@@ -387,6 +463,23 @@ namespace VaMUtils
     // Create one-line text input with a label
     private static GameObject customOnelineTextInputPrefab;
     public static UIDynamicOnelineTextInput CreateOnelineTextInput(ref JSONStorableString storable, UIColumn side, string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
+    {
+      if (storable == null)
+      {
+        storable = new JSONStorableString(label, defaultValue);
+        if (register)
+        {
+          storable.storeType = JSONStorableParam.StoreType.Full;
+          script.RegisterString(storable);
+        }
+        if (callback != null)
+        {
+          storable.setCallbackFunction = callback;
+        }
+      }
+      return CreateOnelineTextInputFromStorable(storable, side);
+    }
+    public static UIDynamicOnelineTextInput CreateOnelineTextInputFromStorable(JSONStorableString storable, UIColumn side)
     {
       if (customOnelineTextInputPrefab == null)
       {
@@ -414,19 +507,7 @@ namespace VaMUtils
         uid.input = inputRect.GetComponent<InputField>();
       }
       {
-        if (storable == null)
-        {
-          storable = new JSONStorableString(label, defaultValue);
-          if (register)
-          {
-            storable.storeType = JSONStorableParam.StoreType.Full;
-            script.RegisterString(storable);
-          }
-          if (callback != null)
-          {
-            storable.setCallbackFunction = callback;
-          }
-        }
+        string label = storable.name;
         Transform t = createUIElement(customOnelineTextInputPrefab.transform, side == UIColumn.RIGHT);
         UIDynamicOnelineTextInput uid = t.GetComponent<UIDynamicOnelineTextInput>();
         uid.label.text = label;
@@ -473,7 +554,24 @@ namespace VaMUtils
     // Create label that has a toggle on the right side
     // Not much different than a normal toggle -- but a good example of how to do a custom toggle
     private static GameObject customLabelWithTogglePrefab;
-    public static UIDynamicLabelWithToggle CreateLabelWithToggle(ref JSONStorableBool storable, UIColumn side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = true)
+    public static UIDynamicLabelWithToggle CreateLabelWithToggle(ref JSONStorableBool storable, UIColumn side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
+    {
+      if (storable == null)
+      {
+        storable = new JSONStorableBool(label, defaultValue);
+        if (register)
+        {
+          storable.storeType = JSONStorableParam.StoreType.Full;
+          script.RegisterBool(storable);
+        }
+        if (callback != null)
+        {
+          storable.setCallbackFunction = callback;
+        }
+      }
+      return CreateLabelWithToggleFromStorable(storable, side);
+    }
+    public static UIDynamicLabelWithToggle CreateLabelWithToggleFromStorable(JSONStorableBool storable, UIColumn side)
     {
       if (customLabelWithTogglePrefab == null)
       {
@@ -495,19 +593,7 @@ namespace VaMUtils
         uid.toggle = toggleRect.GetComponent<Toggle>();
       }
       {
-        if (storable == null)
-        {
-          storable = new JSONStorableBool(label, defaultValue);
-          if (register)
-          {
-            storable.storeType = JSONStorableParam.StoreType.Full;
-            script.RegisterBool(storable);
-          }
-          if (callback != null)
-          {
-            storable.setCallbackFunction = callback;
-          }
-        }
+        string label = storable.name;
         Transform t = createUIElement(customLabelWithTogglePrefab.transform, side == UIColumn.RIGHT);
         UIDynamicLabelWithToggle uid = t.GetComponent<UIDynamicLabelWithToggle>();
         uid.label.text = label;
@@ -873,9 +959,9 @@ namespace VaMUtils
       transform.pivot = new Vector2(0.5f, 0.5f);
     }
 
-    private static void ResetLayoutElement(LayoutElement layout, float height = 0f)
+    private static void ResetLayoutElement(LayoutElement layout, float height = 0f, bool flexWidth = true)
     {
-      layout.flexibleWidth = 1f;
+      layout.flexibleWidth = flexWidth ? 1f : -1f;
       layout.flexibleHeight = -1f;
       layout.minWidth = -1f;
       layout.minHeight = height;
@@ -1299,7 +1385,7 @@ namespace VaMUtils
     }
 
     // Generate a random id
-    private const string IDAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private const string IDAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-=";
     public static string GenerateRandomID(int length = 16)
     {
       StringBuilder str = new StringBuilder();
@@ -1311,6 +1397,20 @@ namespace VaMUtils
       }
 
       return str.ToString();
+    }
+
+    // Set string chooser choices/displayChoices from a key-value list
+    public static void SetStringChooserChoices(JSONStorableStringChooser storable, List<KeyValuePair<string, string>> entries)
+    {
+      List<string> choices = new List<string>();
+      List<string> displayChoices = new List<string>();
+      foreach (KeyValuePair<string, string> entry in entries)
+      {
+        choices.Add(entry.Key);
+        displayChoices.Add(entry.Value);
+      }
+      storable.choices = choices;
+      storable.displayChoices = displayChoices;
     }
 
     // Select the first value of a string chooser

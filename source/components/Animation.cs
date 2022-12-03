@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using SimpleJSON;
 using VaMUtils;
@@ -7,38 +8,40 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class Animation
+    public partial class Animation : BaseComponentWithId
     {
-      public static List<Animation> list = new List<Animation>();
-
-      public string id { get { return $"{layer.name}::{name}"; } }
-      public string name { get; private set; }
+      public override string id { get; protected set; }
+      public string name { get; set; }
       public Layer layer { get; private set; }
+      public List<Keyframe> keyframes { get; private set; } = new List<Keyframe>();
 
       public List<Transition> fromTransitions
       {
-        get { return Transition.list.FindAll((transition) => transition.from.id == this.id); }
+        get { return Transition.list.FindAll((transition) => transition.from == this); }
       }
 
       public List<Transition> toTransitions
       {
-        get { return Transition.list.FindAll((transition) => transition.to.id == this.id); }
+        get { return Transition.list.FindAll((transition) => transition.to == this); }
       }
 
       public Animation(Layer layer, string name = null)
       {
+        this.id = Utils.GenerateRandomID();
+        this.name = name ?? "animation";
         this.layer = layer;
-        SetNameUnique(name ?? "animation");
-        Animation.list.Add(this);
+        layer.animations.Add(this);
       }
 
       public Animation Clone(Layer layer = null)
       {
-        if (layer == null)
+        string name = layer == null ? Helpers.GetCopyName(this.name) : this.name;
+        layer = layer ?? this.layer;
+        Animation newAnimation = new Animation(layer, name);
+        foreach (Keyframe keyframe in keyframes)
         {
-          layer = this.layer;
+          keyframe.Clone(newAnimation);
         }
-        Animation newAnimation = new Animation(layer);
         foreach (Transition transition in fromTransitions)
         {
           transition.Clone(from: newAnimation);
@@ -52,36 +55,18 @@ namespace ThatsLewd
 
       public void Delete()
       {
-        Animation.list.Remove(this);
-      }
-
-      public void SetNameUnique(string name)
-      {
-        for (int i = 0; true; i++)
+        layer.animations.Remove(this);
+        foreach (Keyframe keyframe in keyframes.ToArray())
         {
-          if (i == 0)
-          {
-            this.name = $"{name}";
-          }
-          else
-          {
-            this.name = $"{name} copy{i.ToString().PadLeft(3, '0')}";
-          }
-
-          bool matchFound = false;
-          foreach (Animation animation in Animation.list)
-          {
-            if (animation != this && animation.id == this.id)
-            {
-              matchFound = true;
-              break;
-            }
-          }
-
-          if (!matchFound)
-          {
-            break;
-          }
+          keyframe.Delete();
+        }
+        foreach (Transition transition in fromTransitions.ToArray())
+        {
+          transition.Delete();
+        }
+        foreach (Transition transition in toTransitions.ToArray())
+        {
+          transition.Delete();
         }
       }
     }

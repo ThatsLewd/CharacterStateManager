@@ -69,11 +69,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="source/components/_BaseComponentWithId.cs" />
     <Compile Include="source/components/Animation.cs" />
+    <Compile Include="source/components/AnimationKeyframe.cs" />
     <Compile Include="source/components/Group.cs" />
     <Compile Include="source/components/Layer.cs" />
     <Compile Include="source/components/State.cs" />
     <Compile Include="source/components/Transition.cs" />
+    <Compile Include="source/lib/Easing.cs" />
+    <Compile Include="source/lib/Helpers.cs" />
     <Compile Include="source/lib/VaMUtils.cs" />
     <Compile Include="source/Core.cs" />
     <Compile Include="source/Ui.cs" />

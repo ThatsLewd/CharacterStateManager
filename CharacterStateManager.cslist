@@ -1,8 +1,12 @@
+source/components/_BaseComponentWithId.cs
 source/components/Animation.cs
+source/components/AnimationKeyframe.cs
 source/components/Group.cs
 source/components/Layer.cs
 source/components/State.cs
 source/components/Transition.cs
+source/lib/Easing.cs
+source/lib/Helpers.cs
 source/lib/VaMUtils.cs
 source/Core.cs
 source/Ui.cs

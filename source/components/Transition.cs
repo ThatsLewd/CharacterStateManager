@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using SimpleJSON;
 using VaMUtils;
@@ -7,16 +8,17 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class Transition
+    public class Transition : BaseComponentWithId
     {
       public static List<Transition> list = new List<Transition>();
 
-      public string id { get { return $"{from.id}->{to.id}"; } }
+      public override string id { get; protected set; }
       public Animation from { get; private set; }
       public Animation to { get; private set; }
 
       public Transition(Animation from, Animation to)
       {
+        this.id = Utils.GenerateRandomID();
         this.from = from;
         this.to = to;
         Transition.list.Add(this);
@@ -24,14 +26,8 @@ namespace ThatsLewd
 
       public Transition Clone(Animation from = null, Animation to = null)
       {
-        if (from == null)
-        {
-          from = this.from;
-        }
-        if (to == null)
-        {
-          to = this.to;
-        }
+        from = from ?? this.from;
+        to = to ?? this.to;
         Transition newTransition = new Transition(from, to);
         return newTransition;
       }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using SimpleJSON;
 using VaMUtils;
@@ -7,35 +8,31 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class Layer
+    public class Layer : BaseComponentWithId
     {
       public static List<Layer> list = new List<Layer>();
 
-      public string id { get { return name; } }
-      public string name { get; private set; }
-      public List<TrackedControllerStorable> trackedControllers { get; private set; }
-      public List<DAZMorph> trackedMorphs { get; private set; }
+      public override string id { get; protected set; }
+      public string name { get; set; }
+      public List<Animation> animations { get; private set; } = new List<Animation>();
 
-
-      public List<Animation> animations
-      {
-        get { return Animation.list.FindAll((animation) => animation.layer.id == this.id); }
-      }
+      public List<TrackedController> trackedControllers { get; private set; } = new List<TrackedController>();
+      public List<DAZMorph> trackedMorphs { get; private set; } = new List<DAZMorph>();
 
       public Layer(string name = null)
       {
-        SetNameUnique(name ?? "layer");
+        this.id = Utils.GenerateRandomID();
+        this.name = name ?? "layer";
         InitializeControllers();
-        trackedMorphs = new List<DAZMorph>();
         Layer.list.Add(this);
       }
 
       public Layer Clone()
       {
-        Layer newLayer = new Layer();
-        foreach (TrackedControllerStorable source in trackedControllers)
+        Layer newLayer = new Layer(Helpers.GetCopyName(name));
+        foreach (TrackedController source in trackedControllers)
         {
-          TrackedControllerStorable target = newLayer.trackedControllers.Find((s) => s.controller.name == source.controller.name);
+          TrackedController target = newLayer.trackedControllers.Find((tc) => tc.controller.name == source.controller.name);
           target.CopyFrom(source);
         }
         foreach (DAZMorph morph in trackedMorphs)
@@ -52,53 +49,23 @@ namespace ThatsLewd
       public void Delete()
       {
         Layer.list.Remove(this);
-        foreach (Animation animation in animations)
+        foreach (Animation animation in animations.ToArray())
         {
           animation.Delete();
         }
       }
 
-      public void SetNameUnique(string name)
-      {
-        for (int i = 0; true; i++)
-        {
-          if (i == 0)
-          {
-            this.name = $"{name}";
-          }
-          else
-          {
-            this.name = $"{name} copy{i.ToString().PadLeft(3, '0')}";
-          }
-
-          bool matchFound = false;
-          foreach (Layer layer in Layer.list)
-          {
-            if (layer != this && layer.id == this.id)
-            {
-              matchFound = true;
-              break;
-            }
-          }
-
-          if (!matchFound)
-          {
-            break;
-          }
-        }
-      }
-
       private void InitializeControllers()
       {
-        trackedControllers = new List<TrackedControllerStorable>();
+        trackedControllers.Clear();
         foreach (FreeControllerV3 controller in CharacterStateManager.instance.controllers)
         {
-          trackedControllers.Add(new TrackedControllerStorable(controller));
+          trackedControllers.Add(new TrackedController(controller));
         }
       }
     }
 
-    public class TrackedControllerStorable
+    public class TrackedController
     {
       public FreeControllerV3 controller { get; private set; }
       public JSONStorableBool trackPositionStorable;
@@ -107,18 +74,18 @@ namespace ThatsLewd
       public bool isTracked { get { return trackPositionStorable.val || trackRotationStorable.val; }} 
 
       public SetValueCallback setCallbackFunction;
-      public delegate void SetValueCallback(FreeControllerV3 controller, bool positionVal, bool rotationVal);
+      public delegate void SetValueCallback(TrackedController trackedController);
 
-      public TrackedControllerStorable(FreeControllerV3 controller)
+      public TrackedController(FreeControllerV3 controller)
       {
         this.controller = controller;
-        trackPositionStorable = new JSONStorableBool($"Track {controller.name} Position", false);
-        trackRotationStorable = new JSONStorableBool($"Track {controller.name} Rotation", false);
-        trackPositionStorable.setCallbackFunction += OnValueChanged;
-        trackRotationStorable.setCallbackFunction += OnValueChanged;
+        this.trackPositionStorable = new JSONStorableBool($"Track {controller.name} Position", false);
+        this.trackRotationStorable = new JSONStorableBool($"Track {controller.name} Rotation", false);
+        this.trackPositionStorable.setCallbackFunction += OnValueChanged;
+        this.trackRotationStorable.setCallbackFunction += OnValueChanged;
       }
 
-      public void CopyFrom(TrackedControllerStorable source)
+      public void CopyFrom(TrackedController source)
       {
         if (controller.name != source.controller.name)
         {
@@ -132,7 +99,7 @@ namespace ThatsLewd
 
       private void OnValueChanged(bool val)
       {
-        setCallbackFunction?.Invoke(controller, trackPositionStorable.val, trackRotationStorable.val);
+        setCallbackFunction?.Invoke(this);
       }
     }
   }
