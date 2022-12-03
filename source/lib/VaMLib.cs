@@ -52,10 +52,13 @@ namespace VaMLib
 
   public static partial class VaMUI
   {
+    public static MVRScript script { get; private set; }
+    private static CreateUIElement createUIElement;
+
     public static void Init(MVRScript script, CreateUIElement createUIElementCallback)
     {
       VaMUI.script = script;
-      createUIElement = createUIElementCallback;
+      VaMUI.createUIElement = createUIElementCallback;
     }
 
     public static void Destroy()
@@ -1008,10 +1011,8 @@ namespace VaMLib
       };
       ImageLoaderThreaded.singleton.QueueImage(queuedImage);
     }
-
-    private static MVRScript script;
-    private static CreateUIElement createUIElement;
   }
+
 
   // =================================================================================================== //
   // ========================================== TRIGGER UTILS ========================================== //
@@ -1023,23 +1024,38 @@ namespace VaMLib
   //       VaMTrigger.Destroy();
   //
   // Credit to AcidBubbles for figuring out how to do custom triggers.
-
   public static class VaMTrigger
   {
-    public static bool Loaded { get; private set; }
+    public static bool initialized { get; private set; }
+    public static bool loaded { get; private set; }
+    public static SimpleTriggerHandler handler { get; private set; } = new SimpleTriggerHandler();
+    public static MVRScript script { get; private set; }
+
+    private static GameObject customTriggerActionsPrefab;
+    private static GameObject customTriggerActionMiniPrefab;
+    private static GameObject customTriggerActionDiscretePrefab;
+    private static GameObject customTriggerActionTransitionPrefab;
 
     public static void Init(MVRScript script)
     {
       VaMTrigger.script = script;
-      handler = new SimpleTriggerHandler();
       SuperController.singleton.StartCoroutine(LoadAssets());
+      VaMTrigger.initialized = true;
+    }
+
+    public static void Destroy()
+    {
+      VaMUtils.SafeDestroy(ref customTriggerActionsPrefab);
+      VaMUtils.SafeDestroy(ref customTriggerActionMiniPrefab);
+      VaMUtils.SafeDestroy(ref customTriggerActionDiscretePrefab);
+      VaMUtils.SafeDestroy(ref customTriggerActionTransitionPrefab);
     }
 
     // Create a trigger
-    public static T Create<T>(string name, string secondaryName = null) where T : CustomTrigger, new()
+    public static T Create<T>(string name) where T : CustomTrigger, new()
     {
       T trigger = new T();
-      trigger.Initialize(script, handler, name, secondaryName);
+      trigger.Initialize(name);
       return trigger;
     }
 
@@ -1049,11 +1065,6 @@ namespace VaMLib
       T trigger = new T();
       trigger.Initialize(other);
       return trigger;
-    }
-
-    public static void Destroy()
-    {
-      // unused
     }
 
     // Restore an existing trigger from JSON
@@ -1066,48 +1077,57 @@ namespace VaMLib
     public static void RestoreFromJSON<T>(out T trigger, string name, JSONClass jc, bool setMissingToDefault) where T : CustomTrigger, new()
     {
       trigger = new T();
-      trigger.Initialize(script, handler, name);
+      trigger.Initialize(name);
       trigger.RestoreFromJSON(jc, script.subScenePrefix, script.mergeRestore, setMissingToDefault);
     }
 
     private static IEnumerator LoadAssets()
     {
-      foreach (var x in LoadAsset("z_ui2", "TriggerActionsPanel", p => ourTriggerActionsPrefab = p))
+      foreach (var x in LoadAsset("z_ui2", "TriggerActionsPanel", CreateTriggerActionsPrefab))
         yield return x;
-      foreach (var x in LoadAsset("z_ui2", "TriggerActionMiniPanel", p => ourTriggerActionMiniPrefab = p))
+      foreach (var x in LoadAsset("z_ui2", "TriggerActionMiniPanel", CreateTriggerActionMiniPrefab))
         yield return x;
-      foreach (var x in LoadAsset("z_ui2", "TriggerActionDiscretePanel", p => ourTriggerActionDiscretePrefab = p))
+      foreach (var x in LoadAsset("z_ui2", "TriggerActionDiscretePanel", CreateTriggerActionDiscretePrefab))
         yield return x;
-      foreach (var x in LoadAsset("z_ui2", "TriggerActionTransitionPanel", p => ourTriggerActionTransitionPrefab = p))
+      foreach (var x in LoadAsset("z_ui2", "TriggerActionTransitionPanel", CreateTriggerActionTransitionPrefab))
         yield return x;
 
-      Loaded = true;
+      loaded = true;
     }
 
-    private static IEnumerable LoadAsset(string assetBundleName, string assetName, Action<RectTransform> assign)
+    private static IEnumerable LoadAsset(string assetBundleName, string assetName, Action<GameObject> assign)
     {
       AssetBundleLoadAssetOperation request = AssetBundleManager.LoadAssetAsync(assetBundleName, assetName, typeof(GameObject));
-      if (request == null)
-        throw new NullReferenceException($"Request for {assetName} in {assetBundleName} assetbundle failed: Null request.");
+      if (request == null) throw new NullReferenceException($"Request for {assetName} in {assetBundleName} assetbundle failed: Null request.");
       yield return request;
-      GameObject go = request.GetAsset<GameObject>();
-      if (go == null)
-        throw new NullReferenceException($"Request for {assetName} in {assetBundleName} assetbundle failed: Null GameObject.");
-      RectTransform prefab = go.GetComponent<RectTransform>();
-      if (prefab == null)
-        throw new NullReferenceException($"Request for {assetName} in {assetBundleName} assetbundle failed: Null RectTansform.");
+      GameObject prefab = request.GetAsset<GameObject>();
+      if (prefab == null) throw new NullReferenceException($"Request for {assetName} in {assetBundleName} assetbundle failed: Null GameObject.");
       assign(prefab);
     }
 
-    private static MVRScript script;
-    private static SimpleTriggerHandler handler;
-    private static RectTransform ourTriggerActionsPrefab;
-    private static RectTransform ourTriggerActionMiniPrefab;
-    private static RectTransform ourTriggerActionDiscretePrefab;
-    private static RectTransform ourTriggerActionTransitionPrefab;
+    private static void CreateTriggerActionsPrefab(GameObject basePrefab)
+    {
+      customTriggerActionsPrefab = UnityEngine.GameObject.Instantiate(basePrefab);
+    }
+
+    private static void CreateTriggerActionMiniPrefab(GameObject basePrefab)
+    {
+      customTriggerActionMiniPrefab = UnityEngine.GameObject.Instantiate(basePrefab);
+    }
+
+    private static void CreateTriggerActionDiscretePrefab(GameObject basePrefab)
+    {
+      customTriggerActionDiscretePrefab = UnityEngine.GameObject.Instantiate(basePrefab);
+    }
+
+    private static void CreateTriggerActionTransitionPrefab(GameObject basePrefab)
+    {
+      customTriggerActionTransitionPrefab = UnityEngine.GameObject.Instantiate(basePrefab);
+      customTriggerActionTransitionPrefab.GetComponent<TriggerActionTransitionUI>().startWithCurrentValToggle.gameObject.SetActive(false);
+    }
 
     // Helper class since we need a non-static handler
-    private class SimpleTriggerHandler : TriggerHandler
+    public class SimpleTriggerHandler : TriggerHandler
     {
       void TriggerHandler.RemoveTrigger(Trigger t)
       {
@@ -1121,24 +1141,22 @@ namespace VaMLib
 
       RectTransform TriggerHandler.CreateTriggerActionsUI()
       {
-        return UnityEngine.Object.Instantiate(ourTriggerActionsPrefab);
+        return UnityEngine.Object.Instantiate(customTriggerActionsPrefab.transform as RectTransform);
       }
 
       RectTransform TriggerHandler.CreateTriggerActionMiniUI()
       {
-        return UnityEngine.Object.Instantiate(ourTriggerActionMiniPrefab);
+        return UnityEngine.Object.Instantiate(customTriggerActionMiniPrefab.transform as RectTransform);
       }
 
       RectTransform TriggerHandler.CreateTriggerActionDiscreteUI()
       {
-        return UnityEngine.Object.Instantiate(ourTriggerActionDiscretePrefab);
+        return UnityEngine.Object.Instantiate(customTriggerActionDiscretePrefab.transform as RectTransform);
       }
 
       RectTransform TriggerHandler.CreateTriggerActionTransitionUI()
       {
-        RectTransform rt = UnityEngine.Object.Instantiate(ourTriggerActionTransitionPrefab);
-        rt.GetComponent<TriggerActionTransitionUI>().startWithCurrentValToggle.gameObject.SetActive(false);
-        return rt;
+        return UnityEngine.Object.Instantiate(customTriggerActionTransitionPrefab.transform as RectTransform);
       }
 
       void TriggerHandler.RemoveTriggerActionUI(RectTransform rt)
@@ -1148,166 +1166,6 @@ namespace VaMLib
     }
   }
 
-  // ============================================================================================================ //
-  // ========================================== TRIGGER HELPER CLASSES ========================================== //
-  // ============================================================================================================ //
-  // You shouldn't need to instantiate these directly -- use VaMTrigger.Create()
-
-  // Base class for easier handling of custom triggers.
-  public abstract class CustomTrigger : Trigger
-  {
-    private string _name;
-    public string name
-    {
-      get { return _name; }
-      set { _name = value; rebuildPanel = true; }
-    }
-
-    private string _secondaryName;
-    public string secondaryName
-    {
-      get { return _secondaryName; }
-      set { _secondaryName = value; rebuildPanel = true; }
-    }
-
-    private MVRScript script;
-    private bool initialized = false;
-    private bool rebuildPanel = true;
-
-    public CustomTrigger() { }
-
-    public void Initialize(MVRScript script, TriggerHandler handler, string name, string secondaryName = null)
-    {
-      this.name = name;
-      this.secondaryName = secondaryName;
-      this.script = script;
-      base.handler = handler;
-      this.initialized = true;
-    }
-
-    public void Initialize(CustomTrigger other)
-    {
-      this.name = other.name;
-      this.secondaryName = other.secondaryName;
-      this.script = other.script;
-      base.handler = other.handler;
-      this.initialized = true;
-
-      JSONClass jc = other.GetJSON(script.subScenePrefix);
-      base.RestoreFromJSON(jc, script.subScenePrefix, false);
-    }
-
-    public void OpenPanel()
-    {
-      if (!VaMTrigger.Loaded)
-      {
-        SuperController.LogError("CustomTrigger: You need to call VaMTrigger.Init() before use.");
-        return;
-      }
-      if (!initialized)
-      {
-        SuperController.LogError("CustomTrigger: Trigger is not initialized correctly. Use VaMTrigger.Create() to instantiate triggers.");
-        return;
-      }
-
-      triggerActionsParent = script.UITransform;
-      InitTriggerUI();
-      OpenTriggerActionsPanel();
-      if (rebuildPanel)
-      {
-        Transform panel = triggerActionsPanel.Find("Panel");
-        panel.Find("Header Text").GetComponent<Text>().text = name;
-        Transform secondaryHeader = panel.Find("Trigger Name Text");
-        secondaryHeader.gameObject.SetActive(!string.IsNullOrEmpty(secondaryName));
-        secondaryHeader.GetComponent<Text>().text = secondaryName;
-
-        InitPanel();
-        rebuildPanel = false;
-      }
-    }
-
-    protected abstract void InitPanel();
-
-    public void RestoreFromJSON(JSONClass jc, string subScenePrefix, bool isMerge, bool setMissingToDefault)
-    {
-      if (jc.HasKey(name))
-      {
-        JSONClass tc = jc[name].AsObject;
-        if (tc != null)
-          base.RestoreFromJSON(tc, subScenePrefix, isMerge);
-      }
-      else if (setMissingToDefault)
-      {
-        base.RestoreFromJSON(new JSONClass());
-      }
-    }
-  }
-
-  // Wrapper for easier handling of custom event triggers.
-  public class EventTrigger : CustomTrigger
-  {
-    public EventTrigger() : base() { }
-
-    protected override void InitPanel()
-    {
-      Transform content = triggerActionsPanel.Find("Content");
-      content.Find("Tab1/Label").GetComponent<Text>().text = "Event Actions";
-      content.Find("Tab2").gameObject.SetActive(false);
-      content.Find("Tab3").gameObject.SetActive(false);
-    }
-
-    public void Trigger()
-    {
-      active = true;
-      active = false;
-    }
-
-    public void Trigger(List<TriggerActionDiscrete> actionsNeedingUpdateOut)
-    {
-      Trigger();
-      for (int i = 0; i < discreteActionsStart.Count; ++i)
-      {
-        if (discreteActionsStart[i].timerActive)
-          actionsNeedingUpdateOut.Add(discreteActionsStart[i]);
-      }
-    }
-  }
-
-  // Wrapper for easier handling of custom float triggers.
-  public class FloatTrigger : CustomTrigger
-  {
-    public FloatTrigger() : base() { }
-
-    protected override void InitPanel()
-    {
-      Transform content = triggerActionsPanel.Find("Content");
-      content.Find("Tab2/Label").GetComponent<Text>().text = "Value Actions";
-      content.Find("Tab3/Label").GetComponent<Text>().text = "Event Actions";
-      content.Find("Tab2").GetComponent<Toggle>().isOn = true;
-      content.Find("Tab1").gameObject.SetActive(false);
-    }
-
-    public void Trigger(float v)
-    {
-      _transitionInterpValue = Mathf.Clamp01(v);
-      if (transitionInterpValueSlider != null)
-        transitionInterpValueSlider.value = _transitionInterpValue;
-      for (int i = 0; i < transitionActions.Count; ++i)
-        transitionActions[i].TriggerInterp(_transitionInterpValue, true);
-      for (int i = 0; i < discreteActionsEnd.Count; ++i)
-        discreteActionsEnd[i].Trigger();
-    }
-
-    public void Trigger(float v, List<TriggerActionDiscrete> actionsNeedingUpdateOut)
-    {
-      Trigger(v);
-      for (int i = 0; i < discreteActionsEnd.Count; ++i)
-      {
-        if (discreteActionsEnd[i].timerActive)
-          actionsNeedingUpdateOut.Add(discreteActionsEnd[i]);
-      }
-    }
-  }
 
   // =================================================================================================== //
   // ========================================== GENERAL UTILS ========================================== //
@@ -1497,21 +1355,22 @@ namespace VaMLib
       return obj;
     }
 
-    // Recursively log a game object and its children
-    public static void LogGameObjectTree(GameObject obj, bool logComponents = true, bool logProps = false)
+    // Recursively log a game object and its children (can explode if the log gets too big)
+    public static void LogGameObjectTree(GameObject obj, int maxDepth = 99, bool logComponents = true, bool logProps = false)
     {
       StringBuilder str = new StringBuilder();
-      LogGameObjectTreeInternal(obj, 0, str, logComponents, logProps);
+      LogGameObjectTreeInternal(obj, 0, str, maxDepth, logComponents, logProps);
       str.Append("\n");
       SuperController.LogMessage(str.ToString());
     }
-    public static void LogGameObjectTree(Transform obj, bool logComponents = true, bool logProps = false)
+    public static void LogGameObjectTree(Transform obj, int maxDepth = 99, bool logComponents = true, bool logProps = false)
     {
-      LogGameObjectTree(obj.gameObject, logComponents, logProps);
+      LogGameObjectTree(obj.gameObject, maxDepth, logComponents, logProps);
     }
 
-    private static void LogGameObjectTreeInternal(GameObject obj, int depth, StringBuilder str, bool logComponents, bool logProps)
+    private static void LogGameObjectTreeInternal(GameObject obj, int depth, StringBuilder str, int maxDepth, bool logComponents, bool logProps)
     {
+      if (depth >= maxDepth) return;
       LogGameObjectTreeChildLineStart(depth, str);
       str.Append(obj.name).Append("\n");
 
@@ -1561,7 +1420,7 @@ namespace VaMLib
       for (int i = 0; i < obj.transform.childCount; i++)
       {
         Transform child = obj.transform.GetChild(i);
-        LogGameObjectTreeInternal(child.gameObject, depth + 1, str, logComponents, logProps);
+        LogGameObjectTreeInternal(child.gameObject, depth + 1, str, maxDepth, logComponents, logProps);
       }
     }
 
@@ -1625,14 +1484,16 @@ namespace VaMLib
   }
 
 
-  // ================================================================================================== //
-  // ========================================== HELPER TYPES ========================================== //
-  // ================================================================================================== //
+  // ========================================================================================================= //
+  // ========================================== MISC HELPER CLASSES ========================================== //
+  // ========================================================================================================= //
+  // You shouldn't need to mess with these at all
+
   public delegate Transform CreateUIElement(Transform prefab, bool rightSide);
   public delegate void TextureSetCallback(Texture2D tex);
   public delegate void TabClickCallback(string tabName);
 
-  // dumb custom enum stuff
+  // dumb custom enum stuff since VaM explodes if you make an enum
   public static partial class VaMUI
   {
     public struct Column : IEquatable<Column>
@@ -1701,6 +1562,124 @@ namespace VaMLib
       displayName = aName;
       category = "AssetBundle";
       destroyed = false;
+    }
+  }
+
+  // Base class for easier handling of custom triggers.
+  // You shouldn't need to instantiate these directly -- use VaMTrigger.Create()
+  public abstract class CustomTrigger : Trigger
+  {
+    public string name { get; private set; }
+
+    private bool initialized = false;
+    private bool panelInitialized = false;
+    
+    private Text text;
+
+    public CustomTrigger() {}
+
+    protected abstract void InitPanel();
+
+    public void Initialize(string name)
+    {
+      this.name = name;
+      base.handler = VaMTrigger.handler;
+      this.initialized = true;
+    }
+
+    public void Initialize(CustomTrigger other)
+    {
+      this.name = other.name;
+      base.handler = VaMTrigger.handler;
+      this.initialized = true;
+
+      JSONClass jc = other.GetJSON();
+      base.RestoreFromJSON(jc);
+    }
+
+    public void OpenPanel()
+    {
+      if (!VaMTrigger.initialized || !VaMTrigger.loaded)
+      {
+        SuperController.LogError("CustomTrigger: You need to call VaMTrigger.Init() before use.");
+        return;
+      }
+      if (!initialized)
+      {
+        SuperController.LogError("CustomTrigger: Trigger is not initialized correctly. Use VaMTrigger.Create() to instantiate triggers.");
+        return;
+      }
+      if (!panelInitialized)
+      {
+        triggerActionsParent = VaMTrigger.script.UITransform;
+        InitTriggerUI();
+        OpenTriggerActionsPanel();
+        text = triggerActionsPanel.Find("Panel").Find("Header Text").GetComponent<Text>();
+        text.text = name;
+        InitPanel();
+        panelInitialized = true;
+      }
+      else
+      {
+        OpenTriggerActionsPanel();
+        text.text = name;
+      }
+    }
+
+    public void RestoreFromJSON(JSONClass jc, string subScenePrefix, bool isMerge, bool setMissingToDefault)
+    {
+      if (jc.HasKey(name))
+      {
+        JSONClass tc = jc[name].AsObject;
+        if (tc != null)
+          base.RestoreFromJSON(tc, subScenePrefix, isMerge);
+      }
+      else if (setMissingToDefault)
+      {
+        base.RestoreFromJSON(new JSONClass());
+      }
+    }
+  }
+
+  public class EventTrigger : CustomTrigger
+  {
+    public EventTrigger() : base() { }
+
+    protected override void InitPanel()
+    {
+      Transform content = triggerActionsPanel.Find("Content");
+      content.Find("Tab1/Label").GetComponent<Text>().text = "Event Actions";
+      content.Find("Tab2").gameObject.SetActive(false);
+      content.Find("Tab3").gameObject.SetActive(false);
+    }
+
+    public void Trigger()
+    {
+      active = true;
+      active = false;
+    }
+  }
+
+  public class ValueTrigger : CustomTrigger
+  {
+    public ValueTrigger() : base() { }
+
+    protected override void InitPanel()
+    {
+      Transform content = triggerActionsPanel.Find("Content");
+      content.Find("Tab2/Label").GetComponent<Text>().text = "Value Actions";
+      content.Find("Tab2").GetComponent<Toggle>().isOn = true;
+      content.Find("Tab1").gameObject.SetActive(false);
+      content.Find("Tab3").gameObject.SetActive(false);
+    }
+
+    public void Trigger(float v)
+    {
+      _transitionInterpValue = Mathf.Clamp01(v);
+      if (transitionInterpValueSlider != null)
+        transitionInterpValueSlider.value = _transitionInterpValue;
+      for (int i = 0; i < transitionActions.Count; ++i)
+        transitionActions[i].TriggerInterp(_transitionInterpValue, true);
     }
   }
 

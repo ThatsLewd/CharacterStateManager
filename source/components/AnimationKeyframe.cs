@@ -20,7 +20,7 @@ namespace ThatsLewd
         public JSONStorableFloat durationStorable;
 
         public EventTrigger onEnterTrigger = VaMTrigger.Create<EventTrigger>("On Enter Keyframe");
-        public FloatTrigger onPlayingTrigger = VaMTrigger.Create<FloatTrigger>("On Keyframe Playing");
+        public ValueTrigger onPlayingTrigger = VaMTrigger.Create<ValueTrigger>("On Keyframe Playing");
         public EventTrigger onExitTrigger = VaMTrigger.Create<EventTrigger>("On Exit Keyframe");
 
         public List<CapturedController> capturedControllers = new List<CapturedController>();
