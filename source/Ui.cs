@@ -58,6 +58,7 @@ namespace ThatsLewd
     {
       VaMUI.Destroy();
       VaMUtils.SafeDestroy(ref tabBarPrefab);
+      VaMUtils.SafeDestroy(ref keyframeSelectorPrefab);
       VaMTrigger.Destroy();
     }
 
@@ -660,6 +661,22 @@ namespace ThatsLewd
         HandleDeleteAnimation
       );
 
+      if (activeAnimation == null) return;
+
+      CreateSubHeader(VaMUI.RIGHT, "Animation Details");
+      Draw(VaMUI.CreateStringChooserFromStorable(activeAnimation.loopTypeStorable, VaMUI.RIGHT));
+      Draw(VaMUI.CreateSliderFromStorable(activeAnimation.playbackSpeedStorable, VaMUI.RIGHT, 1f, 0f, 2f));
+
+      CreateSubHeader(VaMUI.LEFT, "Keyframe Defaults");
+      Draw(VaMUI.CreateSliderFromStorable(activeAnimation.defaultDurationStorable, VaMUI.LEFT, 1f, 0f, 10f));
+      Draw(VaMUI.CreateStringChooserFromStorable(activeAnimation.defaultEasingStorable, VaMUI.LEFT));
+
+      Draw(VaMUI.CreateSpacer(VaMUI.LEFT));
+      CreateSubHeader(VaMUI.LEFT, "Actions");
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Enter Animation", activeAnimation.onEnterTrigger.OpenPanel));
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Animation Playing", activeAnimation.onPlayingTrigger.OpenPanel));
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Exit Animation", activeAnimation.onExitTrigger.OpenPanel));
+
 
       CreateBottomPadding();
     }
@@ -732,12 +749,15 @@ namespace ThatsLewd
         return;
       }
       Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "<< New Keyframe", HandleAddKeyframeStart, "New Keyframe >>", HandleAddKeyframeEnd));
-      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "< New Keyframe", HandleAddKeyframeAfter, "New Keyframe >", HandleAddKeyframeBefore));
+      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "< New Keyframe", HandleAddKeyframeBefore, "New Keyframe >", HandleAddKeyframeAfter));
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "Duplicate Keyframe", HandleDuplicateKeyframe));
       Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "< Move Keyframe", () => { HandleMoveKeyframe(-1); }, "Move Keyframe >", () => { HandleMoveKeyframe(1); }));
       Draw(CreateKeyframeSelector(activeAnimation.keyframes, activeKeyframe, VaMUI.LEFT, HandleSelectKeyframe));
 
       if (activeKeyframe == null) return;
+
+      Draw(VaMUI.CreateOnelineTextInputFromStorable(activeKeyframe.labelStorable, VaMUI.LEFT));
+      activeKeyframe.labelStorable.setCallbackFunction = HandleSetKeyframeLabel;
 
       Draw(VaMUI.CreateColorPickerFromStorable(activeKeyframe.colorStorable, VaMUI.LEFT));
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "Apply Color", () => { InvalidateUI(); }));
@@ -757,7 +777,7 @@ namespace ThatsLewd
       Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Delete Keyframe", HandleDeleteKeyframe, color: VaMUI.RED));
       Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
 
-      Draw(VaMUI.CreateSliderFromStorable(activeKeyframe.durationStorable, VaMUI.RIGHT, 5f, 0f, 10f));
+      Draw(VaMUI.CreateSliderFromStorable(activeKeyframe.durationStorable, VaMUI.RIGHT, 1f, 0f, 10f));
       Draw(VaMUI.CreateStringChooserFromStorable(activeKeyframe.easingStorable, VaMUI.RIGHT));
       Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
 
@@ -912,6 +932,11 @@ namespace ThatsLewd
     {
       if (activeKeyframe == null) return;
       activeKeyframe.Delete();
+      InvalidateUI();
+    }
+
+    void HandleSetKeyframeLabel(string val)
+    {
       InvalidateUI();
     }
 
@@ -1097,35 +1122,48 @@ namespace ThatsLewd
 
       private List<UIDynamicButton> buttons = new List<UIDynamicButton>();
 
+      private const int buttonsPerRow = 4;
+      private const float buttonWidthScale = 1f / (float)buttonsPerRow;
       private const float buttonHeight = 70f;
       private const float buttonSpacing = 10f;
 
       void Start()
       {
-        int rows = (keyframes.Count - 1) / 5 + 1;
+        int rows = (keyframes.Count - 1) / buttonsPerRow + 1;
         float totalHeight = rows * (buttonHeight + buttonSpacing) - buttonSpacing;
         layout.preferredHeight = layout.minHeight = totalHeight + 10f;
 
         for (int i = 0; i < keyframes.Count; i++)
         {
           Animation.Keyframe keyframe = keyframes[i];
-          int x = i % 5;
-          int y = i / 5;
+          int x = i % buttonsPerRow;
+          int y = i / buttonsPerRow;
           float yOffset = (buttonHeight + buttonSpacing) * y;
 
           RectTransform buttonRect = VaMUI.InstantiateButton(buttonContainer);
-          buttonRect.anchorMin = new Vector2(0.2f * x, 1f);
-          buttonRect.anchorMax = new Vector2(0.2f * x + 0.2f, 1f);
+          buttonRect.anchorMin = new Vector2(buttonWidthScale * x, 1f);
+          buttonRect.anchorMax = new Vector2(buttonWidthScale * x + buttonWidthScale, 1f);
           buttonRect.offsetMin = new Vector2(buttonSpacing / 2f, -buttonHeight - yOffset);
           buttonRect.offsetMax = new Vector2(-buttonSpacing / 2f, 0f - yOffset);
+
           UIDynamicButton button = buttonRect.GetComponent<UIDynamicButton>();
-          button.buttonText.text = $"<size=35>{i + 1}</size>";
+          button.buttonText.rectTransform.anchorMin = new Vector2(0f, 0.4f);
+          button.buttonText.rectTransform.offsetMin = new Vector2(5f, 0f);
+          button.buttonText.text = $"<size=25>{i + 1}</size>";
           if (keyframe.id == activeKeyframe?.id)
           {
-            button.buttonText.text = $"<size=35>[ {i + 1} ]</size>";
+            button.buttonText.text = $"<size=25>[ {i + 1} ]</size>";
           }
+          button.buttonText.alignment = TextAnchor.UpperLeft;
           HSVColor color = keyframe.colorStorable.val;
           button.buttonColor = Color.HSVToRGB(color.H, color.S, color.V);
+
+          RectTransform labelRect = VaMUI.InstantiateLabel(buttonRect);
+          labelRect.anchorMax = new Vector2(1f, 0.6f);
+          labelRect.offsetMin = new Vector2(5f, 5f);
+          Text labelText = labelRect.GetComponent<Text>();
+          labelText.text = $"<size=22>{keyframe.labelStorable.val}</size>";
+          labelText.alignment = TextAnchor.LowerLeft;
 
           if (callback != null)
           {

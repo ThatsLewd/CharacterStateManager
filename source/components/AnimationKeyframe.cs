@@ -15,6 +15,7 @@ namespace ThatsLewd
         public override string id { get; protected set; }
         public Animation animation { get; private set; }
 
+        public JSONStorableString labelStorable;
         public JSONStorableColor colorStorable;
         public JSONStorableStringChooser easingStorable;
         public JSONStorableFloat durationStorable;
@@ -30,9 +31,10 @@ namespace ThatsLewd
         {
           this.id = VaMUtils.GenerateRandomID();
           this.animation = animation;
+          this.labelStorable = CreateLabelStorable("");
           this.colorStorable = CreateColorStorable();
-          this.easingStorable = CreateEasingStorable(Easing.EasingType.Linear);
-          this.durationStorable = CreateDurationStorable(5f, 0f, 10f);
+          this.easingStorable = CreateEasingStorable(animation.defaultEasingStorable.val);
+          this.durationStorable = CreateDurationStorable(animation.defaultDurationStorable.val, animation.defaultDurationStorable.min, animation.defaultDurationStorable.max);
           if (index == -1)
           {
             index = this.animation.keyframes.Count;
@@ -44,6 +46,7 @@ namespace ThatsLewd
         {
           animation = animation ?? this.animation;
           Keyframe newKeyframe = new Keyframe(animation, index);
+          newKeyframe.labelStorable = CreateLabelStorable(labelStorable.val);
           newKeyframe.colorStorable = CreateColorStorable(colorStorable.val);
           newKeyframe.easingStorable = CreateEasingStorable(easingStorable.val);
           newKeyframe.durationStorable = CreateDurationStorable(durationStorable.val, durationStorable.min, durationStorable.max);
@@ -118,6 +121,11 @@ namespace ThatsLewd
             V = 1.0f
           };
           return color;
+        }
+
+        private JSONStorableString CreateLabelStorable(string defaultValue)
+        {
+          return new JSONStorableString("Label", defaultValue);
         }
 
         private JSONStorableColor CreateColorStorable(HSVColor? defaultValue = null)
