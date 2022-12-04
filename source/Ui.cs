@@ -18,9 +18,10 @@ namespace ThatsLewd
       public const string Animations = "Animations";
       public const string Keyframes = "Keyframes";
       public const string Transitions = "Transitions";
-      public const string Triggers = "Triggers";
+      public const string SendMessages = "Send Msgs";
+      public const string ReceiveMessages = "Receive Msgs";
 
-      public static readonly string[] list = new string[] { Info, Groups, States, Layers, Animations, Keyframes, Transitions, Triggers };
+      public static readonly string[] list = new string[] { Info, Groups, States, Layers, Animations, Keyframes, Transitions, SendMessages, ReceiveMessages };
     }
 
     bool uiNeedsRebuilt = false;
@@ -139,8 +140,11 @@ namespace ThatsLewd
         case Tabs.Transitions:
           BuildTransitionsTabUI();
           break;
-        case Tabs.Triggers:
-          BuildTriggersTabUI();
+        case Tabs.SendMessages:
+          BuildSendMessagesTabUI();
+          break;
+        case Tabs.ReceiveMessages:
+          BuildReceiveMessagesTabUI();
           break;
         default:
           BuildInfoTabUI();
@@ -279,12 +283,12 @@ namespace ThatsLewd
       if (showNewOnly)
       {
         Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
-        Draw(VaMUI.CreateButton(VaMUI.RIGHT, $"New {category}", newHandler));
+        Draw(VaMUI.CreateButton(VaMUI.RIGHT, $"New {category}", newHandler, color: VaMUI.GREEN));
       }
       else
       {
         createNameInput();
-        Draw(VaMUI.CreateButtonPair(VaMUI.RIGHT, $"New {category}", newHandler, $"Duplicate {category}", duplicateHandler));
+        Draw(VaMUI.CreateButtonPair(VaMUI.RIGHT, $"New {category}", newHandler, $"Duplicate {category}", duplicateHandler, VaMUI.GREEN, VaMUI.BLUE));
         Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
         Draw(VaMUI.CreateButton(VaMUI.RIGHT, $"Delete {category}", deleteHandler, color: VaMUI.RED));
         Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
@@ -505,6 +509,12 @@ namespace ThatsLewd
       }
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "Apply to All", HandleApplyDefaultsToAll));
 
+      // ACTIONS
+      Draw(VaMUI.CreateSpacer(VaMUI.LEFT));
+      CreateSubHeader(VaMUI.LEFT, "Actions");
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Enter State", activeState.onEnterTrigger.OpenPanel));
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Exit State", activeState.onExitTrigger.OpenPanel));
+
       // PLAYLIST
       Draw(VaMUI.CreateInfoTextNoScroll(
         VaMUI.RIGHT,
@@ -515,9 +525,11 @@ namespace ThatsLewd
       Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Add Current Animation", HandleAddPlaylistEntry));
       Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
 
-      foreach (PlaylistEntry entry in activePlaylist.entries)
+      for (int i = 0; i < activePlaylist.entries.Count; i++)
       {
-        Draw(CreatePlaylistEntryContainer(activePlaylist.modeStorable.val, entry.timingModeStorable.val, VaMUI.RIGHT));
+        PlaylistEntry entry = activePlaylist.entries[i];
+        Draw(CreatePlaylistEntryContainer(activePlaylist.modeStorable.val, entry.timingModeStorable.val, i + 1, VaMUI.RIGHT));
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 10f));
         Draw(VaMUI.CreateLabelWithX(VaMUI.RIGHT, $"<b>{entry.animation.name}</b>", () => { HandleDeletePlaylistEntry(entry); }));
         Draw(VaMUI.CreateButtonPair(VaMUI.RIGHT, "Move Up", () => HandleMovePlaylistEntry(entry, -1), "Move Down", () => HandleMovePlaylistEntry(entry, 1)));
         Draw(VaMUI.CreateStringChooserFromStorable(entry.timingModeStorable, VaMUI.RIGHT));
@@ -1192,17 +1204,36 @@ namespace ThatsLewd
     }
 
 
-    // ============================================================================== //
-    // ================================ TRIGGERS TAB ================================ //
-    // ============================================================================== //
-    void BuildTriggersTabUI()
+    // =================================================================================== //
+    // ================================ SEND MESSAGES TAB ================================ //
+    // =================================================================================== //
+    void BuildSendMessagesTabUI()
     {
-      CreateMainHeader(VaMUI.LEFT, "Triggers");
+      CreateMainHeader(VaMUI.LEFT, "Send Messages");
       Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
 
       Draw(VaMUI.CreateInfoTextNoScroll(
         VaMUI.LEFT,
-        @"A <b>Trigger</b> is a custom event that can be called from other atoms in your scene using the 'Call Trigger' action. Triggers allow external management of the character's state.",
+        @"A <b>Message</b> is a custom event that can be called from other atoms in your scene using the 'Send Message' action. Messages allow external management of the character's state.",
+        5
+      ));
+
+
+      CreateBottomPadding();
+    }
+
+
+    // ====================================================================================== //
+    // ================================ RECEIVE MESSAGES TAB ================================ //
+    // ====================================================================================== //
+    void BuildReceiveMessagesTabUI()
+    {
+      CreateMainHeader(VaMUI.LEFT, "Receive Messages");
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
+
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
+        @"A <b>Message</b> is a custom event that can be called from other atoms in your scene using the 'Send Message' action. Messages allow external management of the character's state.",
         5
       ));
 
@@ -1410,25 +1441,37 @@ namespace ThatsLewd
       public string playlistMode;
       public string timingMode;
       public RectTransform background;
+      public Text indexText;
     }
     
     private GameObject playlistEntryContainerPrefab;
-    public UIDynamicPlaylistEntryContainer CreatePlaylistEntryContainer(string playlistMode, string timingMode, VaMUI.Column side)
+    public UIDynamicPlaylistEntryContainer CreatePlaylistEntryContainer(string playlistMode, string timingMode, int index, VaMUI.Column side)
     {
       if (playlistEntryContainerPrefab == null)
       {
         UIDynamicPlaylistEntryContainer uid = VaMUI.CreateUIDynamicPrefab<UIDynamicPlaylistEntryContainer>("PlaylistEntryContainer", 0f);
         playlistEntryContainerPrefab = uid.gameObject;
+
         RectTransform background = VaMUI.InstantiateBackground(uid.transform);
         Image bgImage = background.GetComponent<Image>();
         bgImage.color = new Color(0.9f, 0.9f, 0.9f, 0.5f);
+
+        RectTransform textRect = VaMUI.InstantiateLabel(uid.transform);
+        textRect.offsetMin = new Vector2(8f, -50f);
+        textRect.offsetMax = new Vector2(0f, -8f);
+        Text text = textRect.GetComponent<Text>();
+        text.alignment = TextAnchor.UpperLeft;
+        text.fontSize = 24;
+
         uid.background = background;
+        uid.indexText = text;
       }
       {
-        const float sliderHeight = 135f;
+        const float sliderHeight = 136f;
         Transform t = CreateUIElement(playlistEntryContainerPrefab.transform, side == VaMUI.RIGHT);
         UIDynamicPlaylistEntryContainer uid = t.GetComponent<UIDynamicPlaylistEntryContainer>();
-        float height = 260f;
+        uid.indexText.text = index.ToString();
+        float height = 280f;
         if (playlistMode == PlaylistMode.Random) height += sliderHeight;
         if (timingMode == TimingMode.FixedDuration) height += sliderHeight;
         if (timingMode == TimingMode.RandomDuration) height += 2f * sliderHeight;

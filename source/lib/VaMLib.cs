@@ -609,7 +609,7 @@ namespace VaMLib
 
     // Create two buttons on one line
     private static GameObject customButtonPairPrefab;
-    public static UIDynamicButtonPair CreateButtonPair(Column side, string leftLabel, UnityAction leftCallback, string rightLabel, UnityAction rightCallback)
+    public static UIDynamicButtonPair CreateButtonPair(Column side, string leftLabel, UnityAction leftCallback, string rightLabel, UnityAction rightCallback, Color? leftColor = null, Color? rightColor = null)
     {
       if (customButtonPairPrefab == null)
       {
@@ -636,8 +636,16 @@ namespace VaMLib
         UIDynamicButtonPair uid = t.GetComponent<UIDynamicButtonPair>();
         uid.leftButton.buttonText.text = leftLabel;
         uid.leftButton.button.onClick.AddListener(leftCallback);
+        if (leftColor != null)
+        {
+          uid.leftButton.buttonColor = leftColor.Value;
+        }
         uid.rightButton.buttonText.text = rightLabel;
         uid.rightButton.button.onClick.AddListener(rightCallback);
+        if (rightColor != null)
+        {
+          uid.rightButton.buttonColor = rightColor.Value;
+        }
         uid.gameObject.SetActive(true);
         return uid;
       }

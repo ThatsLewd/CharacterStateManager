@@ -17,6 +17,9 @@ namespace ThatsLewd
       public string name { get; set; }
       public Group group { get; private set; }
 
+      public EventTrigger onEnterTrigger = VaMTrigger.Create<EventTrigger>("On Enter State");
+      public EventTrigger onExitTrigger = VaMTrigger.Create<EventTrigger>("On Exit State");
+
       public List<AnimationPlaylist> playlists { get; private set; } = new List<AnimationPlaylist>();
 
       public State(Group group, string name = null)
@@ -35,6 +38,8 @@ namespace ThatsLewd
         string name = group == null ? Helpers.GetCopyName(this.name) : this.name;
         group = group ?? this.group;
         State newState = new State(group, name);
+        newState.onEnterTrigger = VaMTrigger.Clone(onEnterTrigger);
+        newState.onExitTrigger = VaMTrigger.Clone(onExitTrigger);
         foreach (AnimationPlaylist playlist in playlists)
         {
           newState.playlists.Add(playlist.Clone());
