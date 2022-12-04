@@ -19,7 +19,7 @@ namespace ThatsLewd
       public string name { get; set; }
       public List<State> states { get; private set; } = new List<State>();
 
-      public State initialState { get; private set; } = null;
+      public State initialState { get; set; } = null;
 
       public Group(string name = null)
       {

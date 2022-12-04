@@ -324,6 +324,8 @@ namespace ThatsLewd
     // ============================================================================ //
     // ================================ GROUPS TAB ================================ //
     // ============================================================================ //
+    VaMUI.VaMStringChooser transitionStateChooser;
+
     void BuildGroupsTabUI()
     {
       CreateMainHeader(VaMUI.LEFT, "Groups");
@@ -353,12 +355,49 @@ namespace ThatsLewd
         return;
       }
 
+      CreateSubHeader(VaMUI.LEFT, "Group Settings");
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "Set As Initial State", SetInitialState));
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "Remove Initial State", RemoveInitialState));
       Draw(VaMUI.CreateInfoText(VaMUI.LEFT, $"<b>Initial State</b>: {activeGroup.initialState?.name ?? "<none>"}", 1, background: false));
 
       Draw(VaMUI.CreateSpacer(VaMUI.LEFT));
+      CreateSubHeader(VaMUI.LEFT, "State Settings");
       Draw(activeState.transitionModeChooser.Draw(VaMUI.LEFT));
+      activeState.transitionModeChooser.storable.setCallbackFunction = (string val) => { RequestRedraw(); };
+      if (activeState.transitionModeChooser.val == TransitionMode.None)
+      {
+        Draw(VaMUI.CreateInfoText(VaMUI.LEFT, "The state will not automatically advance.", 2));
+      }
+      else if (activeState.transitionModeChooser.val == TransitionMode.PlaylistCompleted)
+      {
+        Draw(VaMUI.CreateInfoText(VaMUI.LEFT, "The state will advance when the first layer's playlist completes.", 2));
+      }
+      else if (activeState.transitionModeChooser.val == TransitionMode.FixedDuration)
+      {
+        Draw(VaMUI.CreateInfoText(VaMUI.LEFT, "The state will advance after a fixed duration.", 2));
+        Draw(activeState.fixedDurationSlider.Draw(VaMUI.LEFT));
+      }
+      else if (activeState.transitionModeChooser.val == TransitionMode.RandomDuration)
+      {
+        Draw(VaMUI.CreateInfoText(VaMUI.LEFT, "The state will advance after a random duration.", 2));
+        Draw(activeState.minDurationSlider.Draw(VaMUI.LEFT));
+        Draw(activeState.maxDurationSlider.Draw(VaMUI.LEFT));
+      }
+      Draw(VaMUI.CreateSpacer(VaMUI.LEFT, 100f));
+
+      CreateSubHeader(VaMUI.RIGHT, "State Transitions");
+      Draw(VaMUI.CreateInfoText(VaMUI.RIGHT, "The current state can transition to states added here.", 2));
+      Draw(VaMUI.CreateStringChooserKeyVal(ref transitionStateChooser, "Select State", null, "").Draw(VaMUI.RIGHT));
+      SetTransitionStateChooserChoices();
+      Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Add State Transition", HandleAddStateTransition));
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
+
+      foreach (StateTransition transition in activeState.transitions)
+      {
+        Draw(VaMUI.CreateLabelWithX(VaMUI.RIGHT, transition.state.name, () => { HandleRemoveStateTransition(transition); }));
+        Draw(transition.weightSlider.Draw(VaMUI.RIGHT));
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
+      }
 
 
       CreateBottomPadding();
@@ -397,12 +436,40 @@ namespace ThatsLewd
 
     void SetInitialState()
     {
-
+      if (activeGroup == null || activeState == null) return;
+      activeGroup.initialState = activeState;
+      RequestRedraw();
     }
 
     void RemoveInitialState()
     {
+      if (activeGroup == null) return;
+      activeGroup.initialState = null;
+      RequestRedraw();
+    }
 
+    void SetTransitionStateChooserChoices()
+    {
+      if (transitionStateChooser == null || activeStateIdChooser == null) return;
+      transitionStateChooser.choices = activeStateIdChooser.choices;
+      transitionStateChooser.displayChoices = activeStateIdChooser.displayChoices;
+    }
+
+    void HandleAddStateTransition()
+    {
+      if (transitionStateChooser == null || activeState == null || activeState == null) return;
+      State target = activeGroup.states.Find((s) => s.id == transitionStateChooser.val);
+      if (target == null) return;
+      activeState.AddTransition(target);
+      transitionStateChooser.val = "";
+      RequestRedraw();
+    }
+
+    void HandleRemoveStateTransition(StateTransition transition)
+    {
+      if (activeState == null) return;
+      activeState.transitions.Remove(transition);
+      RequestRedraw();
     }
 
 

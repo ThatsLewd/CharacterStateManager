@@ -29,6 +29,9 @@ namespace ThatsLewd
         this.name = name ?? "state";
         this.group.states.Add(this);
         this.transitionModeChooser = VaMUI.CreateStringChooser("Transition Condition", TransitionMode.list.ToList(), TransitionMode.None);
+        this.fixedDurationSlider = VaMUI.CreateSlider("Duration", 10f, 0f, 30f, callback: HandleFixedDurationChange);
+        this.minDurationSlider = VaMUI.CreateSlider("Min Duration", 10f, 0f, 30f);
+        this.maxDurationSlider = VaMUI.CreateSlider("Max Duration", 30f, 0f, 30f);
         Group.OnDelete += HandleGroupDeleted;
         Layer.OnDelete += HandleLayerDeleted;
         Animation.OnDelete += HandleAnimationDeleted;
@@ -46,6 +49,9 @@ namespace ThatsLewd
           newState.playlists.Add(playlist.Clone());
         }
         newState.transitionModeChooser.valNoCallback = transitionModeChooser.val;
+        Helpers.SetSliderValues(newState.fixedDurationSlider, fixedDurationSlider.val, fixedDurationSlider.min, fixedDurationSlider.max);
+        Helpers.SetSliderValues(newState.minDurationSlider, minDurationSlider.val, minDurationSlider.min, minDurationSlider.max);
+        Helpers.SetSliderValues(newState.maxDurationSlider, maxDurationSlider.val, maxDurationSlider.min, maxDurationSlider.max);
         foreach (StateTransition transition in transitions)
         {
           newState.transitions.Add(transition.Clone());

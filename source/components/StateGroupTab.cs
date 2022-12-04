@@ -15,7 +15,7 @@ namespace ThatsLewd
       public const string FixedDuration = "Fixed Duration";
       public const string RandomDuration = "Random Duration";
 
-      public static readonly string[] list = new string[] { };
+      public static readonly string[] list = new string[] { None, PlaylistCompleted, FixedDuration, RandomDuration };
     }
 
     // All the state properties related to the group tab are in this file for clarity
@@ -23,7 +23,24 @@ namespace ThatsLewd
     public partial class State : BaseComponentWithId
     {
       public VaMUI.VaMStringChooser transitionModeChooser { get; private set; }
+      public VaMUI.VaMSlider fixedDurationSlider { get; private set; }
+      public VaMUI.VaMSlider minDurationSlider { get; private set; }
+      public VaMUI.VaMSlider maxDurationSlider { get; private set; }
+
       public List<StateTransition> transitions { get; private set; } = new List<StateTransition>();
+
+      public void AddTransition(State state)
+      {
+        if (transitions.Exists((t) => t.state == state)) return;
+        transitions.Add(new StateTransition(state));
+        transitions.Sort((a, b) => String.Compare(a.state.name, b.state.name));
+      }
+
+      private void HandleFixedDurationChange(float val)
+      {
+        Helpers.SetSliderValues(minDurationSlider, fixedDurationSlider.val, fixedDurationSlider.min, fixedDurationSlider.max);
+        Helpers.SetSliderValues(maxDurationSlider, fixedDurationSlider.val, fixedDurationSlider.min, fixedDurationSlider.max);
+      }
     }
 
     public class StateTransition
