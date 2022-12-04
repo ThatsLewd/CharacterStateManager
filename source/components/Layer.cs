@@ -101,20 +101,15 @@ namespace ThatsLewd
 
     public class TrackedMorph
     {
-      public string standardName { get; private set; }
       public DAZMorph morph { get; private set; }
+      public string standardName { get; private set; }
       public VaMUI.VaMSlider slider { get; private set; }
-
-      public float defaultValue { get; private set; } = 0f;
-      public float defaultMin { get; private set; } = -1f;
-      public float defaultMax { get; private set; } = 1f;
 
       public TrackedMorph(DAZMorph morph)
       {
         this.morph = morph;
         this.standardName = Helpers.GetStandardMorphName(morph);
-        this.defaultValue = morph.jsonFloat.defaultVal;
-        this.slider = VaMUI.CreateSlider(standardName, defaultValue, defaultMin, defaultMax, callback: HandleValueChange);
+        this.slider = VaMUI.CreateSlider(standardName, morph.jsonFloat.defaultVal, -1f, 1f, callback: HandleValueChange);
         UpdateSliderToMorph();
       }
 
@@ -137,7 +132,7 @@ namespace ThatsLewd
 
       private void HandleValueChange(float val)
       {
-        morph.SetValue(val);
+        morph.morphValue = slider.val;
       }
     }
   }

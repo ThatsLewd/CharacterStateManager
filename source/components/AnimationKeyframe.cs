@@ -34,10 +34,11 @@ namespace ThatsLewd
         {
           this.id = VaMUtils.GenerateRandomID();
           this.animation = animation;
-          this.labelInput = CreateLabelInput("");
-          this.colorPicker = CreateColorPicker();
-          this.easingChooser = CreateEasingChooser(animation.defaultEasingChooser.val);
-          this.durationSlider = CreateDurationSlider(animation.defaultDurationSlider.val, animation.defaultDurationSlider.min, animation.defaultDurationSlider.max);
+          this.labelInput = VaMUI.CreateTextInput("Label", "");
+          this.colorPicker = VaMUI.CreateColorPicker("Keyframe Color", GetRandomColor());
+          this.easingChooser = VaMUI.CreateStringChooser("Select Easing", Easing.list.ToList(), animation.defaultEasingChooser.val);
+          this.durationSlider = VaMUI.CreateSlider("Duration", 1f, 0f, 10f);
+          Helpers.SetSliderValues(durationSlider, animation.defaultDurationSlider.val, animation.defaultDurationSlider.min, animation.defaultDurationSlider.max);
           if (index == -1)
           {
             index = this.animation.keyframes.Count;
@@ -49,10 +50,10 @@ namespace ThatsLewd
         {
           animation = animation ?? this.animation;
           Keyframe newKeyframe = new Keyframe(animation, index);
-          newKeyframe.labelInput = CreateLabelInput(labelInput.val);
-          newKeyframe.colorPicker = CreateColorPicker(colorPicker.val);
-          newKeyframe.easingChooser = CreateEasingChooser(easingChooser.val);
-          newKeyframe.durationSlider = CreateDurationSlider(durationSlider.val, durationSlider.min, durationSlider.max);
+          newKeyframe.labelInput.valNoCallback = labelInput.val;
+          newKeyframe.colorPicker.valNoCallback = colorPicker.val;
+          newKeyframe.easingChooser.valNoCallback = easingChooser.val;
+          Helpers.SetSliderValues(newKeyframe.durationSlider, durationSlider.val, durationSlider.min, durationSlider.max);
           newKeyframe.onEnterTrigger = VaMTrigger.Clone(onEnterTrigger);
           newKeyframe.onPlayingTrigger = VaMTrigger.Clone(onPlayingTrigger);
           newKeyframe.onExitTrigger = VaMTrigger.Clone(onExitTrigger);
@@ -125,30 +126,6 @@ namespace ThatsLewd
             V = 1.0f
           };
           return color;
-        }
-
-        private VaMUI.VaMTextInput CreateLabelInput(string defaultValue)
-        {
-          return VaMUI.CreateTextInput("Label", defaultValue);
-        }
-
-        private VaMUI.VaMColorPicker CreateColorPicker(HSVColor? defaultValue = null)
-        {
-          if (defaultValue == null)
-          {
-            defaultValue = GetRandomColor();
-          }
-          return VaMUI.CreateColorPicker("Keyframe Color", defaultValue.Value);
-        }
-
-        private VaMUI.VaMStringChooser CreateEasingChooser(string defaultValue)
-        {
-          return VaMUI.CreateStringChooser("Select Easing", Easing.list.ToList(), defaultValue);
-        }
-
-        private VaMUI.VaMSlider CreateDurationSlider(float defaultValue, float minValue, float maxValue)
-        {
-          return VaMUI.CreateSlider("Duration", defaultValue, minValue, maxValue);
         }
       }
     }

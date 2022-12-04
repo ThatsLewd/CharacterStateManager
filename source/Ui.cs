@@ -278,7 +278,7 @@ namespace ThatsLewd
       Draw(VaMUI.CreateHeaderText(side, text, 38f));
     }
 
-    void CreateBasicFunctionsUI(string category, bool showNewOnly, Action createNameInput, UnityAction newHandler, UnityAction duplicateHandler, UnityAction deleteHandler)
+    void CreateBasicFunctionsUI(string category, bool showNewOnly, VaMUI.VaMTextInput nameInput, UnityAction newHandler, UnityAction duplicateHandler, UnityAction deleteHandler)
     {
       if (showNewOnly)
       {
@@ -287,7 +287,7 @@ namespace ThatsLewd
       }
       else
       {
-        createNameInput();
+        Draw(nameInput.Draw(VaMUI.RIGHT));
         Draw(VaMUI.CreateButtonPair(VaMUI.RIGHT, $"New {category}", newHandler, $"Duplicate {category}", duplicateHandler, VaMUI.GREEN, VaMUI.BLUE));
         Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
         Draw(VaMUI.CreateButton(VaMUI.RIGHT, $"Delete {category}", deleteHandler, color: VaMUI.RED));
@@ -336,7 +336,7 @@ namespace ThatsLewd
       CreateBasicFunctionsUI(
         "Group",
         activeGroup == null,
-        () => { Draw(VaMUI.CreateTextInput(ref editGroupNameInput, "Name", activeGroup?.name ?? "", callback: HandleRenameGroup).Draw(VaMUI.RIGHT)); },
+        VaMUI.CreateTextInput(ref editGroupNameInput, "Name", activeGroup?.name ?? "", callback: HandleRenameGroup),
         HandleNewGroup,
         HandleDuplicateGroup,
         HandleDeleteGroup
@@ -436,7 +436,7 @@ namespace ThatsLewd
       CreateBasicFunctionsUI(
         "State",
         activeState == null,
-        () => { Draw(VaMUI.CreateTextInput(ref editStateNameInput, "Name", activeState?.name ?? "", callback: HandleRenameState).Draw(VaMUI.RIGHT)); },
+        VaMUI.CreateTextInput(ref editStateNameInput, "Name", activeState?.name ?? "", callback: HandleRenameState),
         HandleNewState,
         HandleDuplicateState,
         HandleDeleteState
@@ -696,7 +696,7 @@ namespace ThatsLewd
       CreateBasicFunctionsUI(
         "Layer",
         activeLayer == null,
-        () => { Draw(VaMUI.CreateTextInput(ref editLayerNameInput, "Name", activeLayer?.name ?? "", callback: HandleRenameLayer).Draw(VaMUI.RIGHT)); },
+        VaMUI.CreateTextInput(ref editLayerNameInput, "Name", activeLayer?.name ?? "", callback: HandleRenameLayer),
         HandleNewLayer,
         HandleDuplicateLayer,
         HandleDeleteLayer
@@ -887,7 +887,7 @@ namespace ThatsLewd
       CreateBasicFunctionsUI(
         "Anim.",
         activeAnimation == null,
-        () => { Draw(VaMUI.CreateTextInput(ref editAnimationNameInput, "Name", activeAnimation?.name ?? "", callback: HandleRenameAnimation).Draw(VaMUI.RIGHT)); },
+        VaMUI.CreateTextInput(ref editAnimationNameInput, "Name", activeAnimation?.name ?? "", callback: HandleRenameAnimation),
         HandleNewAnimation,
         HandleDuplicateAnimation,
         HandleDeleteAnimation
@@ -1199,7 +1199,7 @@ namespace ThatsLewd
         CapturedMorph capture = activeKeyframe.GetCapturedMorph(tm.morph.uid);
         if (capture != null)
         {
-          tm.morph.SetValue(capture.value);
+          tm.morph.morphValue = capture.value;
           tm.UpdateSliderToMorph();
         }
       }

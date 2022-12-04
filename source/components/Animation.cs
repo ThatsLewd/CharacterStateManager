@@ -52,10 +52,10 @@ namespace ThatsLewd
         this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "animation";
         this.layer = layer;
-        this.loopTypeChooser = CreateLoopTypeChooser(LoopType.Loop);
-        this.playbackSpeedSlider = CreatePlaybackSpeedSlider(1f, 0f, 2f);
-        this.defaultEasingChooser = CreateEasingChooser(Easing.EasingType.Linear);
-        this.defaultDurationSlider = CreateDurationSlider(1f, 0f, 10f);
+        this.loopTypeChooser = VaMUI.CreateStringChooser("Loop Type", LoopType.list.ToList(), LoopType.Loop);
+        this.playbackSpeedSlider = VaMUI.CreateSlider("Playback Speed", 1f, 0f, 2f);
+        this.defaultEasingChooser = VaMUI.CreateStringChooser("Default Easing", Easing.list.ToList(), Easing.EasingType.Linear);
+        this.defaultDurationSlider = VaMUI.CreateSlider("Default Duration", 1f, 0f, 10f);
         layer.animations.Add(this);
         Layer.OnDelete += HandleLayerDeleted;
       }
@@ -65,10 +65,10 @@ namespace ThatsLewd
         string name = layer == null ? Helpers.GetCopyName(this.name) : this.name;
         layer = layer ?? this.layer;
         Animation newAnimation = new Animation(layer, name);
-        newAnimation.loopTypeChooser = CreateLoopTypeChooser(loopTypeChooser.val);
-        newAnimation.playbackSpeedSlider = CreatePlaybackSpeedSlider(playbackSpeedSlider.val, playbackSpeedSlider.min, playbackSpeedSlider.max);
-        newAnimation.defaultEasingChooser = CreateEasingChooser(defaultEasingChooser.val);
-        newAnimation.defaultDurationSlider = CreateDurationSlider(defaultDurationSlider.val, defaultDurationSlider.min, defaultDurationSlider.max);
+        newAnimation.loopTypeChooser.valNoCallback = loopTypeChooser.val;
+        Helpers.SetSliderValues(newAnimation.playbackSpeedSlider, playbackSpeedSlider.val, playbackSpeedSlider.min, playbackSpeedSlider.max);
+        newAnimation.defaultEasingChooser.valNoCallback = defaultEasingChooser.val;
+        Helpers.SetSliderValues(newAnimation.defaultDurationSlider, defaultDurationSlider.val, defaultDurationSlider.min, defaultDurationSlider.max);
         newAnimation.onEnterTrigger = VaMTrigger.Clone(onEnterTrigger);
         newAnimation.onPlayingTrigger = VaMTrigger.Clone(onPlayingTrigger);
         newAnimation.onExitTrigger = VaMTrigger.Clone(onExitTrigger);
@@ -97,26 +97,6 @@ namespace ThatsLewd
         layer.animations.Remove(this);
         Animation.OnDelete?.Invoke(this);
         Layer.OnDelete -= HandleLayerDeleted;
-      }
-
-      private VaMUI.VaMStringChooser CreateLoopTypeChooser(string defaultValue)
-      {
-        return VaMUI.CreateStringChooser("Loop Type", LoopType.list.ToList(), defaultValue);
-      }
-
-      private VaMUI.VaMSlider CreatePlaybackSpeedSlider(float defaultValue, float minValue, float maxValue)
-      {
-        return VaMUI.CreateSlider("Playback Speed", defaultValue, minValue, maxValue);
-      }
-
-      private VaMUI.VaMStringChooser CreateEasingChooser(string defaultValue)
-      {
-        return VaMUI.CreateStringChooser("Default Easing", Easing.list.ToList(), defaultValue);
-      }
-
-      private VaMUI.VaMSlider CreateDurationSlider(float defaultValue, float minValue, float maxValue)
-      {
-        return VaMUI.CreateSlider("Default Duration", defaultValue, minValue, maxValue);
       }
     }
   }
