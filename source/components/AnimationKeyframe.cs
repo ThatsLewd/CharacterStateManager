@@ -18,10 +18,10 @@ namespace ThatsLewd
         public override string id { get; protected set; }
         public Animation animation { get; private set; }
 
-        public JSONStorableString labelStorable;
-        public JSONStorableColor colorStorable;
-        public JSONStorableStringChooser easingStorable;
-        public JSONStorableFloat durationStorable;
+        public VaMUI.VaMTextInput labelInput;
+        public VaMUI.VaMColorPicker colorPicker;
+        public VaMUI.VaMStringChooser easingChooser;
+        public VaMUI.VaMSlider durationSlider;
 
         public EventTrigger onEnterTrigger = VaMTrigger.Create<EventTrigger>("On Enter Keyframe");
         public ValueTrigger onPlayingTrigger = VaMTrigger.Create<ValueTrigger>("On Keyframe Playing");
@@ -34,10 +34,10 @@ namespace ThatsLewd
         {
           this.id = VaMUtils.GenerateRandomID();
           this.animation = animation;
-          this.labelStorable = CreateLabelStorable("");
-          this.colorStorable = CreateColorStorable();
-          this.easingStorable = CreateEasingStorable(animation.defaultEasingStorable.val);
-          this.durationStorable = CreateDurationStorable(animation.defaultDurationStorable.val, animation.defaultDurationStorable.min, animation.defaultDurationStorable.max);
+          this.labelInput = CreateLabelInput("");
+          this.colorPicker = CreateColorPicker();
+          this.easingChooser = CreateEasingChooser(animation.defaultEasingChooser.val);
+          this.durationSlider = CreateDurationSlider(animation.defaultDurationSlider.val, animation.defaultDurationSlider.min, animation.defaultDurationSlider.max);
           if (index == -1)
           {
             index = this.animation.keyframes.Count;
@@ -49,10 +49,10 @@ namespace ThatsLewd
         {
           animation = animation ?? this.animation;
           Keyframe newKeyframe = new Keyframe(animation, index);
-          newKeyframe.labelStorable = CreateLabelStorable(labelStorable.val);
-          newKeyframe.colorStorable = CreateColorStorable(colorStorable.val);
-          newKeyframe.easingStorable = CreateEasingStorable(easingStorable.val);
-          newKeyframe.durationStorable = CreateDurationStorable(durationStorable.val, durationStorable.min, durationStorable.max);
+          newKeyframe.labelInput = CreateLabelInput(labelInput.val);
+          newKeyframe.colorPicker = CreateColorPicker(colorPicker.val);
+          newKeyframe.easingChooser = CreateEasingChooser(easingChooser.val);
+          newKeyframe.durationSlider = CreateDurationSlider(durationSlider.val, durationSlider.min, durationSlider.max);
           newKeyframe.onEnterTrigger = VaMTrigger.Clone(onEnterTrigger);
           newKeyframe.onPlayingTrigger = VaMTrigger.Clone(onPlayingTrigger);
           newKeyframe.onExitTrigger = VaMTrigger.Clone(onExitTrigger);
@@ -84,11 +84,11 @@ namespace ThatsLewd
             Transform controllerTransform = tc.controller.transform;
             CapturedController capture = new CapturedController();
             capture.name = tc.controller.name;
-            if (tc.trackPositionStorable.val)
+            if (tc.trackPositionToggle.val)
             {
               capture.position = mainTransform.InverseTransformPoint(controllerTransform.position);
             }
-            if (tc.trackRotationStorable.val)
+            if (tc.trackRotationToggle.val)
             {
               capture.rotation = Quaternion.Inverse(mainTransform.rotation) * controllerTransform.rotation;
             }
@@ -127,28 +127,28 @@ namespace ThatsLewd
           return color;
         }
 
-        private JSONStorableString CreateLabelStorable(string defaultValue)
+        private VaMUI.VaMTextInput CreateLabelInput(string defaultValue)
         {
-          return new JSONStorableString("Label", defaultValue);
+          return VaMUI.CreateTextInput("Label", defaultValue);
         }
 
-        private JSONStorableColor CreateColorStorable(HSVColor? defaultValue = null)
+        private VaMUI.VaMColorPicker CreateColorPicker(HSVColor? defaultValue = null)
         {
           if (defaultValue == null)
           {
             defaultValue = GetRandomColor();
           }
-          return new JSONStorableColor("Keyframe Color", defaultValue.Value);
+          return VaMUI.CreateColorPicker("Keyframe Color", defaultValue.Value);
         }
 
-        private JSONStorableStringChooser CreateEasingStorable(string defaultValue)
+        private VaMUI.VaMStringChooser CreateEasingChooser(string defaultValue)
         {
-          return new JSONStorableStringChooser("Select Easing", Easing.list.ToList(), defaultValue, "Select Easing");
+          return VaMUI.CreateStringChooser("Select Easing", Easing.list.ToList(), defaultValue);
         }
 
-        private JSONStorableFloat CreateDurationStorable(float defaultValue, float minValue, float maxValue)
+        private VaMUI.VaMSlider CreateDurationSlider(float defaultValue, float minValue, float maxValue)
         {
-          return new JSONStorableFloat("Duration", defaultValue, minValue, maxValue, true, true);
+          return VaMUI.CreateSlider("Duration", defaultValue, minValue, maxValue);
         }
       }
     }

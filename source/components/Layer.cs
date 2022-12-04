@@ -75,16 +75,16 @@ namespace ThatsLewd
     public class TrackedController
     {
       public FreeControllerV3 controller { get; private set; }
-      public JSONStorableBool trackPositionStorable { get; private set; }
-      public JSONStorableBool trackRotationStorable { get; private set; }
+      public VaMUI.VaMToggle trackPositionToggle { get; private set; }
+      public VaMUI.VaMToggle trackRotationToggle { get; private set; }
 
-      public bool isTracked { get { return trackPositionStorable.val || trackRotationStorable.val; }}
+      public bool isTracked { get { return trackPositionToggle.val || trackRotationToggle.val; }}
 
       public TrackedController(FreeControllerV3 controller)
       {
         this.controller = controller;
-        this.trackPositionStorable = new JSONStorableBool($"Track {controller.name} Position", false);
-        this.trackRotationStorable = new JSONStorableBool($"Track {controller.name} Rotation", false);
+        this.trackPositionToggle = VaMUI.CreateToggle($"Track {controller.name} Position", false);
+        this.trackRotationToggle = VaMUI.CreateToggle($"Track {controller.name} Rotation", false);
       }
 
       public void CopyFrom(TrackedController source)
@@ -94,8 +94,8 @@ namespace ThatsLewd
           SuperController.LogError("Tried to copy controller from wrong source!");
           return;
         }
-        trackPositionStorable.valNoCallback = source.trackPositionStorable.val;
-        trackRotationStorable.valNoCallback = source.trackRotationStorable.val;
+        trackPositionToggle.valNoCallback = source.trackPositionToggle.val;
+        trackRotationToggle.valNoCallback = source.trackRotationToggle.val;
       }
     }
 
@@ -103,7 +103,7 @@ namespace ThatsLewd
     {
       public string standardName { get; private set; }
       public DAZMorph morph { get; private set; }
-      public JSONStorableFloat storable { get; private set; }
+      public VaMUI.VaMSlider slider { get; private set; }
 
       public float defaultValue { get; private set; } = 0f;
       public float defaultMin { get; private set; } = -1f;
@@ -114,9 +114,8 @@ namespace ThatsLewd
         this.morph = morph;
         this.standardName = Helpers.GetStandardMorphName(morph);
         this.defaultValue = morph.jsonFloat.defaultVal;
-        this.storable = new JSONStorableFloat(standardName, defaultValue, defaultMin, defaultMax, true, true);
-        this.storable.setCallbackFunction = HandleValueChange;
-        UpdateStorableToMorph();
+        this.slider = VaMUI.CreateSlider(standardName, defaultValue, defaultMin, defaultMax, callback: HandleValueChange);
+        UpdateSliderToMorph();
       }
 
       public TrackedMorph Clone()
@@ -124,16 +123,16 @@ namespace ThatsLewd
         return new TrackedMorph(morph);
       }
 
-      public void UpdateStorableToMorph()
+      public void UpdateSliderToMorph()
       {
         float value = morph.morphValue;
-        float currMin = storable.min;
-        float currMax = storable.max;
+        float currMin = slider.min;
+        float currMax = slider.max;
         float range = Mathf.Max(new float[] { 1f, Mathf.Abs(value), Mathf.Abs(currMin), Mathf.Abs(currMin) });
 
-        storable.min = -range;
-        storable.max = range;
-        storable.valNoCallback = value;
+        slider.min = -range;
+        slider.max = range;
+        slider.valNoCallback = value;
       }
 
       private void HandleValueChange(float val)

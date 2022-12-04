@@ -75,124 +75,7 @@ namespace VaMLib
       VaMUtils.SafeDestroy(ref buttonElementPrefab);
     }
 
-    // Create an action that other objects can see
-    public static JSONStorableAction CreateAction(string name, JSONStorableAction.ActionCallback callback)
-    {
-      JSONStorableAction action = new JSONStorableAction(name, callback);
-      script.RegisterAction(action);
-      return action;
-    }
-
-    // Create default VaM toggle
-    public static UIDynamicToggle CreateToggle(ref JSONStorableBool storable, Column side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
-    {
-      if (storable == null)
-      {
-        storable = new JSONStorableBool(label, defaultValue);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterBool(storable);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      return CreateToggleFromStorable(storable, side);
-    }
-    public static UIDynamicToggle CreateToggleFromStorable(JSONStorableBool storable, Column side)
-    {
-      UIDynamicToggle toggle = script.CreateToggle(storable, side == Column.RIGHT);
-      return toggle;
-    }
-
-    // Create default VaM string chooser
-    public static UIDynamicPopup CreateStringChooser
-    (
-      ref JSONStorableStringChooser storable,
-      Column side,
-      string label,
-      List<string> initialChoices = null,
-      bool noDefaultSelection = false,
-      bool filterable = false,
-      JSONStorableStringChooser.SetStringCallback callback = null,
-      bool register = false
-    )
-    {
-      if (storable == null)
-      {
-        if (initialChoices == null)
-        {
-          initialChoices = new List<string>();
-        }
-        string defaultValue = (!noDefaultSelection && initialChoices.Count > 0) ? initialChoices[0] : "";
-        storable = new JSONStorableStringChooser(label, initialChoices, defaultValue, label);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterStringChooser(storable);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      return CreateStringChooserFromStorable(storable, side, filterable);
-    }
-    public static UIDynamicPopup CreateStringChooserKeyVal
-    (
-      ref JSONStorableStringChooser storable,
-      Column side,
-      string label,
-      List<KeyValuePair<string, string>> initialKeyValues = null,
-      bool noDefaultSelection = false,
-      bool filterable = false,
-      JSONStorableStringChooser.SetStringCallback callback = null,
-      bool register = false
-    )
-    {
-      if (storable == null)
-      {
-        if (initialKeyValues == null)
-        {
-          initialKeyValues = new List<KeyValuePair<string, string>>();
-        }
-        List<string> initialChoices = new List<string>();
-        List<string> initialDisplayChoices = new List<string>();
-        foreach (KeyValuePair<string, string> entry in initialKeyValues)
-        {
-          initialChoices.Add(entry.Key);
-          initialDisplayChoices.Add(entry.Value);
-        }
-        string defaultValue = (!noDefaultSelection && initialChoices.Count > 0) ? initialChoices[0] : "";
-        storable = new JSONStorableStringChooser(label, initialChoices, initialDisplayChoices, defaultValue, label);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterStringChooser(storable);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      return CreateStringChooserFromStorable(storable, side, filterable);
-    }
-    public static UIDynamicPopup CreateStringChooserFromStorable(JSONStorableStringChooser storable, Column side, bool filterable = false)
-    {
-      UIDynamicPopup popup;
-      if (filterable)
-      {
-        popup = script.CreateFilterablePopup(storable, side == Column.RIGHT);
-      }
-      else
-      {
-        popup = script.CreateScrollablePopup(storable, side == Column.RIGHT);
-      }
-      return popup;
-    }
-
+    // ================ CreateButton ================ //
     // Create default VaM Button
     public static UIDynamicButton CreateButton(Column side, string label, UnityAction callback, Color? color = null)
     {
@@ -205,408 +88,7 @@ namespace VaMLib
       return button;
     }
 
-    // Create default VaM text field with scrolling
-    public static UIDynamicTextField CreateInfoText(Column side, string text, float height)
-    {
-      JSONStorableString storable = new JSONStorableString("Info", text);
-      UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
-      LayoutElement layout = textfield.GetComponent<LayoutElement>();
-      layout.minHeight = height;
-      return textfield;
-    }
-
-    // Create spacer
-    public static UIDynamic CreateSpacer(Column side, float height = 20f)
-    {
-      UIDynamic spacer = script.CreateSpacer(side == Column.RIGHT);
-      spacer.height = height;
-      return spacer;
-    }
-
-    // Create default VaM color picker
-    public static UIDynamicColorPicker CreateColorPicker(ref JSONStorableColor storable, Column side, string label, Color defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = false)
-    {
-      if (storable == null)
-      {
-        HSVColor hsvColor = HSVColorPicker.RGBToHSV(defaultValue.r, defaultValue.g, defaultValue.b);
-        storable = new JSONStorableColor(label, hsvColor);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterColor(storable);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      return CreateColorPickerFromStorable(storable, side);
-    }
-    public static UIDynamicColorPicker CreateColorPickerFromStorable(JSONStorableColor storable, Column side)
-    {
-      UIDynamicColorPicker picker = script.CreateColorPicker(storable, side == Column.RIGHT);
-      return picker;
-    }
-
-    // Create texture chooser -- note that you are responsible for destroying the texture when you don't need it anymore.
-    public static void CreateTextureChooser(ref JSONStorableUrl storable, Column side, string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = false)
-    {
-      if (storable == null)
-      {
-        storable = new JSONStorableUrl(label, string.Empty, (string url) => { QueueLoadTexture(url, settings, callback); }, "jpg|png|tif|tiff");
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterUrl(storable);
-        }
-        if (!string.IsNullOrEmpty(defaultValue))
-        {
-          storable.SetFilePath(defaultValue);
-        }
-      }
-      CreateTextureChooserFromStorable(storable, side);
-    }
-    public static void CreateTextureChooserFromStorable(JSONStorableUrl storable, Column side)
-    {
-      string label = storable.name;
-      UIDynamicButton button = script.CreateButton("Browse " + label, side == Column.RIGHT);
-      UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
-      textfield.UItext.alignment = TextAnchor.MiddleRight;
-      textfield.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
-      textfield.UItext.verticalOverflow = VerticalWrapMode.Truncate;
-      LayoutElement layout = textfield.GetComponent<LayoutElement>();
-      layout.preferredHeight = layout.minHeight = 35;
-      textfield.height = 35;
-      storable.RegisterFileBrowseButton(button.button);
-    }
-
-    // Create asset bundle chooser
-    public static void CreateAssetBundleChooser(ref JSONStorableUrl storable, Column side, string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = false)
-    {
-      if (storable == null)
-      {
-        storable = new JSONStorableUrl(label, defaultValue, fileExtensions);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterUrl(storable);
-        }
-        if (!string.IsNullOrEmpty(defaultValue))
-        {
-          storable.SetFilePath(defaultValue);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      CreateAssetBundleChooserFromStorable(storable, side);
-    }
-    public static void CreateAssetBundleChooserFromStorable(JSONStorableUrl storable, Column side)
-    {
-      string label = storable.name;
-      UIDynamicButton button = script.CreateButton("Select " + label, side == Column.RIGHT);
-      UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
-      textfield.UItext.alignment = TextAnchor.MiddleRight;
-      textfield.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
-      textfield.UItext.verticalOverflow = VerticalWrapMode.Truncate;
-      LayoutElement layout = textfield.GetComponent<LayoutElement>();
-      layout.preferredHeight = layout.minHeight = 35;
-      textfield.height = 35;
-      storable.RegisterFileBrowseButton(button.button);
-    }
-
-    // Create a custom slider with less sucky behavior (Hint: use C# named params for optional args)
-    private static GameObject customSliderPrefab;
-    public static UIDynamicCustomSlider CreateSlider
-    (
-      ref JSONStorableFloat storable,
-      Column side,
-      string label,
-      float defaultValue,
-      float defaultRange,
-      bool allowNegative = false,
-      bool fixedRange = false,
-      bool exponentialRangeIncrement = false,
-      bool integer = false,
-      bool interactable = true,
-      JSONStorableFloat.SetFloatCallback callback = null,
-      bool register = false
-    )
-    {
-      float defaultMin = allowNegative ? -defaultRange : 0f;
-      float defaultMax = defaultRange;
-      return CreateSlider(ref storable, side, label, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
-    }
-    public static UIDynamicCustomSlider CreateSlider
-    (
-      ref JSONStorableFloat storable,
-      Column side,
-      string label,
-      float defaultValue,
-      float defaultMin,
-      float defaultMax,
-      bool fixedRange = false,
-      bool exponentialRangeIncrement = false,
-      bool integer = false,
-      bool interactable = true,
-      JSONStorableFloat.SetFloatCallback callback = null,
-      bool register = false
-    )
-    {
-      if (storable == null)
-      {
-        storable = new JSONStorableFloat(label, defaultValue, defaultMin, defaultMax, true, interactable);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterFloat(storable);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      return CreateSliderFromStorable(storable, side, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable);
-    }
-    public static UIDynamicCustomSlider CreateSliderFromStorable(JSONStorableFloat storable, Column side, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true)
-    {
-      if (customSliderPrefab == null)
-      {
-        Transform basePrefab = script.manager.configurableSliderPrefab;
-        customSliderPrefab = UnityEngine.Object.Instantiate(basePrefab.gameObject);
-        customSliderPrefab.name = "Slider";
-
-        UnityEngine.Object.DestroyImmediate(customSliderPrefab.GetComponent<UIDynamicSlider>());
-        UnityEngine.Object.DestroyImmediate(customSliderPrefab.transform.Find("RangePanel").gameObject);
-
-        Slider slider = customSliderPrefab.transform.Find("Slider").GetComponent<Slider>();
-        Text sliderLabel = customSliderPrefab.transform.Find("Text").GetComponent<Text>();
-        RectTransform sliderRect = customSliderPrefab.transform.Find("Slider") as RectTransform;
-        sliderRect.offsetMax = new Vector2(-10f, 70f);
-
-        SetTextFromFloat textFormatter = customSliderPrefab.transform.Find("ValueInputField").GetComponent<SetTextFromFloat>();
-
-        Button defaultButton = customSliderPrefab.transform.Find("DefaultValueButton").GetComponent<Button>();
-
-        Button m1Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M1Button").GetComponent<Button>();
-        Text m1ButtonText = m1Button.transform.Find("Text").GetComponent<Text>();
-        m1ButtonText.text = "-";
-
-        Button m2Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M2Button").GetComponent<Button>();
-        Text m2ButtonText = m2Button.transform.Find("Text").GetComponent<Text>();
-        m2ButtonText.text = "--";
-
-        Button m3Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M3Button").GetComponent<Button>();
-        Text m3ButtonText = m3Button.transform.Find("Text").GetComponent<Text>();
-        m3ButtonText.text = "---";
-
-        Button mRangeButton = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M4Button").GetComponent<Button>();
-        Text mRangeButtonText = mRangeButton.transform.Find("Text").GetComponent<Text>();
-        mRangeButton.gameObject.name = "MRangeButton";
-        mRangeButtonText.text = "- Rng";
-
-        Button p1Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P1Button").GetComponent<Button>();
-        Text p1ButtonText = p1Button.transform.Find("Text").GetComponent<Text>();
-        p1ButtonText.text = "+";
-
-        Button p2Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P2Button").GetComponent<Button>();
-        Text p2ButtonText = p2Button.transform.Find("Text").GetComponent<Text>();
-        p2ButtonText.text = "++";
-
-        Button p3Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P3Button").GetComponent<Button>();
-        Text p3ButtonText = p3Button.transform.Find("Text").GetComponent<Text>();
-        p3ButtonText.text = "+++";
-
-        Button pRangeButton = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P4Button").GetComponent<Button>();
-        Text pRangeButtonText = pRangeButton.transform.Find("Text").GetComponent<Text>();
-        pRangeButtonText.gameObject.name = "PRangeButton";
-        pRangeButtonText.text = "+ Rng";
-
-        UIDynamicCustomSlider uid = customSliderPrefab.AddComponent<UIDynamicCustomSlider>();
-        uid.slider = slider;
-        uid.label = sliderLabel;
-        uid.textFormatter = textFormatter;
-        uid.m1ButtonText = m1ButtonText;
-        uid.m2ButtonText = m2ButtonText;
-        uid.m3ButtonText = m3ButtonText;
-        uid.p1ButtonText = p1ButtonText;
-        uid.p2ButtonText = p2ButtonText;
-        uid.p3ButtonText = p3ButtonText;
-        uid.mRangeButtonText = mRangeButtonText;
-        uid.pRangeButtonText = pRangeButtonText;
-        uid.defaultButton = defaultButton;
-        uid.m1Button = m1Button;
-        uid.m2Button = m2Button;
-        uid.m3Button = m3Button;
-        uid.p1Button = p1Button;
-        uid.p2Button = p2Button;
-        uid.p3Button = p3Button;
-        uid.mRangeButton = mRangeButton;
-        uid.pRangeButton = pRangeButton;
-      }
-      {
-        Transform t = createUIElement(customSliderPrefab.transform, side == Column.RIGHT);
-        UIDynamicCustomSlider uid = t.GetComponent<UIDynamicCustomSlider>();
-        storable.RegisterSlider(uid.slider);
-        uid.storable = storable;
-        uid.fixedRange = fixedRange;
-        uid.exponentialRangeIncrement = exponentialRangeIncrement;
-        uid.integer = integer;
-        uid.interactable = interactable;
-        uid.defaultValue = defaultValue;
-        uid.defaultMin = defaultMin;
-        uid.defaultMax = defaultMax;
-        uid.gameObject.SetActive(true);
-        return uid;
-      }
-    }
-
-    // Create one-line text input with a label
-    private static GameObject customOnelineTextInputPrefab;
-    public static UIDynamicOnelineTextInput CreateOnelineTextInput(ref JSONStorableString storable, Column side, string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
-    {
-      if (storable == null)
-      {
-        storable = new JSONStorableString(label, defaultValue);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterString(storable);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      return CreateOnelineTextInputFromStorable(storable, side);
-    }
-    public static UIDynamicOnelineTextInput CreateOnelineTextInputFromStorable(JSONStorableString storable, Column side)
-    {
-      if (customOnelineTextInputPrefab == null)
-      {
-        UIDynamicOnelineTextInput uid = CreateUIDynamicPrefab<UIDynamicOnelineTextInput>("TextInput", 50f);
-        customOnelineTextInputPrefab = uid.gameObject;
-
-        RectTransform background = InstantiateBackground(uid.transform);
-
-        RectTransform labelRect = InstantiateLabel(uid.transform);
-        labelRect.anchorMax = new Vector2(0.4f, 1f);
-        Text labelText = labelRect.GetComponent<Text>();
-        labelText.text = "";
-        labelText.color = Color.white;
-
-        RectTransform inputRect = InstantiateTextField(uid.transform);
-        inputRect.anchorMin = new Vector2(0.4f, 0f);
-        inputRect.offsetMin = new Vector2(5f, 5f);
-        inputRect.offsetMax = new Vector2(-5f, -4f);
-
-        RectTransform textRect = inputRect.Find("Scroll View/Viewport/Content/Text") as RectTransform;
-        textRect.offsetMin = new Vector2(10f, 0f);
-        textRect.offsetMax = new Vector2(-10f, -5f);
-
-        uid.label = labelText;
-        uid.input = inputRect.GetComponent<InputField>();
-      }
-      {
-        string label = storable.name;
-        Transform t = createUIElement(customOnelineTextInputPrefab.transform, side == Column.RIGHT);
-        UIDynamicOnelineTextInput uid = t.GetComponent<UIDynamicOnelineTextInput>();
-        uid.label.text = label;
-        storable.inputField = uid.input;
-        uid.gameObject.SetActive(true);
-        return uid;
-      }
-    }
-
-    // Create label that has an X button on the right side
-    private static GameObject customLabelWithXPrefab;
-    public static UIDynamicLabelWithX CreateLabelWithX(Column side, string label, UnityAction callback)
-    {
-      if (customLabelWithXPrefab == null)
-      {
-        UIDynamicLabelWithX uid = CreateUIDynamicPrefab<UIDynamicLabelWithX>("LabelWithX", 50f);
-        customLabelWithXPrefab = uid.gameObject;
-
-        RectTransform background = InstantiateBackground(uid.transform);
-        Image bgImage = background.GetComponent<Image>();
-        bgImage.color = new Color(1f, 1f, 1f, 0.35f);
-
-        RectTransform labelRect = InstantiateLabel(uid.transform);
-        Text labelText = labelRect.GetComponent<Text>();
-        labelText.text = "";
-
-        RectTransform buttonRect = InstantiateButton(uid.transform);
-        buttonRect.anchorMin = new Vector2(1f, 0f);
-        buttonRect.offsetMin = new Vector2(-50f, 0f);
-        UIDynamicButton button = buttonRect.GetComponent<UIDynamicButton>();
-        button.buttonText.text = "X";
-
-        uid.label = labelText;
-        uid.button = button;
-      }
-      {
-        Transform t = createUIElement(customLabelWithXPrefab.transform, side == Column.RIGHT);
-        UIDynamicLabelWithX uid = t.GetComponent<UIDynamicLabelWithX>();
-        uid.label.text = label;
-        uid.button.button.onClick.AddListener(callback);
-        uid.gameObject.SetActive(true);
-        return uid;
-      }
-    }
-
-    // Create label that has a toggle on the right side
-    // Not much different than a normal toggle -- but a good example of how to do a custom toggle
-    private static GameObject customLabelWithTogglePrefab;
-    public static UIDynamicLabelWithToggle CreateLabelWithToggle(ref JSONStorableBool storable, Column side, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
-    {
-      if (storable == null)
-      {
-        storable = new JSONStorableBool(label, defaultValue);
-        if (register)
-        {
-          storable.storeType = JSONStorableParam.StoreType.Full;
-          script.RegisterBool(storable);
-        }
-        if (callback != null)
-        {
-          storable.setCallbackFunction = callback;
-        }
-      }
-      return CreateLabelWithToggleFromStorable(storable, side);
-    }
-    public static UIDynamicLabelWithToggle CreateLabelWithToggleFromStorable(JSONStorableBool storable, Column side)
-    {
-      if (customLabelWithTogglePrefab == null)
-      {
-        UIDynamicLabelWithToggle uid = CreateUIDynamicPrefab<UIDynamicLabelWithToggle>("LabelWithToggle", 50f);
-        customLabelWithTogglePrefab = uid.gameObject;
-
-        RectTransform background = InstantiateBackground(uid.transform);
-
-        RectTransform labelRect = InstantiateLabel(uid.transform);
-        Text labelText = labelRect.GetComponent<Text>();
-        labelText.text = "";
-
-        RectTransform toggleRect = InstantiateToggle(uid.transform, 45f);
-        toggleRect.anchorMin = new Vector2(1f, 0f);
-        toggleRect.offsetMin = new Vector2(-45f, 0f);
-        toggleRect.offsetMax = new Vector2(0f, -2.5f);
-
-        uid.label = labelText;
-        uid.toggle = toggleRect.GetComponent<Toggle>();
-      }
-      {
-        string label = storable.name;
-        Transform t = createUIElement(customLabelWithTogglePrefab.transform, side == Column.RIGHT);
-        UIDynamicLabelWithToggle uid = t.GetComponent<UIDynamicLabelWithToggle>();
-        uid.label.text = label;
-        storable.RegisterToggle(uid.toggle);
-        uid.gameObject.SetActive(true);
-        return uid;
-      }
-    }
-
+    // ================ CreateButtonPair ================ //
     // Create two buttons on one line
     private static GameObject customButtonPairPrefab;
     public static UIDynamicButtonPair CreateButtonPair(Column side, string leftLabel, UnityAction leftCallback, string rightLabel, UnityAction rightCallback, Color? leftColor = null, Color? rightColor = null)
@@ -651,9 +133,10 @@ namespace VaMLib
       }
     }
 
-    // Create an info textbox with scrolling disabled
+    // ================ CreateInfoText ================ //
+    // Create an info textbox
     private static GameObject customInfoTextPrefab;
-    public static UIDynamicInfoText CreateInfoTextNoScroll(Column side, string text, float height, bool background = true)
+    public static UIDynamicInfoText CreateInfoText(Column side, string text, float height, bool background = true)
     {
       if (customInfoTextPrefab == null)
       {
@@ -691,20 +174,129 @@ namespace VaMLib
       }
     }
 
-    // Create an info textbox with scrolling disabled with a specified number of lines (default text size only)
-    public static UIDynamicInfoText CreateInfoTextNoScroll(Column side, string text, int lines, bool background = true)
+    // Create an info textbox with a specified number of lines (default text size only)
+    public static UIDynamicInfoText CreateInfoText(Column side, string text, int lines, bool background = true)
     {
-      return CreateInfoTextNoScroll(side, text, lines * 32f + 8f, background);
+      return CreateInfoText(side, text, lines * 32f + 8f, background);
     }
 
     // Creates a one-line header with automatic styling
     public static UIDynamicInfoText CreateHeaderText(Column side, string text, float size = 50f)
     {
-      UIDynamicInfoText uid = CreateInfoTextNoScroll(side, $"<size={size * 0.85f}><b>{text}</b></size>", size, background: false);
+      UIDynamicInfoText uid = CreateInfoText(side, $"<size={size * 0.85f}><b>{text}</b></size>", size, background: false);
       return uid;
     }
 
+    // ================ CreateLabelWithX ================ //
     // Create label that has an X button on the right side
+    private static GameObject customLabelWithXPrefab;
+    public static UIDynamicLabelWithX CreateLabelWithX(Column side, string label, UnityAction callback)
+    {
+      if (customLabelWithXPrefab == null)
+      {
+        UIDynamicLabelWithX uid = CreateUIDynamicPrefab<UIDynamicLabelWithX>("LabelWithX", 50f);
+        customLabelWithXPrefab = uid.gameObject;
+
+        RectTransform background = InstantiateBackground(uid.transform);
+        Image bgImage = background.GetComponent<Image>();
+        bgImage.color = new Color(1f, 1f, 1f, 0.35f);
+
+        RectTransform labelRect = InstantiateLabel(uid.transform);
+        Text labelText = labelRect.GetComponent<Text>();
+        labelText.text = "";
+
+        RectTransform buttonRect = InstantiateButton(uid.transform);
+        buttonRect.anchorMin = new Vector2(1f, 0f);
+        buttonRect.offsetMin = new Vector2(-50f, 0f);
+        UIDynamicButton button = buttonRect.GetComponent<UIDynamicButton>();
+        button.buttonText.text = "X";
+
+        uid.label = labelText;
+        uid.button = button;
+      }
+      {
+        Transform t = createUIElement(customLabelWithXPrefab.transform, side == Column.RIGHT);
+        UIDynamicLabelWithX uid = t.GetComponent<UIDynamicLabelWithX>();
+        uid.label.text = label;
+        uid.button.button.onClick.AddListener(callback);
+        uid.gameObject.SetActive(true);
+        return uid;
+      }
+    }
+
+    // ================ CreateTabBar ================ //
+    // Create a list of buttons that spans both columns
+    // NOTE that this creates a prefab, which you should clean up when your script exits
+    // NOTE that this also means the tab bar is not dynamic -- it is setup once and the same prefab is reused
+    public static UIDynamicTabBar CreateTabBar(ref GameObject prefabReference, Column anchorSide, string[] menuItems, TabClickCallback callback, int tabsPerRow = 6)
+    {
+      if (prefabReference == null)
+      {
+        const float rowHeight = 50f;
+        const float rowWidth = 1060f;
+        const float spacing = 5f;
+
+        int numRows = Mathf.CeilToInt((float)menuItems.Length / (float)tabsPerRow);
+        float totalHeight = numRows * (rowHeight + spacing);
+        float tabWidth = ((rowWidth + spacing) / tabsPerRow) - spacing;
+        float tabHeight = rowHeight;
+
+        UIDynamicTabBar uid = CreateUIDynamicPrefab<UIDynamicTabBar>("TabBar", 0f);
+        prefabReference = uid.gameObject;
+
+        uid.layout.minHeight = uid.layout.preferredHeight = totalHeight;
+        uid.layout.minWidth = uid.layout.preferredWidth = rowWidth;
+
+        for (int i = 0; i < menuItems.Length; i++)
+        {
+          int col = i % tabsPerRow;
+          int row = i / tabsPerRow;
+
+          float xOffset = col * (tabWidth + spacing);
+          if (anchorSide == Column.RIGHT)
+          {
+            xOffset -= rowWidth / 2 + 9f;
+          }
+          float yOffset = -row * (rowHeight + spacing);
+
+          RectTransform tabRect = InstantiateButton(prefabReference.transform);
+          tabRect.name = "TabButton";
+          tabRect.anchorMin = new Vector2(0f, 1f);
+          tabRect.anchorMax = new Vector2(0f, 1f);
+          tabRect.offsetMin = new Vector2(xOffset, yOffset - tabHeight);
+          tabRect.offsetMax = new Vector2(xOffset + tabWidth, yOffset);
+
+          UIDynamicButton tabButton = tabRect.GetComponent<UIDynamicButton>();
+          uid.buttons.Add(tabButton);
+          tabButton.buttonText.text = menuItems[i];
+        }
+      }
+      {
+        Transform t = createUIElement(prefabReference.transform, anchorSide == Column.RIGHT);
+        UIDynamicTabBar uid = t.GetComponent<UIDynamicTabBar>();
+        for (int i = 0; i < uid.buttons.Count; i++)
+        {
+          string item = menuItems[i];
+          uid.buttons[i].button.onClick.AddListener(
+            () => { callback(item); }
+          );
+        }
+        uid.gameObject.SetActive(true);
+        return uid;
+      }
+    }
+
+    // ================ CreateSpacer ================ //
+    // Create spacer
+    public static UIDynamic CreateSpacer(Column side, float height = 20f)
+    {
+      UIDynamic spacer = script.CreateSpacer(side == Column.RIGHT);
+      spacer.height = height;
+      return spacer;
+    }
+
+    // ================ CreateHorizontalLine ================ //
+    // Create a horizontal line
     private static GameObject customHorizontalLinePrefab;
     public static UIDynamicHorizontalLine CreateHorizontalLine(Column side)
     {
@@ -727,64 +319,533 @@ namespace VaMLib
       }
     }
 
-    // Create a list of buttons that spans both columns
-    // NOTE that this creates a prefab, which you should clean up when your script exits
-    // NOTE that this also means the tab bar is not dynamic -- it is setup once and the same prefab is reused
-    public static UIDynamicTabBar CreateTabBar(ref GameObject prefab, Column anchorSide, string[] menuItems, TabClickCallback callback, int tabsPerRow = 6)
+    // ================ CreateAction ================ //
+    // Create an action that other objects in the scene can use
+    public static JSONStorableAction CreateAction(string name, JSONStorableAction.ActionCallback callback)
     {
-      if (prefab == null)
+      JSONStorableAction action = new JSONStorableAction(name, callback);
+      script.RegisterAction(action);
+      return action;
+    }
+
+    // ================ CreateToggle ================ //
+    // Create default VaM toggle
+    public static VaMToggle CreateToggle(ref VaMToggle reference, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateToggle(label, defaultValue, callback, register);
+    }
+
+    public static VaMToggle CreateToggle(string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
+    {
+      JSONStorableBool storable = new JSONStorableBool(label, defaultValue);
+      if (register)
       {
-        const float rowHeight = 50f;
-        const float rowWidth = 1060f;
-        const float spacing = 5f;
+        storable.storeType = JSONStorableParam.StoreType.Full;
+        script.RegisterBool(storable);
+      }
+      if (callback != null)
+      {
+        storable.setCallbackFunction = callback;
+      }
+      return new VaMToggle() { storable = storable };
+    }
 
-        int numRows = Mathf.CeilToInt((float)menuItems.Length / (float)tabsPerRow);
-        float totalHeight = numRows * (rowHeight + spacing);
-        float tabWidth = ((rowWidth + spacing) / tabsPerRow) - spacing;
-        float tabHeight = rowHeight;
+    public class VaMToggle
+    {
+      public JSONStorableBool storable;
+      public bool val { get { return storable.val; } set { storable.val = value; }}
+      public bool valNoCallback { set { storable.valNoCallback = value; }}
+      public UIDynamicToggle Draw(Column side)
+      {
+        UIDynamicToggle toggle = script.CreateToggle(storable, side == Column.RIGHT);
+        return toggle;
+      }
+    }
 
-        UIDynamicTabBar uid = CreateUIDynamicPrefab<UIDynamicTabBar>("TabBar", 0f);
-        prefab = uid.gameObject;
+    // ================ CreateStringChooser ================ //
+    // Create default VaM string chooser
+    public static VaMStringChooser CreateStringChooser(ref VaMStringChooser reference, string label, List<string> initialChoices = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateStringChooser(label, initialChoices, defaultValue, filterable, callback, register);
+    }
 
-        uid.layout.minHeight = uid.layout.preferredHeight = totalHeight;
-        uid.layout.minWidth = uid.layout.preferredWidth = rowWidth;
+    public static VaMStringChooser CreateStringChooser(string label, List<string> initialChoices = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
+    {
+      if (initialChoices == null)
+      {
+        initialChoices = new List<string>();
+      }
+      defaultValue = defaultValue ?? (initialChoices.Count > 0 ? initialChoices[0] : "");
+      JSONStorableStringChooser storable = new JSONStorableStringChooser(label, initialChoices, defaultValue, label);
+      if (register)
+      {
+        storable.storeType = JSONStorableParam.StoreType.Full;
+        script.RegisterStringChooser(storable);
+      }
+      if (callback != null)
+      {
+        storable.setCallbackFunction = callback;
+      }
+      return new VaMStringChooser() { storable = storable, filterable = filterable };
+    }
 
-        for (int i = 0; i < menuItems.Length; i++)
+    public static VaMStringChooser CreateStringChooserKeyVal(ref VaMStringChooser reference, string label, List<KeyValuePair<string, string>> initialKeyValues = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateStringChooserKeyVal(label, initialKeyValues, defaultValue, filterable, callback, register);
+    }
+
+    public static VaMStringChooser CreateStringChooserKeyVal(string label, List<KeyValuePair<string, string>> initialKeyValues = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
+    {
+      if (initialKeyValues == null)
+      {
+        initialKeyValues = new List<KeyValuePair<string, string>>();
+      }
+      List<string> initialChoices = new List<string>();
+      List<string> initialDisplayChoices = new List<string>();
+      foreach (KeyValuePair<string, string> entry in initialKeyValues)
+      {
+        initialChoices.Add(entry.Key);
+        initialDisplayChoices.Add(entry.Value);
+      }
+      defaultValue = defaultValue ?? (initialChoices.Count > 0 ? initialChoices[0] : "");
+      JSONStorableStringChooser storable = new JSONStorableStringChooser(label, initialChoices, initialDisplayChoices, defaultValue, label);
+      if (register)
+      {
+        storable.storeType = JSONStorableParam.StoreType.Full;
+        script.RegisterStringChooser(storable);
+      }
+      if (callback != null)
+      {
+        storable.setCallbackFunction = callback;
+      }
+      return new VaMStringChooser() { storable = storable, filterable = filterable };
+    }
+
+    public class VaMStringChooser
+    {
+      public JSONStorableStringChooser storable;
+      public string val { get { return storable.val; } set { storable.val = value; } }
+      public string valNoCallback { set { storable.valNoCallback = value; } }
+      public List<string> choices { get { return storable.choices; } set { storable.choices = value; } }
+      public List<string> displayChoices { get { return storable.displayChoices; } set { storable.displayChoices = value; } }
+      public bool filterable;
+      public UIDynamicPopup Draw(Column side)
+      {
+        UIDynamicPopup popup;
+        if (filterable)
         {
-          int col = i % tabsPerRow;
-          int row = i / tabsPerRow;
+          popup = script.CreateFilterablePopup(storable, side == Column.RIGHT);
+        }
+        else
+        {
+          popup = script.CreateScrollablePopup(storable, side == Column.RIGHT);
+        }
+        return popup;
+      }
+    }
 
-          float xOffset = col * (tabWidth + spacing);
-          if (anchorSide == Column.RIGHT)
-          {
-            xOffset -= rowWidth / 2 + 9f;
-          }
-          float yOffset = -row * (rowHeight + spacing);
+    // ================ CreateSlider ================ //
+    // Create a custom slider with less sucky behavior (Hint: use C# named params for optional args)
+    public static VaMSlider CreateSlider(ref VaMSlider reference, string label, float defaultValue, float defaultRange, bool allowNegative = false, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateSlider(label, defaultValue, defaultRange, allowNegative, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
+    }
 
-          RectTransform tabRect = InstantiateButton(prefab.transform);
-          tabRect.name = "TabButton";
-          tabRect.anchorMin = new Vector2(0f, 1f);
-          tabRect.anchorMax = new Vector2(0f, 1f);
-          tabRect.offsetMin = new Vector2(xOffset, yOffset - tabHeight);
-          tabRect.offsetMax = new Vector2(xOffset + tabWidth, yOffset);
+    public static VaMSlider CreateSlider(string label, float defaultValue, float defaultRange, bool allowNegative = false, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
+    {
+      float defaultMin = allowNegative ? -defaultRange : 0f;
+      float defaultMax = defaultRange;
+      return CreateSlider(label, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
+    }
 
-          UIDynamicButton tabButton = tabRect.GetComponent<UIDynamicButton>();
-          uid.buttons.Add(tabButton);
-          tabButton.buttonText.text = menuItems[i];
+    public static VaMSlider CreateSlider(ref VaMSlider reference, string label, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateSlider(label, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
+    }
+
+    public static VaMSlider CreateSlider(string label, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
+    {
+      JSONStorableFloat storable = new JSONStorableFloat(label, defaultValue, defaultMin, defaultMax, true, interactable);
+      if (register)
+      {
+        storable.storeType = JSONStorableParam.StoreType.Full;
+        script.RegisterFloat(storable);
+      }
+      if (callback != null)
+      {
+        storable.setCallbackFunction = callback;
+      }
+      return new VaMSlider()
+      {
+        storable = storable,
+        defaultValue = defaultValue,
+        defaultMin = defaultMin,
+        defaultMax = defaultMax,
+        fixedRange = fixedRange,
+        exponentialRangeIncrement = exponentialRangeIncrement,
+        integer = integer,
+        interactable = interactable,
+      };
+    }
+
+    private static GameObject customSliderPrefab;
+    public class VaMSlider
+    {
+      public JSONStorableFloat storable;
+      public float val { get { return storable.val; } set { storable.val = value; } }
+      public float valNoCallback { set { storable.valNoCallback = value; } }
+      public float min { get { return storable.min; } set { storable.min = value; } }
+      public float max { get { return storable.max; } set { storable.max = value; } }
+      public float defaultValue { get { return storable.defaultVal; } set { storable.defaultVal = value; } }
+      public float defaultMin;
+      public float defaultMax;
+      public bool fixedRange;
+      public bool exponentialRangeIncrement;
+      public bool integer;
+      public bool interactable;
+
+      public UIDynamicCustomSlider Draw(Column side)
+      {
+        if (customSliderPrefab == null)
+        {
+          Transform basePrefab = script.manager.configurableSliderPrefab;
+          customSliderPrefab = UnityEngine.Object.Instantiate(basePrefab.gameObject);
+          customSliderPrefab.name = "Slider";
+
+          UnityEngine.Object.DestroyImmediate(customSliderPrefab.GetComponent<UIDynamicSlider>());
+          UnityEngine.Object.DestroyImmediate(customSliderPrefab.transform.Find("RangePanel").gameObject);
+
+          Slider slider = customSliderPrefab.transform.Find("Slider").GetComponent<UnityEngine.UI.Slider>();
+          Text sliderLabel = customSliderPrefab.transform.Find("Text").GetComponent<Text>();
+          RectTransform sliderRect = customSliderPrefab.transform.Find("Slider") as RectTransform;
+          sliderRect.offsetMax = new Vector2(-10f, 70f);
+
+          SetTextFromFloat textFormatter = customSliderPrefab.transform.Find("ValueInputField").GetComponent<SetTextFromFloat>();
+
+          Button defaultButton = customSliderPrefab.transform.Find("DefaultValueButton").GetComponent<Button>();
+
+          Button m1Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M1Button").GetComponent<Button>();
+          Text m1ButtonText = m1Button.transform.Find("Text").GetComponent<Text>();
+          m1ButtonText.text = "-";
+
+          Button m2Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M2Button").GetComponent<Button>();
+          Text m2ButtonText = m2Button.transform.Find("Text").GetComponent<Text>();
+          m2ButtonText.text = "--";
+
+          Button m3Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M3Button").GetComponent<Button>();
+          Text m3ButtonText = m3Button.transform.Find("Text").GetComponent<Text>();
+          m3ButtonText.text = "---";
+
+          Button mRangeButton = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsLeft/M4Button").GetComponent<Button>();
+          Text mRangeButtonText = mRangeButton.transform.Find("Text").GetComponent<Text>();
+          mRangeButton.gameObject.name = "MRangeButton";
+          mRangeButtonText.text = "- Rng";
+
+          Button p1Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P1Button").GetComponent<Button>();
+          Text p1ButtonText = p1Button.transform.Find("Text").GetComponent<Text>();
+          p1ButtonText.text = "+";
+
+          Button p2Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P2Button").GetComponent<Button>();
+          Text p2ButtonText = p2Button.transform.Find("Text").GetComponent<Text>();
+          p2ButtonText.text = "++";
+
+          Button p3Button = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P3Button").GetComponent<Button>();
+          Text p3ButtonText = p3Button.transform.Find("Text").GetComponent<Text>();
+          p3ButtonText.text = "+++";
+
+          Button pRangeButton = customSliderPrefab.transform.Find("QuickButtonsGroup/QuickButtonsRight/P4Button").GetComponent<Button>();
+          Text pRangeButtonText = pRangeButton.transform.Find("Text").GetComponent<Text>();
+          pRangeButtonText.gameObject.name = "PRangeButton";
+          pRangeButtonText.text = "+ Rng";
+
+          UIDynamicCustomSlider uid = customSliderPrefab.AddComponent<UIDynamicCustomSlider>();
+          uid.slider = slider;
+          uid.label = sliderLabel;
+          uid.textFormatter = textFormatter;
+          uid.m1ButtonText = m1ButtonText;
+          uid.m2ButtonText = m2ButtonText;
+          uid.m3ButtonText = m3ButtonText;
+          uid.p1ButtonText = p1ButtonText;
+          uid.p2ButtonText = p2ButtonText;
+          uid.p3ButtonText = p3ButtonText;
+          uid.mRangeButtonText = mRangeButtonText;
+          uid.pRangeButtonText = pRangeButtonText;
+          uid.defaultButton = defaultButton;
+          uid.m1Button = m1Button;
+          uid.m2Button = m2Button;
+          uid.m3Button = m3Button;
+          uid.p1Button = p1Button;
+          uid.p2Button = p2Button;
+          uid.p3Button = p3Button;
+          uid.mRangeButton = mRangeButton;
+          uid.pRangeButton = pRangeButton;
+        }
+        {
+          Transform t = createUIElement(customSliderPrefab.transform, side == Column.RIGHT);
+          UIDynamicCustomSlider uid = t.GetComponent<UIDynamicCustomSlider>();
+          storable.RegisterSlider(uid.slider);
+          uid.storable = storable;
+          uid.fixedRange = fixedRange;
+          uid.exponentialRangeIncrement = exponentialRangeIncrement;
+          uid.integer = integer;
+          uid.interactable = interactable;
+          uid.defaultValue = defaultValue;
+          uid.defaultMin = defaultMin;
+          uid.defaultMax = defaultMax;
+          uid.gameObject.SetActive(true);
+          return uid;
         }
       }
+    }
+
+    // ================ CreateTextInput ================ //
+    // Create one-line text input with a label
+    public static VaMTextInput CreateTextInput(ref VaMTextInput reference, string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateTextInput(label, defaultValue, callback, register);
+    }
+
+    public static VaMTextInput CreateTextInput(string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
+    {
+      JSONStorableString storable = new JSONStorableString(label, defaultValue);
+      if (register)
       {
-        Transform t = createUIElement(prefab.transform, anchorSide == Column.RIGHT);
-        UIDynamicTabBar uid = t.GetComponent<UIDynamicTabBar>();
-        for (int i = 0; i < uid.buttons.Count; i++)
+        storable.storeType = JSONStorableParam.StoreType.Full;
+        script.RegisterString(storable);
+      }
+      if (callback != null)
+      {
+        storable.setCallbackFunction = callback;
+      }
+      return new VaMTextInput() { storable = storable };
+    }
+
+    private static GameObject customOnelineTextInputPrefab;
+    public class VaMTextInput
+    {
+      public JSONStorableString storable;
+      public string val { get { return storable.val; } set { storable.val = value; } }
+      public string valNoCallback { set { storable.valNoCallback = value; } }
+      public UIDynamicOnelineTextInput Draw(Column side)
+      {
+        if (customOnelineTextInputPrefab == null)
         {
-          string item = menuItems[i];
-          uid.buttons[i].button.onClick.AddListener(
-            () => { callback(item); }
-          );
+          UIDynamicOnelineTextInput uid = CreateUIDynamicPrefab<UIDynamicOnelineTextInput>("TextInput", 50f);
+          customOnelineTextInputPrefab = uid.gameObject;
+
+          RectTransform background = InstantiateBackground(uid.transform);
+
+          RectTransform labelRect = InstantiateLabel(uid.transform);
+          labelRect.anchorMax = new Vector2(0.4f, 1f);
+          Text labelText = labelRect.GetComponent<Text>();
+          labelText.text = "";
+          labelText.color = Color.white;
+
+          RectTransform inputRect = InstantiateTextField(uid.transform);
+          inputRect.anchorMin = new Vector2(0.4f, 0f);
+          inputRect.offsetMin = new Vector2(5f, 5f);
+          inputRect.offsetMax = new Vector2(-5f, -4f);
+
+          RectTransform textRect = inputRect.Find("Scroll View/Viewport/Content/Text") as RectTransform;
+          textRect.offsetMin = new Vector2(10f, 0f);
+          textRect.offsetMax = new Vector2(-10f, -5f);
+
+          uid.label = labelText;
+          uid.input = inputRect.GetComponent<InputField>();
         }
-        uid.gameObject.SetActive(true);
-        return uid;
+        {
+          string label = storable.name;
+          Transform t = createUIElement(customOnelineTextInputPrefab.transform, side == Column.RIGHT);
+          UIDynamicOnelineTextInput uid = t.GetComponent<UIDynamicOnelineTextInput>();
+          uid.label.text = label;
+          storable.inputField = uid.input;
+          uid.gameObject.SetActive(true);
+          return uid;
+        }
+      }
+    }
+
+    // ================ CreateLabelWithToggle ================ //
+    // Create label that has a toggle on the right side
+    // Not much different than a normal toggle -- but a good example of how to do a custom toggle
+    public static VaMLabelWithToggle CreateLabelWithToggle(ref VaMLabelWithToggle reference, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateLabelWithToggle(label, defaultValue, callback, register);
+    }
+
+    public static VaMLabelWithToggle CreateLabelWithToggle(string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
+    {
+      JSONStorableBool storable = new JSONStorableBool(label, defaultValue);
+      if (register)
+      {
+        storable.storeType = JSONStorableParam.StoreType.Full;
+        script.RegisterBool(storable);
+      }
+      if (callback != null)
+      {
+        storable.setCallbackFunction = callback;
+      }
+      return new VaMLabelWithToggle() { storable = storable };
+    }
+
+    private static GameObject customLabelWithTogglePrefab;
+    public class VaMLabelWithToggle
+    {
+      public JSONStorableBool storable;
+      public bool val { get { return storable.val; } set { storable.val = value; } }
+      public bool valNoCallback { set { storable.valNoCallback = value; } }
+      public UIDynamicLabelWithToggle Draw(Column side)
+      {
+        if (customLabelWithTogglePrefab == null)
+        {
+          UIDynamicLabelWithToggle uid = CreateUIDynamicPrefab<UIDynamicLabelWithToggle>("LabelWithToggle", 50f);
+          customLabelWithTogglePrefab = uid.gameObject;
+
+          RectTransform background = InstantiateBackground(uid.transform);
+
+          RectTransform labelRect = InstantiateLabel(uid.transform);
+          Text labelText = labelRect.GetComponent<Text>();
+          labelText.text = "";
+
+          RectTransform toggleRect = InstantiateToggle(uid.transform, 45f);
+          toggleRect.anchorMin = new Vector2(1f, 0f);
+          toggleRect.offsetMin = new Vector2(-45f, 0f);
+          toggleRect.offsetMax = new Vector2(0f, -2.5f);
+
+          uid.label = labelText;
+          uid.toggle = toggleRect.GetComponent<Toggle>();
+        }
+        {
+          string label = storable.name;
+          Transform t = createUIElement(customLabelWithTogglePrefab.transform, side == Column.RIGHT);
+          UIDynamicLabelWithToggle uid = t.GetComponent<UIDynamicLabelWithToggle>();
+          uid.label.text = label;
+          storable.RegisterToggle(uid.toggle);
+          uid.gameObject.SetActive(true);
+          return uid;
+        }
+      }
+    }
+
+    // ================ CreateColorPicker ================ //
+    // Create default VaM color picker
+    public static VaMColorPicker CreateColorPicker(ref VaMColorPicker reference, string label, HSVColor defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateColorPicker(label, defaultValue, callback, register);
+    }
+
+    public static VaMColorPicker CreateColorPicker(string label, HSVColor defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = false)
+    {
+      JSONStorableColor storable = new JSONStorableColor(label, defaultValue);
+      if (register)
+      {
+        storable.storeType = JSONStorableParam.StoreType.Full;
+        script.RegisterColor(storable);
+      }
+      if (callback != null)
+      {
+        storable.setCallbackFunction = callback;
+      }
+      return new VaMColorPicker() { storable = storable };
+    }
+
+    public class VaMColorPicker
+    {
+      public JSONStorableColor storable;
+      public HSVColor val { get { return storable.val; } set { storable.val = value; } }
+      public HSVColor valNoCallback { set { storable.valNoCallback = value; } }
+      public UIDynamicColorPicker Draw(Column side)
+      {
+        UIDynamicColorPicker picker = script.CreateColorPicker(storable, side == Column.RIGHT);
+        return picker;
+      }
+    }
+
+    // ================ CreateTextureChooser ================ //
+    // Create texture chooser -- note that you are responsible for destroying the texture when you don't need it anymore.
+    public static VaMTextureChooser CreateTextureChooser(ref VaMTextureChooser reference, string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateTextureChooser(label, defaultValue, settings, callback, register);
+    }
+
+    public static VaMTextureChooser CreateTextureChooser(string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = false)
+    {
+      JSONStorableUrl storable = new JSONStorableUrl(label, string.Empty, (string url) => { QueueLoadTexture(url, settings, callback); }, "jpg|png|tif|tiff");
+      if (register)
+      {
+        storable.storeType = JSONStorableParam.StoreType.Full;
+        script.RegisterUrl(storable);
+      }
+      if (!string.IsNullOrEmpty(defaultValue))
+      {
+        storable.SetFilePath(defaultValue);
+      }
+      return new VaMTextureChooser() { storable = storable };
+    }
+
+    public class VaMTextureChooser
+    {
+      public JSONStorableUrl storable;
+      public string val { get { return storable.val; } set { storable.val = value; } }
+      public string valNoCallback { set { storable.valNoCallback = value; } }
+      public void Draw(Column side)
+      {
+        string label = storable.name;
+        UIDynamicButton button = script.CreateButton("Browse " + label, side == Column.RIGHT);
+        UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
+        textfield.UItext.alignment = TextAnchor.MiddleRight;
+        textfield.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
+        textfield.UItext.verticalOverflow = VerticalWrapMode.Truncate;
+        LayoutElement layout = textfield.GetComponent<LayoutElement>();
+        layout.preferredHeight = layout.minHeight = 35;
+        textfield.height = 35;
+        storable.RegisterFileBrowseButton(button.button);
+      }
+    }
+
+    // ================ CreateAssetBundleChooser ================ //
+    // Create asset bundle chooser
+    public static VaMAssetBundleChooser CreateAssetBundleChooser(ref VaMAssetBundleChooser reference, string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = false)
+    {
+      return reference = reference ?? CreateAssetBundleChooser(label, defaultValue, fileExtensions, callback, register);
+    }
+    
+    public static VaMAssetBundleChooser CreateAssetBundleChooser(string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = false)
+    {
+      JSONStorableUrl storable = new JSONStorableUrl(label, defaultValue, fileExtensions);
+      if (register)
+      {
+        storable.storeType = JSONStorableParam.StoreType.Full;
+        script.RegisterUrl(storable);
+      }
+      if (!string.IsNullOrEmpty(defaultValue))
+      {
+        storable.SetFilePath(defaultValue);
+      }
+      if (callback != null)
+      {
+        storable.setCallbackFunction = callback;
+      }
+      return new VaMAssetBundleChooser() { storable = storable };
+    }
+
+    public class VaMAssetBundleChooser
+    {
+      public JSONStorableUrl storable;
+      public string val { get { return storable.val; } set { storable.val = value; } }
+      public string valNoCallback { set { storable.valNoCallback = value; } }
+      public void Draw(Column side)
+      {
+        string label = storable.name;
+        UIDynamicButton button = script.CreateButton("Select " + label, side == Column.RIGHT);
+        UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
+        textfield.UItext.alignment = TextAnchor.MiddleRight;
+        textfield.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
+        textfield.UItext.verticalOverflow = VerticalWrapMode.Truncate;
+        LayoutElement layout = textfield.GetComponent<LayoutElement>();
+        layout.preferredHeight = layout.minHeight = 35;
+        textfield.height = 35;
+        storable.RegisterFileBrowseButton(button.button);
       }
     }
 
@@ -842,7 +903,6 @@ namespace VaMLib
             script.RemoveSpacer(uid);
         }
       }
-
       menuElements.Clear();
     }
 

@@ -27,11 +27,11 @@ namespace ThatsLewd
       public Layer layer { get; private set; }
       public List<Keyframe> keyframes { get; private set; } = new List<Keyframe>();
 
-      public JSONStorableStringChooser loopTypeStorable;
-      public JSONStorableFloat playbackSpeedStorable;
+      public VaMUI.VaMStringChooser loopTypeChooser;
+      public VaMUI.VaMSlider playbackSpeedSlider;
 
-      public JSONStorableStringChooser defaultEasingStorable;
-      public JSONStorableFloat defaultDurationStorable;
+      public VaMUI.VaMStringChooser defaultEasingChooser;
+      public VaMUI.VaMSlider defaultDurationSlider;
 
       public EventTrigger onEnterTrigger = VaMTrigger.Create<EventTrigger>("On Enter Animation");
       public ValueTrigger onPlayingTrigger = VaMTrigger.Create<ValueTrigger>("On Animation Playing");
@@ -52,10 +52,10 @@ namespace ThatsLewd
         this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "animation";
         this.layer = layer;
-        this.loopTypeStorable = CreateLoopTypeStorable(LoopType.Loop);
-        this.playbackSpeedStorable = CreatePlaybackSpeedStorable(1f, 0f, 2f);
-        this.defaultEasingStorable = CreateEasingStorable(Easing.EasingType.Linear);
-        this.defaultDurationStorable = CreateDurationStorable(1f, 0f, 10f);
+        this.loopTypeChooser = CreateLoopTypeChooser(LoopType.Loop);
+        this.playbackSpeedSlider = CreatePlaybackSpeedSlider(1f, 0f, 2f);
+        this.defaultEasingChooser = CreateEasingChooser(Easing.EasingType.Linear);
+        this.defaultDurationSlider = CreateDurationSlider(1f, 0f, 10f);
         layer.animations.Add(this);
         Layer.OnDelete += HandleLayerDeleted;
       }
@@ -65,10 +65,10 @@ namespace ThatsLewd
         string name = layer == null ? Helpers.GetCopyName(this.name) : this.name;
         layer = layer ?? this.layer;
         Animation newAnimation = new Animation(layer, name);
-        newAnimation.loopTypeStorable = CreateLoopTypeStorable(loopTypeStorable.val);
-        newAnimation.playbackSpeedStorable = CreatePlaybackSpeedStorable(playbackSpeedStorable.val, playbackSpeedStorable.min, playbackSpeedStorable.max);
-        newAnimation.defaultEasingStorable = CreateEasingStorable(defaultEasingStorable.val);
-        newAnimation.defaultDurationStorable = CreateDurationStorable(defaultDurationStorable.val, defaultDurationStorable.min, defaultDurationStorable.max);
+        newAnimation.loopTypeChooser = CreateLoopTypeChooser(loopTypeChooser.val);
+        newAnimation.playbackSpeedSlider = CreatePlaybackSpeedSlider(playbackSpeedSlider.val, playbackSpeedSlider.min, playbackSpeedSlider.max);
+        newAnimation.defaultEasingChooser = CreateEasingChooser(defaultEasingChooser.val);
+        newAnimation.defaultDurationSlider = CreateDurationSlider(defaultDurationSlider.val, defaultDurationSlider.min, defaultDurationSlider.max);
         newAnimation.onEnterTrigger = VaMTrigger.Clone(onEnterTrigger);
         newAnimation.onPlayingTrigger = VaMTrigger.Clone(onPlayingTrigger);
         newAnimation.onExitTrigger = VaMTrigger.Clone(onExitTrigger);
@@ -99,24 +99,24 @@ namespace ThatsLewd
         Layer.OnDelete -= HandleLayerDeleted;
       }
 
-      private JSONStorableStringChooser CreateLoopTypeStorable(string defaultValue)
+      private VaMUI.VaMStringChooser CreateLoopTypeChooser(string defaultValue)
       {
-        return new JSONStorableStringChooser("Loop Type", LoopType.list.ToList(), defaultValue, "Loop Type");
+        return VaMUI.CreateStringChooser("Loop Type", LoopType.list.ToList(), defaultValue);
       }
 
-      private JSONStorableFloat CreatePlaybackSpeedStorable(float defaultValue, float minValue, float maxValue)
+      private VaMUI.VaMSlider CreatePlaybackSpeedSlider(float defaultValue, float minValue, float maxValue)
       {
-        return new JSONStorableFloat("Playback Speed", defaultValue, minValue, maxValue, true, true);
+        return VaMUI.CreateSlider("Playback Speed", defaultValue, minValue, maxValue);
       }
 
-      private JSONStorableStringChooser CreateEasingStorable(string defaultValue)
+      private VaMUI.VaMStringChooser CreateEasingChooser(string defaultValue)
       {
-        return new JSONStorableStringChooser("Default Easing", Easing.list.ToList(), defaultValue, "Default Easing");
+        return VaMUI.CreateStringChooser("Default Easing", Easing.list.ToList(), defaultValue);
       }
 
-      private JSONStorableFloat CreateDurationStorable(float defaultValue, float minValue, float maxValue)
+      private VaMUI.VaMSlider CreateDurationSlider(float defaultValue, float minValue, float maxValue)
       {
-        return new JSONStorableFloat("Default Duration", defaultValue, minValue, maxValue, true, true);
+        return VaMUI.CreateSlider("Default Duration", defaultValue, minValue, maxValue);
       }
     }
   }

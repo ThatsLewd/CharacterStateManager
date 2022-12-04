@@ -8,7 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class State : BaseComponentWithId
+    public partial class State : BaseComponentWithId
     {
       public delegate void OnDeleteCallback(State state);
       public static event OnDeleteCallback OnDelete;
@@ -20,7 +20,7 @@ namespace ThatsLewd
       public EventTrigger onEnterTrigger = VaMTrigger.Create<EventTrigger>("On Enter State");
       public EventTrigger onExitTrigger = VaMTrigger.Create<EventTrigger>("On Exit State");
 
-      public List<AnimationPlaylist> playlists { get; private set; } = new List<AnimationPlaylist>();
+      public List<AnimationPlaylist> playlists { get; private set; } = new List<AnimationPlaylist>(); 
 
       public State(Group group, string name = null)
       {
@@ -28,6 +28,7 @@ namespace ThatsLewd
         this.group = group;
         this.name = name ?? "state";
         this.group.states.Add(this);
+        this.transitionModeChooser = VaMUI.CreateStringChooser("Transition Condition", TransitionMode.list.ToList(), TransitionMode.None);
         Group.OnDelete += HandleGroupDeleted;
         Layer.OnDelete += HandleLayerDeleted;
         Animation.OnDelete += HandleAnimationDeleted;
@@ -43,6 +44,11 @@ namespace ThatsLewd
         foreach (AnimationPlaylist playlist in playlists)
         {
           newState.playlists.Add(playlist.Clone());
+        }
+        newState.transitionModeChooser.valNoCallback = transitionModeChooser.val;
+        foreach (StateTransition transition in transitions)
+        {
+          newState.transitions.Add(transition.Clone());
         }
         return newState;
       }
@@ -114,47 +120,46 @@ namespace ThatsLewd
       public Layer layer { get; private set; }
       public List<PlaylistEntry> entries { get; private set; } = new List<PlaylistEntry>();
 
-      public JSONStorableStringChooser modeStorable { get; private set; }
+      public VaMUI.VaMStringChooser playModeChooser { get; private set; }
 
-      public JSONStorableStringChooser defaultTimingModeStorable { get; private set; }
-      public JSONStorableFloat defaultWeightStorable { get; private set; }
-      public JSONStorableFloat defaultDurationFixedStorable { get; private set; }
-      public JSONStorableFloat defaultDurationMinStorable { get; private set; }
-      public JSONStorableFloat defaultDurationMaxStorable { get; private set; }
+      public VaMUI.VaMStringChooser defaultTimingModeChooser { get; private set; }
+      public VaMUI.VaMSlider defaultWeightSlider { get; private set; }
+      public VaMUI.VaMSlider defaultDurationFixedSlider { get; private set; }
+      public VaMUI.VaMSlider defaultDurationMinSlider { get; private set; }
+      public VaMUI.VaMSlider defaultDurationMaxSlider { get; private set; }
 
       public AnimationPlaylist(Layer layer)
       {
         this.layer = layer;
-        modeStorable = new JSONStorableStringChooser("Play Mode", PlaylistMode.list.ToList(), PlaylistMode.Sequential, "Play Mode");
-        defaultTimingModeStorable = new JSONStorableStringChooser("Timing Mode", TimingMode.list.ToList(), TimingMode.DurationFromAnimation, "Timing Mode");
-        defaultWeightStorable = new JSONStorableFloat("Default Weight", 0.5f, 0f, 1f, true, true);
-        defaultDurationFixedStorable = new JSONStorableFloat("Default Duration", 10f, 0f, 30f, true, true);
-        defaultDurationFixedStorable.setCallbackFunction = HandleDurationFixedChange;
-        defaultDurationMinStorable = new JSONStorableFloat("Default Duration Min", 10f, 0f, 30f, true, true);
-        defaultDurationMaxStorable = new JSONStorableFloat("Default Duration Max", 10f, 0f, 30f, true, true);
+        playModeChooser = VaMUI.CreateStringChooser("Play Mode", PlaylistMode.list.ToList(), PlaylistMode.Sequential);
+        defaultTimingModeChooser = VaMUI.CreateStringChooser("Timing Mode", TimingMode.list.ToList(), TimingMode.DurationFromAnimation);
+        defaultWeightSlider = VaMUI.CreateSlider("Default Weight", 0.5f, 0f, 1f);
+        defaultDurationFixedSlider = VaMUI.CreateSlider("Default Duration", 10f, 0f, 30f, callback: HandleDurationFixedChange);
+        defaultDurationMinSlider = VaMUI.CreateSlider("Default Duration Min", 10f, 0f, 30f);
+        defaultDurationMaxSlider = VaMUI.CreateSlider("Default Duration Max", 10f, 0f, 30f);
       }
 
       public AnimationPlaylist Clone()
       {
         AnimationPlaylist newPlaylist = new AnimationPlaylist(layer);
-        newPlaylist.modeStorable.valNoCallback = modeStorable.val;
-        newPlaylist.defaultTimingModeStorable.valNoCallback = defaultTimingModeStorable.val;
+        newPlaylist.playModeChooser.valNoCallback = playModeChooser.val;
+        newPlaylist.defaultTimingModeChooser.valNoCallback = defaultTimingModeChooser.val;
 
-        newPlaylist.defaultWeightStorable.valNoCallback = defaultWeightStorable.val;
-        newPlaylist.defaultWeightStorable.min = defaultWeightStorable.min;
-        newPlaylist.defaultWeightStorable.max = defaultWeightStorable.max;
+        newPlaylist.defaultWeightSlider.valNoCallback = defaultWeightSlider.val;
+        newPlaylist.defaultWeightSlider.min = defaultWeightSlider.min;
+        newPlaylist.defaultWeightSlider.max = defaultWeightSlider.max;
 
-        newPlaylist.defaultDurationFixedStorable.valNoCallback = defaultDurationFixedStorable.val;
-        newPlaylist.defaultDurationFixedStorable.min = defaultDurationFixedStorable.min;
-        newPlaylist.defaultDurationFixedStorable.max = defaultDurationFixedStorable.max;
+        newPlaylist.defaultDurationFixedSlider.valNoCallback = defaultDurationFixedSlider.val;
+        newPlaylist.defaultDurationFixedSlider.min = defaultDurationFixedSlider.min;
+        newPlaylist.defaultDurationFixedSlider.max = defaultDurationFixedSlider.max;
 
-        newPlaylist.defaultDurationMinStorable.valNoCallback = defaultDurationMinStorable.val;
-        newPlaylist.defaultDurationMinStorable.min = defaultDurationMinStorable.min;
-        newPlaylist.defaultDurationMinStorable.max = defaultDurationMinStorable.max;
+        newPlaylist.defaultDurationMinSlider.valNoCallback = defaultDurationMinSlider.val;
+        newPlaylist.defaultDurationMinSlider.min = defaultDurationMinSlider.min;
+        newPlaylist.defaultDurationMinSlider.max = defaultDurationMinSlider.max;
 
-        newPlaylist.defaultDurationMaxStorable.valNoCallback = defaultDurationMaxStorable.val;
-        newPlaylist.defaultDurationMaxStorable.min = defaultDurationMaxStorable.min;
-        newPlaylist.defaultDurationMaxStorable.max = defaultDurationMaxStorable.max;
+        newPlaylist.defaultDurationMaxSlider.valNoCallback = defaultDurationMaxSlider.val;
+        newPlaylist.defaultDurationMaxSlider.min = defaultDurationMaxSlider.min;
+        newPlaylist.defaultDurationMaxSlider.max = defaultDurationMaxSlider.max;
 
         foreach (PlaylistEntry entry in entries)
         {
@@ -171,13 +176,13 @@ namespace ThatsLewd
 
       private void HandleDurationFixedChange(float val)
       {
-        defaultDurationMinStorable.valNoCallback = defaultDurationFixedStorable.val;
-        defaultDurationMinStorable.min = defaultDurationFixedStorable.min;
-        defaultDurationMinStorable.max = defaultDurationFixedStorable.max;
+        defaultDurationMinSlider.valNoCallback = defaultDurationFixedSlider.val;
+        defaultDurationMinSlider.min = defaultDurationFixedSlider.min;
+        defaultDurationMinSlider.max = defaultDurationFixedSlider.max;
 
-        defaultDurationMaxStorable.valNoCallback = defaultDurationFixedStorable.val;
-        defaultDurationMaxStorable.min = defaultDurationFixedStorable.min;
-        defaultDurationMaxStorable.max = defaultDurationFixedStorable.max;
+        defaultDurationMaxSlider.valNoCallback = defaultDurationFixedSlider.val;
+        defaultDurationMaxSlider.min = defaultDurationFixedSlider.min;
+        defaultDurationMaxSlider.max = defaultDurationFixedSlider.max;
       }
     }
 
@@ -186,79 +191,78 @@ namespace ThatsLewd
       public AnimationPlaylist playlist { get; private set; }
       public Animation animation { get; private set; }
 
-      public JSONStorableStringChooser timingModeStorable { get; private set; }
-      public JSONStorableFloat weightStorable { get; private set; }
-      public JSONStorableFloat durationFixedStorable { get; private set; }
-      public JSONStorableFloat durationMinStorable { get; private set; }
-      public JSONStorableFloat durationMaxStorable { get; private set; }
+      public VaMUI.VaMStringChooser timingModeChooser { get; private set; }
+      public VaMUI.VaMSlider weightSlider { get; private set; }
+      public VaMUI.VaMSlider durationFixedSlider { get; private set; }
+      public VaMUI.VaMSlider durationMinSlider { get; private set; }
+      public VaMUI.VaMSlider durationMaxSlider { get; private set; }
 
       public PlaylistEntry(AnimationPlaylist playlist, Animation animation)
       {
         this.playlist = playlist;
         this.animation = animation;
-        timingModeStorable = new JSONStorableStringChooser("Timing Mode", TimingMode.list.ToList(), playlist.defaultTimingModeStorable.val, "Timing Mode");
-        weightStorable = new JSONStorableFloat("Weight", playlist.defaultWeightStorable.val, playlist.defaultWeightStorable.min, playlist.defaultWeightStorable.max, true, true);
-        durationFixedStorable = new JSONStorableFloat("Duration", playlist.defaultDurationFixedStorable.val, playlist.defaultDurationFixedStorable.min, playlist.defaultDurationFixedStorable.max, true, true);
-        durationFixedStorable.setCallbackFunction = HandleDurationFixedChange;
-        durationMinStorable = new JSONStorableFloat("Duration Min", playlist.defaultDurationMinStorable.val, playlist.defaultDurationMinStorable.min, playlist.defaultDurationMinStorable.max, true, true);
-        durationMaxStorable = new JSONStorableFloat("Duration Max", playlist.defaultDurationMaxStorable.val, playlist.defaultDurationMaxStorable.min, playlist.defaultDurationMaxStorable.max, true, true);
+        timingModeChooser = VaMUI.CreateStringChooser("Timing Mode", TimingMode.list.ToList(), playlist.defaultTimingModeChooser.val);
+        weightSlider = VaMUI.CreateSlider("Weight", playlist.defaultWeightSlider.val, playlist.defaultWeightSlider.min, playlist.defaultWeightSlider.max);
+        durationFixedSlider = VaMUI.CreateSlider("Duration", playlist.defaultDurationFixedSlider.val, playlist.defaultDurationFixedSlider.min, playlist.defaultDurationFixedSlider.max, callback: HandleDurationFixedChange);
+        durationMinSlider = VaMUI.CreateSlider("Duration Min", playlist.defaultDurationMinSlider.val, playlist.defaultDurationMinSlider.min, playlist.defaultDurationMinSlider.max);
+        durationMaxSlider = VaMUI.CreateSlider("Duration Max", playlist.defaultDurationMaxSlider.val, playlist.defaultDurationMaxSlider.min, playlist.defaultDurationMaxSlider.max);
       }
 
       public PlaylistEntry Clone(AnimationPlaylist playlist = null)
       {
         playlist = playlist ?? this.playlist;
         PlaylistEntry newEntry = new PlaylistEntry(playlist, animation);
-        newEntry.timingModeStorable.valNoCallback = timingModeStorable.val;
+        newEntry.timingModeChooser.valNoCallback = timingModeChooser.val;
 
-        newEntry.weightStorable.valNoCallback = weightStorable.val;
-        newEntry.weightStorable.min = weightStorable.min;
-        newEntry.weightStorable.max = weightStorable.max;
+        newEntry.weightSlider.valNoCallback = weightSlider.val;
+        newEntry.weightSlider.min = weightSlider.min;
+        newEntry.weightSlider.max = weightSlider.max;
 
-        newEntry.durationFixedStorable.valNoCallback = durationFixedStorable.val;
-        newEntry.durationFixedStorable.min = durationFixedStorable.min;
-        newEntry.durationFixedStorable.max = durationFixedStorable.max;
+        newEntry.durationFixedSlider.valNoCallback = durationFixedSlider.val;
+        newEntry.durationFixedSlider.min = durationFixedSlider.min;
+        newEntry.durationFixedSlider.max = durationFixedSlider.max;
 
-        newEntry.durationMinStorable.valNoCallback = durationMinStorable.val;
-        newEntry.durationMinStorable.min = durationMinStorable.min;
-        newEntry.durationMinStorable.max = durationMinStorable.max;
+        newEntry.durationMinSlider.valNoCallback = durationMinSlider.val;
+        newEntry.durationMinSlider.min = durationMinSlider.min;
+        newEntry.durationMinSlider.max = durationMinSlider.max;
 
-        newEntry.durationMaxStorable.valNoCallback = durationMaxStorable.val;
-        newEntry.durationMaxStorable.min = durationMaxStorable.min;
-        newEntry.durationMaxStorable.max = durationMaxStorable.max;
+        newEntry.durationMaxSlider.valNoCallback = durationMaxSlider.val;
+        newEntry.durationMaxSlider.min = durationMaxSlider.min;
+        newEntry.durationMaxSlider.max = durationMaxSlider.max;
 
         return newEntry;
       }
 
       public void SetFromDefaults()
       {
-        timingModeStorable.val = playlist.defaultTimingModeStorable.val;
+        timingModeChooser.val = playlist.defaultTimingModeChooser.val;
 
-        weightStorable.val = playlist.defaultWeightStorable.val;
-        weightStorable.min = playlist.defaultWeightStorable.min;
-        weightStorable.max = playlist.defaultWeightStorable.max;
+        weightSlider.val = playlist.defaultWeightSlider.val;
+        weightSlider.min = playlist.defaultWeightSlider.min;
+        weightSlider.max = playlist.defaultWeightSlider.max;
 
-        durationFixedStorable.val = playlist.defaultDurationFixedStorable.val;
-        durationFixedStorable.min = playlist.defaultDurationFixedStorable.min;
-        durationFixedStorable.max = playlist.defaultDurationFixedStorable.max;
+        durationFixedSlider.val = playlist.defaultDurationFixedSlider.val;
+        durationFixedSlider.min = playlist.defaultDurationFixedSlider.min;
+        durationFixedSlider.max = playlist.defaultDurationFixedSlider.max;
 
-        durationMinStorable.val = playlist.defaultDurationMinStorable.val;
-        durationMinStorable.min = playlist.defaultDurationMinStorable.min;
-        durationMinStorable.max = playlist.defaultDurationMinStorable.max;
+        durationMinSlider.val = playlist.defaultDurationMinSlider.val;
+        durationMinSlider.min = playlist.defaultDurationMinSlider.min;
+        durationMinSlider.max = playlist.defaultDurationMinSlider.max;
 
-        durationMaxStorable.val = playlist.defaultDurationMaxStorable.val;
-        durationMaxStorable.min = playlist.defaultDurationMaxStorable.min;
-        durationMaxStorable.max = playlist.defaultDurationMaxStorable.max;
+        durationMaxSlider.val = playlist.defaultDurationMaxSlider.val;
+        durationMaxSlider.min = playlist.defaultDurationMaxSlider.min;
+        durationMaxSlider.max = playlist.defaultDurationMaxSlider.max;
       }
 
       private void HandleDurationFixedChange(float val)
       {
-        durationMinStorable.valNoCallback = durationFixedStorable.val;
-        durationMinStorable.min = durationFixedStorable.min;
-        durationMinStorable.max = durationFixedStorable.max;
+        durationMinSlider.valNoCallback = durationFixedSlider.val;
+        durationMinSlider.min = durationFixedSlider.min;
+        durationMinSlider.max = durationFixedSlider.max;
 
-        durationMaxStorable.valNoCallback = durationFixedStorable.val;
-        durationMaxStorable.min = durationFixedStorable.min;
-        durationMaxStorable.max = durationFixedStorable.max;
+        durationMaxSlider.valNoCallback = durationFixedSlider.val;
+        durationMaxSlider.min = durationFixedSlider.min;
+        durationMaxSlider.max = durationFixedSlider.max;
       }
     }
   }

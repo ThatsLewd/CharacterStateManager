@@ -4,6 +4,7 @@ source/components/AnimationKeyframe.cs
 source/components/Group.cs
 source/components/Layer.cs
 source/components/State.cs
+source/components/StateGroupTab.cs
 source/components/Transition.cs
 source/lib/Easing.cs
 source/lib/Helpers.cs

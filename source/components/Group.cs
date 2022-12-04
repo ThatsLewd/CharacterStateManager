@@ -19,6 +19,8 @@ namespace ThatsLewd
       public string name { get; set; }
       public List<State> states { get; private set; } = new List<State>();
 
+      public State initialState { get; private set; } = null;
+
       public Group(string name = null)
       {
         this.id = VaMUtils.GenerateRandomID();
@@ -31,7 +33,11 @@ namespace ThatsLewd
         Group newGroup = new Group(Helpers.GetCopyName(name));
         foreach (State state in states)
         {
-          state.Clone(newGroup);
+          State newState = state.Clone(newGroup);
+          if (state == initialState)
+          {
+            newGroup.initialState = newState;
+          }
         }
         return newGroup;
       }
