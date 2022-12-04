@@ -19,6 +19,9 @@ namespace ThatsLewd
     
     public partial class Animation : BaseComponentWithId
     {
+      public delegate void OnDeleteCallback(Animation animation);
+      public static event OnDeleteCallback OnDelete;
+
       public override string id { get; protected set; }
       public string name { get; set; }
       public Layer layer { get; private set; }
@@ -54,6 +57,7 @@ namespace ThatsLewd
         this.defaultEasingStorable = CreateEasingStorable(Easing.EasingType.Linear);
         this.defaultDurationStorable = CreateDurationStorable(1f, 0f, 10f);
         layer.animations.Add(this);
+        Layer.OnDelete += HandleLayerDeleted;
       }
 
       public Animation Clone(Layer layer = null)
@@ -83,21 +87,16 @@ namespace ThatsLewd
         return newAnimation;
       }
 
+      private void HandleLayerDeleted(Layer layer)
+      {
+        if (layer == this.layer) Delete();
+      }
+
       public void Delete()
       {
         layer.animations.Remove(this);
-        foreach (Keyframe keyframe in keyframes.ToArray())
-        {
-          keyframe.Delete();
-        }
-        foreach (Transition transition in fromTransitions.ToArray())
-        {
-          transition.Delete();
-        }
-        foreach (Transition transition in toTransitions.ToArray())
-        {
-          transition.Delete();
-        }
+        Animation.OnDelete?.Invoke(this);
+        Layer.OnDelete -= HandleLayerDeleted;
       }
 
       private JSONStorableStringChooser CreateLoopTypeStorable(string defaultValue)

@@ -10,6 +10,9 @@ namespace ThatsLewd
   {
     public class Layer : BaseComponentWithId
     {
+      public delegate void OnDeleteCallback(Layer layer);
+      public static event OnDeleteCallback OnDelete;
+
       public static List<Layer> list = new List<Layer>();
 
       public override string id { get; protected set; }
@@ -49,10 +52,7 @@ namespace ThatsLewd
       public void Delete()
       {
         Layer.list.Remove(this);
-        foreach (Animation animation in animations.ToArray())
-        {
-          animation.Delete();
-        }
+        Layer.OnDelete?.Invoke(this);
       }
 
       public void TrackMorph(DAZMorph morph)

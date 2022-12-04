@@ -10,6 +10,9 @@ namespace ThatsLewd
   {
     public class State : BaseComponentWithId
     {
+      public delegate void OnDeleteCallback(State state);
+      public static event OnDeleteCallback OnDelete;
+
       public override string id { get; protected set; }
       public string name { get; set; }
       public Group group { get; private set; }
@@ -22,6 +25,9 @@ namespace ThatsLewd
         this.group = group;
         this.name = name ?? "state";
         this.group.states.Add(this);
+        Group.OnDelete += HandleGroupDeleted;
+        Layer.OnDelete += HandleLayerDeleted;
+        Animation.OnDelete += HandleAnimationDeleted;
       }
 
       public State Clone(Group group = null)
@@ -36,9 +42,31 @@ namespace ThatsLewd
         return newState;
       }
 
+      private void HandleGroupDeleted(Group group)
+      {
+        if (group == this.group) Delete();
+      }
+
+      private void HandleLayerDeleted(Layer layer)
+      {
+        playlists.RemoveAll((p) => p.layer == layer);
+      }
+
+      private void HandleAnimationDeleted(Animation animation)
+      {
+        foreach (AnimationPlaylist playlist in playlists)
+        {
+          playlist.entries.RemoveAll((e) => e.animation == animation);
+        }
+      }
+
       public void Delete()
       {
         group.states.Remove(this);
+        State.OnDelete?.Invoke(this);
+        Group.OnDelete -= HandleGroupDeleted;
+        Layer.OnDelete -= HandleLayerDeleted;
+        Animation.OnDelete -= HandleAnimationDeleted;
       }
 
       public AnimationPlaylist GetPlaylist(Layer layer)

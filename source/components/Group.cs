@@ -10,6 +10,9 @@ namespace ThatsLewd
   {
     public class Group : BaseComponentWithId
     {
+      public delegate void OnDeleteCallback(Group group);
+      public static event OnDeleteCallback OnDelete;
+
       public static List<Group> list = new List<Group>();
 
       public override string id { get; protected set; }
@@ -36,10 +39,7 @@ namespace ThatsLewd
       public void Delete()
       {
         Group.list.Remove(this);
-        foreach (State state in states.ToArray())
-        {
-          state.Delete();
-        }
+        Group.OnDelete?.Invoke(this);
       }
     }
   }

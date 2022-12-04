@@ -10,6 +10,9 @@ namespace ThatsLewd
   {
     public class Transition : BaseComponentWithId
     {
+      public delegate void OnDeleteCallback(Transition transition);
+      public static event OnDeleteCallback OnDelete;
+
       public static List<Transition> list = new List<Transition>();
 
       public override string id { get; protected set; }
@@ -22,6 +25,7 @@ namespace ThatsLewd
         this.from = from;
         this.to = to;
         Transition.list.Add(this);
+        Animation.OnDelete += OnAnimationDeleted;
       }
 
       public Transition Clone(Animation from = null, Animation to = null)
@@ -32,9 +36,16 @@ namespace ThatsLewd
         return newTransition;
       }
 
+      private void OnAnimationDeleted(Animation animation)
+      {
+        if (from == animation || to == animation) Delete();
+      }
+
       public void Delete()
       {
         Transition.list.Remove(this);
+        Transition.OnDelete?.Invoke(this);
+        Animation.OnDelete -= OnAnimationDeleted;
       }
     }
   }

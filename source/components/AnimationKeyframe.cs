@@ -12,6 +12,9 @@ namespace ThatsLewd
     {
       public class Keyframe : BaseComponentWithId
       {
+        public delegate void OnDeleteCallback(Keyframe keyframe);
+        public static event OnDeleteCallback OnDelete;
+
         public override string id { get; protected set; }
         public Animation animation { get; private set; }
 
@@ -66,7 +69,8 @@ namespace ThatsLewd
 
         public void Delete()
         {
-          this.animation.keyframes.Remove(this);
+          animation.keyframes.Remove(this);
+          Keyframe.OnDelete?.Invoke(this);
         }
 
         public void CaptureLayerState()
