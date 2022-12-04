@@ -59,6 +59,7 @@ namespace ThatsLewd
       VaMUI.Destroy();
       VaMUtils.SafeDestroy(ref tabBarPrefab);
       VaMUtils.SafeDestroy(ref keyframeSelectorPrefab);
+      VaMUtils.SafeDestroy(ref playlistEntryContainerPrefab);
       VaMTrigger.Destroy();
     }
 
@@ -71,7 +72,7 @@ namespace ThatsLewd
       }
     }
 
-    void InvalidateUI()
+    void RequestRedraw()
     {
       uiNeedsRebuilt = true;
     }
@@ -104,13 +105,13 @@ namespace ThatsLewd
 
     void HandleHideTopUI(bool val)
     {
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleTabSelect(string tabName)
     {
       activeTab = tabName;
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void BuildActiveTabUI()
@@ -160,7 +161,7 @@ namespace ThatsLewd
         editGroupNameStorable.valNoCallback = activeGroup?.name ?? "";
       }
 
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleSelectState(string val)
@@ -173,7 +174,7 @@ namespace ThatsLewd
         editStateNameStorable.valNoCallback = activeState?.name ?? "";
       }
 
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleSelectLayer(string val)
@@ -189,7 +190,7 @@ namespace ThatsLewd
         editLayerNameStorable.valNoCallback = activeLayer?.name ?? "";
       }
 
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleSelectAnimation(string val)
@@ -202,7 +203,7 @@ namespace ThatsLewd
         editAnimationNameStorable.valNoCallback = activeAnimation?.name ?? "";
       }
 
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void RefreshGroupList()
@@ -215,7 +216,7 @@ namespace ThatsLewd
       entries.Sort((a, b) => a.Value.CompareTo(b.Value));
       VaMUtils.SetStringChooserChoices(activeGroupIdStorable, entries);
 
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void RefreshStateList()
@@ -231,7 +232,7 @@ namespace ThatsLewd
       entries.Sort((a, b) => a.Value.CompareTo(b.Value));
       VaMUtils.SetStringChooserChoices(activeStateIdStorable, entries);
 
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void RefreshLayerList()
@@ -244,7 +245,7 @@ namespace ThatsLewd
       entries.Sort((a, b) => a.Value.CompareTo(b.Value));
       VaMUtils.SetStringChooserChoices(activeLayerIdStorable, entries);
 
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void RefreshAnimationList()
@@ -260,7 +261,7 @@ namespace ThatsLewd
       entries.Sort((a, b) => a.Value.CompareTo(b.Value));
       VaMUtils.SetStringChooserChoices(activeAnimationIdStorable, entries);
 
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void CreateMainHeader(VaMUI.Column side, string text)
@@ -378,12 +379,16 @@ namespace ThatsLewd
     // ============================================================================ //
     // ================================ STATES TAB ================================ //
     // ============================================================================ //
+    AnimationPlaylist activePlaylist;
+
     void BuildStatesTabUI()
     {
+      SetActivePlaylist();
+
       CreateMainHeader(VaMUI.LEFT, "States");
       Draw(VaMUI.CreateInfoTextNoScroll(
         VaMUI.LEFT,
-        @"A <b>State</b> defines what a character is currently doing (idle, sitting, etc). A state assigns <b>Animations</b> to layers that can be played either sequentially or randomly.",
+        @"A <b>State</b> defines what a character is currently doing (idle, sitting, etc). A state assigns <b>Animations</b> to <b>Layers</b> that can be played either sequentially or randomly.",
         185f
       ));
 
@@ -408,6 +413,130 @@ namespace ThatsLewd
       );
 
       if (activeState == null) return;
+
+      CreateSubHeader(VaMUI.LEFT, "Target Layers");
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
+        @"You can only assign animations to layers in this list.",
+        2
+      ));
+
+      if (activeLayer == null)
+      {
+        Draw(VaMUI.CreateInfoTextNoScroll(
+          VaMUI.LEFT,
+          @"You must create a <b>Layer</b> before you can edit this <b>State</b>.",
+          2
+        ));
+        return;
+      }
+
+      // LAYERS
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "Add Current Layer", HandleCreatePlaylist));
+      foreach (AnimationPlaylist playlist in activeState.playlists)
+      {
+        bool isActive = playlist.layer == activeLayer;
+        string label = isActive ? $"[ {playlist.layer.name} ]" : playlist.layer.name;
+        Draw(VaMUI.CreateLabelWithX(VaMUI.LEFT, label, () => { HandleDeletePlaylist(playlist); }));
+      }
+
+      CreateSubHeader(VaMUI.RIGHT, "Animation Playlist");
+      if (activePlaylist == null)
+      {
+        Draw(VaMUI.CreateInfoTextNoScroll(
+          VaMUI.RIGHT,
+          @"Select or add a <b>Layer</b> to the list to edit its animation playlist.",
+          2
+        ));
+        return;
+      }
+
+      if (activeAnimation == null)
+      {
+        Draw(VaMUI.CreateInfoTextNoScroll(
+          VaMUI.RIGHT,
+          @"There are no <b>Animations</b> available for this <b>Layer</b>.",
+          2
+        ));
+        return;
+      }
+
+      // OPTIONS
+      Draw(VaMUI.CreateSpacer(VaMUI.LEFT));
+      CreateSubHeader(VaMUI.LEFT, "Playlist Options");
+      Draw(VaMUI.CreateStringChooserFromStorable(activePlaylist.modeStorable, VaMUI.LEFT));
+      activePlaylist.modeStorable.setCallbackFunction = (string val) => { RequestRedraw(); };
+      if (activePlaylist.modeStorable.val == PlaylistMode.Sequential)
+      {
+        Draw(VaMUI.CreateInfoTextNoScroll(
+          VaMUI.LEFT,
+          @"The animations will play in order.",
+          1
+        ));
+      }
+      else if (activePlaylist.modeStorable.val == PlaylistMode.Random)
+      {
+        Draw(VaMUI.CreateInfoTextNoScroll(
+          VaMUI.LEFT,
+          @"The animations will play randomly.",
+          1
+        ));
+      }
+
+      // DEFAULTS
+      Draw(VaMUI.CreateSpacer(VaMUI.LEFT));
+      CreateSubHeader(VaMUI.LEFT, "Defaults");
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.LEFT,
+        @"New animations will use these defaults.",
+        1
+      ));
+      Draw(VaMUI.CreateStringChooserFromStorable(activePlaylist.defaultTimingModeStorable, VaMUI.LEFT));
+      activePlaylist.defaultTimingModeStorable.setCallbackFunction = (string val) => { RequestRedraw(); };
+      Draw(VaMUI.CreateSliderFromStorable(activePlaylist.defaultWeightStorable, VaMUI.LEFT, 0.5f, 0f, 1f));
+      if (activePlaylist.defaultTimingModeStorable.val == TimingMode.RandomDuration)
+      {
+        Draw(VaMUI.CreateSliderFromStorable(activePlaylist.defaultDurationMinStorable, VaMUI.LEFT, 10f, 0f, 30f));
+        Draw(VaMUI.CreateSliderFromStorable(activePlaylist.defaultDurationMaxStorable, VaMUI.LEFT, 10f, 0f, 30f));
+      }
+      else
+      {
+        Draw(VaMUI.CreateSliderFromStorable(activePlaylist.defaultDurationFixedStorable, VaMUI.LEFT, 10f, 0f, 30f));
+      }
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "Apply to All", HandleApplyDefaultsToAll));
+
+      // PLAYLIST
+      Draw(VaMUI.CreateInfoTextNoScroll(
+        VaMUI.RIGHT,
+        @"This is the playlist of animations for this layer.",
+        2
+      ));
+
+      Draw(VaMUI.CreateButton(VaMUI.RIGHT, "Add Current Animation", HandleAddPlaylistEntry));
+      Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
+
+      foreach (PlaylistEntry entry in activePlaylist.entries)
+      {
+        Draw(CreatePlaylistEntryContainer(activePlaylist.modeStorable.val, entry.timingModeStorable.val, VaMUI.RIGHT));
+        Draw(VaMUI.CreateLabelWithX(VaMUI.RIGHT, $"<b>{entry.animation.name}</b>", () => { HandleDeletePlaylistEntry(entry); }));
+        Draw(VaMUI.CreateButtonPair(VaMUI.RIGHT, "Move Up", () => HandleMovePlaylistEntry(entry, -1), "Move Down", () => HandleMovePlaylistEntry(entry, 1)));
+        Draw(VaMUI.CreateStringChooserFromStorable(entry.timingModeStorable, VaMUI.RIGHT));
+        entry.timingModeStorable.setCallbackFunction = (string val) => { RequestRedraw(); };
+        if (activePlaylist.modeStorable.val == PlaylistMode.Random)
+        {
+          Draw(VaMUI.CreateSliderFromStorable(entry.weightStorable, VaMUI.RIGHT, 0.5f, 0f, 1f));
+        }
+        if (entry.timingModeStorable.val == TimingMode.FixedDuration)
+        {
+          Draw(VaMUI.CreateSliderFromStorable(entry.durationFixedStorable, VaMUI.RIGHT, 10f, 0f, 30f));
+        }
+        else if (entry.timingModeStorable.val == TimingMode.RandomDuration)
+        {
+          Draw(VaMUI.CreateSliderFromStorable(entry.durationMinStorable, VaMUI.RIGHT, 10f, 0f, 30f));
+          Draw(VaMUI.CreateSliderFromStorable(entry.durationMaxStorable, VaMUI.RIGHT, 10f, 0f, 30f));
+        }
+        Draw(VaMUI.CreateSpacer(VaMUI.RIGHT));
+      }
 
 
       CreateBottomPadding();
@@ -443,6 +572,71 @@ namespace ThatsLewd
       activeState.Delete();
       RefreshStateList();
       VaMUtils.SelectStringChooserFirstValue(activeStateIdStorable);
+    }
+
+    void SetActivePlaylist()
+    {
+      if (activeState == null || activeLayer == null)
+      {
+        activePlaylist = null;
+        return;
+      }
+      activePlaylist = activeState.GetPlaylist(activeLayer);
+    }
+
+    void HandleCreatePlaylist()
+    {
+      if (activeState == null) return;
+      activeState.CreatePlaylist(activeLayer);
+
+      RequestRedraw();
+    }
+
+    void HandleDeletePlaylist(AnimationPlaylist playlist)
+    {
+      if (activeState == null) return;
+      activeState.playlists.Remove(playlist);
+
+      RequestRedraw();
+    }
+
+    void HandleAddPlaylistEntry()
+    {
+      if (activePlaylist == null || activeAnimation == null) return;
+      activePlaylist.AddEntry(activeAnimation);
+
+      RequestRedraw();
+    }
+
+    void HandleDeletePlaylistEntry(PlaylistEntry entry)
+    {
+      if (activePlaylist == null) return;
+      activePlaylist.entries.Remove(entry);
+
+      RequestRedraw();
+    }
+
+    void HandleMovePlaylistEntry(PlaylistEntry entry, int direction)
+    {
+      if (activePlaylist == null) return;
+      int index = activePlaylist.entries.IndexOf(entry);
+      if (index < 0) return;
+      int oldIndex = index;
+      int newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= activePlaylist.entries.Count) return;
+      PlaylistEntry temp = activePlaylist.entries[newIndex];
+      activePlaylist.entries[newIndex] = entry;
+      activePlaylist.entries[oldIndex] = temp;
+      RequestRedraw();
+    }
+
+    void HandleApplyDefaultsToAll()
+    {
+      if (activePlaylist == null) return;
+      foreach (PlaylistEntry entry in activePlaylist.entries)
+      {
+        entry.SetFromDefaults();
+      }
     }
 
 
@@ -558,14 +752,14 @@ namespace ThatsLewd
       activeLayer.TrackMorph(morph);
 
       morphChooserStorable.valNoCallback = "";
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleDeleteMorph(TrackedMorph tm)
     {
       if (activeLayer == null) return;
       activeLayer.trackedMorphs.Remove(tm);
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleToggleMorphChooserFavorites(bool val)
@@ -760,7 +954,7 @@ namespace ThatsLewd
       activeKeyframe.labelStorable.setCallbackFunction = HandleSetKeyframeLabel;
 
       Draw(VaMUI.CreateColorPickerFromStorable(activeKeyframe.colorStorable, VaMUI.LEFT));
-      Draw(VaMUI.CreateButton(VaMUI.LEFT, "Apply Color", () => { InvalidateUI(); }));
+      Draw(VaMUI.CreateButton(VaMUI.LEFT, "Apply Color", () => { RequestRedraw(); }));
 
       // ACTIONS
       Draw(VaMUI.CreateSpacer(VaMUI.LEFT));
@@ -844,7 +1038,7 @@ namespace ThatsLewd
     void HandleSelectKeyframe(Animation.Keyframe keyframe)
     {
       activeKeyframe = keyframe;
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void EnsureSelectedKeyframe()
@@ -877,7 +1071,7 @@ namespace ThatsLewd
       if (activeAnimation == null) return;
       Animation.Keyframe keyframe = new Animation.Keyframe(activeAnimation, 0);
       HandleSelectKeyframe(keyframe);
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleAddKeyframeEnd()
@@ -885,7 +1079,7 @@ namespace ThatsLewd
       if (activeAnimation == null) return;
       Animation.Keyframe keyframe = new Animation.Keyframe(activeAnimation, -1);
       HandleSelectKeyframe(keyframe);
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleAddKeyframeBefore()
@@ -894,7 +1088,7 @@ namespace ThatsLewd
       if (activeAnimation == null || index == null) return;
       Animation.Keyframe keyframe = new Animation.Keyframe(activeAnimation, index.Value);
       HandleSelectKeyframe(keyframe);
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleAddKeyframeAfter()
@@ -903,7 +1097,7 @@ namespace ThatsLewd
       if (activeAnimation == null || index == null) return;
       Animation.Keyframe keyframe = new Animation.Keyframe(activeAnimation, index.Value + 1);
       HandleSelectKeyframe(keyframe);
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleMoveKeyframe(int direction)
@@ -916,7 +1110,7 @@ namespace ThatsLewd
       Animation.Keyframe temp = activeAnimation.keyframes[newIndex];
       activeAnimation.keyframes[newIndex] = activeKeyframe;
       activeAnimation.keyframes[oldIndex] = temp;
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleDuplicateKeyframe()
@@ -925,26 +1119,26 @@ namespace ThatsLewd
       if (activeKeyframe == null || index == null) return;
       Animation.Keyframe keyframe = activeKeyframe.Clone(index: index.Value + 1);
       HandleSelectKeyframe(keyframe);
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleDeleteKeyframe()
     {
       if (activeKeyframe == null) return;
       activeKeyframe.Delete();
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleSetKeyframeLabel(string val)
     {
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleCaptureKeyframe()
     {
       if (activeKeyframe == null) return;
       activeKeyframe.CaptureLayerState();
-      InvalidateUI();
+      RequestRedraw();
     }
 
     void HandleGoToKeyframe()
@@ -1045,6 +1239,8 @@ namespace ThatsLewd
         controllerSelectorPrefab = uid.gameObject;
 
         RectTransform background = VaMUI.InstantiateBackground(uid.transform);
+        Image bgImage = background.GetComponent<Image>();
+        bgImage.color = new Color(1f, 1f, 1f, 0.35f);
 
         RectTransform labelRect = VaMUI.InstantiateLabel(uid.transform);
         labelRect.offsetMin = new Vector2(5f, 0f);
@@ -1202,6 +1398,41 @@ namespace ThatsLewd
         uid.activeKeyframe = activeKeyframe;
         uid.keyframes = keyframes;
         uid.callback = callback;
+        uid.gameObject.SetActive(true);
+        return uid;
+      }
+    }
+
+
+    // ====== PlaylistEntry Container ====== //
+    public class UIDynamicPlaylistEntryContainer : UIDynamicBase
+    {
+      public string playlistMode;
+      public string timingMode;
+      public RectTransform background;
+    }
+    
+    private GameObject playlistEntryContainerPrefab;
+    public UIDynamicPlaylistEntryContainer CreatePlaylistEntryContainer(string playlistMode, string timingMode, VaMUI.Column side)
+    {
+      if (playlistEntryContainerPrefab == null)
+      {
+        UIDynamicPlaylistEntryContainer uid = VaMUI.CreateUIDynamicPrefab<UIDynamicPlaylistEntryContainer>("PlaylistEntryContainer", 0f);
+        playlistEntryContainerPrefab = uid.gameObject;
+        RectTransform background = VaMUI.InstantiateBackground(uid.transform);
+        Image bgImage = background.GetComponent<Image>();
+        bgImage.color = new Color(0.9f, 0.9f, 0.9f, 0.5f);
+        uid.background = background;
+      }
+      {
+        const float sliderHeight = 135f;
+        Transform t = CreateUIElement(playlistEntryContainerPrefab.transform, side == VaMUI.RIGHT);
+        UIDynamicPlaylistEntryContainer uid = t.GetComponent<UIDynamicPlaylistEntryContainer>();
+        float height = 260f;
+        if (playlistMode == PlaylistMode.Random) height += sliderHeight;
+        if (timingMode == TimingMode.FixedDuration) height += sliderHeight;
+        if (timingMode == TimingMode.RandomDuration) height += 2f * sliderHeight;
+        uid.background.offsetMin = new Vector2(0f, -height);
         uid.gameObject.SetActive(true);
         return uid;
       }

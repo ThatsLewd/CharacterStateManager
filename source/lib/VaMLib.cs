@@ -68,6 +68,7 @@ namespace VaMLib
       VaMUtils.SafeDestroy(ref customButtonPairPrefab);
       VaMUtils.SafeDestroy(ref customInfoTextPrefab);
       VaMUtils.SafeDestroy(ref customSliderPrefab);
+      VaMUtils.SafeDestroy(ref customHorizontalLinePrefab);
       VaMUtils.SafeDestroy(ref backgroundElementPrefab);
       VaMUtils.SafeDestroy(ref labelElementPrefab);
       VaMUtils.SafeDestroy(ref textFieldElementPrefab);
@@ -528,6 +529,8 @@ namespace VaMLib
         customLabelWithXPrefab = uid.gameObject;
 
         RectTransform background = InstantiateBackground(uid.transform);
+        Image bgImage = background.GetComponent<Image>();
+        bgImage.color = new Color(1f, 1f, 1f, 0.35f);
 
         RectTransform labelRect = InstantiateLabel(uid.transform);
         Text labelText = labelRect.GetComponent<Text>();
@@ -691,6 +694,29 @@ namespace VaMLib
     {
       UIDynamicInfoText uid = CreateInfoTextNoScroll(side, $"<size={size * 0.85f}><b>{text}</b></size>", size, background: false);
       return uid;
+    }
+
+    // Create label that has an X button on the right side
+    private static GameObject customHorizontalLinePrefab;
+    public static UIDynamicHorizontalLine CreateHorizontalLine(Column side)
+    {
+      if (customHorizontalLinePrefab == null)
+      {
+        UIDynamicHorizontalLine uid = CreateUIDynamicPrefab<UIDynamicHorizontalLine>("HorizontalLine", 0f);
+        customHorizontalLinePrefab = uid.gameObject;
+
+        RectTransform background = InstantiateBackground(uid.transform);
+        background.offsetMin = new Vector2(0f, -2f);
+        background.offsetMax = new Vector2(0f, 2f);
+        Image bgImage = background.GetComponent<Image>();
+        bgImage.color = new Color(0f, 0f, 0f, 0.8f);
+      }
+      {
+        Transform t = createUIElement(customHorizontalLinePrefab.transform, side == Column.RIGHT);
+        UIDynamicHorizontalLine uid = t.GetComponent<UIDynamicHorizontalLine>();
+        uid.gameObject.SetActive(true);
+        return uid;
+      }
     }
 
     // Create a list of buttons that spans both columns
@@ -1851,6 +1877,11 @@ namespace VaMLib
     public RectTransform textRect;
     public Text text;
     public Image bgImage;
+  }
+
+  public class UIDynamicHorizontalLine : UIDynamicBase
+  {
+
   }
 
   public class UIDynamicTabBar : UIDynamicBase

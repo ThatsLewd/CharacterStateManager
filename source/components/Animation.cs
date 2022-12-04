@@ -16,6 +16,7 @@ namespace ThatsLewd
 
       public static readonly string[] list = new string[] { PlayOnce, Loop, PingPong };
     }
+    
     public partial class Animation : BaseComponentWithId
     {
       public override string id { get; protected set; }
