@@ -18,11 +18,11 @@ namespace ThatsLewd
       public const string Animations = "Animations";
       public const string Keyframes = "Keyframes";
       public const string Transitions = "Transitions"; // Currently unused
-      public const string SendMessages = "Send Msgs";
-      public const string ReceiveMessages = "Receive Msgs";
+      public const string Roles = "Roles";
+      public const string Messages = "Messages";
       public const string ExportImport = "Export/Import";
 
-      public static readonly string[] list = new string[] { Info, Groups, States, Layers, Animations, Keyframes, SendMessages, ReceiveMessages, ExportImport };
+      public static readonly string[] list = new string[] { Info, Groups, States, Layers, Animations, Keyframes, Roles, Messages, ExportImport };
     }
 
     bool uiNeedsRebuilt = false;
@@ -31,16 +31,14 @@ namespace ThatsLewd
     GameObject tabBarPrefab;
     string activeTab;
 
+    // Global UI
+    VaMUI.VaMToggle playbackEnabledToggle;
+    VaMUI.VaMToggle hideTopUIToggle;
+
     Group activeGroup = null;
     State activeState = null;
     Layer activeLayer = null;
     Animation activeAnimation = null;
-
-    AnimationPlaylist activePlaylist;
-    Animation.Keyframe activeKeyframe;
-
-    VaMUI.VaMToggle playbackEnabledToggle;
-    VaMUI.VaMToggle hideTopUIToggle;
 
     VaMUI.VaMStringChooser activeGroupIdChooser;
     VaMUI.VaMStringChooser activeStateIdChooser;
@@ -51,6 +49,10 @@ namespace ThatsLewd
     VaMUI.VaMTextInput editStateNameInput;
     VaMUI.VaMTextInput editLayerNameInput;
     VaMUI.VaMTextInput editAnimationNameInput;
+
+    // Section UI
+    AnimationPlaylist activePlaylist;
+    Animation.Keyframe activeKeyframe;
 
     VaMUI.VaMStringChooser transitionStateChooser;
     VaMUI.VaMStringChooser addMorphChooser;
@@ -77,6 +79,9 @@ namespace ThatsLewd
       transitionStateChooser = VaMUI.CreateStringChooserKeyVal("Select State", null, "");
       addMorphChooser = VaMUI.CreateStringChooserKeyVal("Select Morph", filterable: true, defaultValue: "");
       morphChooserUseFavoritesToggle = VaMUI.CreateToggle("Favorites Only", true, callbackNoVal: HandleToggleMorphChooserFavorites);
+
+      Role.Init();
+      Messages.Init();
 
       RebuildUI();
     }
@@ -161,11 +166,11 @@ namespace ThatsLewd
         case Tabs.Transitions:
           BuildTransitionsTabUI();
           break;
-        case Tabs.SendMessages:
-          BuildSendMessagesTabUI();
+        case Tabs.Roles:
+          BuildRolesTabUI();
           break;
-        case Tabs.ReceiveMessages:
-          BuildReceiveMessagesTabUI();
+        case Tabs.Messages:
+          BuildMessagesTabUI();
           break;
         case Tabs.ExportImport:
           BuildExportImportTabUI();
@@ -1291,41 +1296,142 @@ namespace ThatsLewd
     }
 
 
-    // =================================================================================== //
-    // ================================ SEND MESSAGES TAB ================================ //
-    // =================================================================================== //
-    void BuildSendMessagesTabUI()
+    // =========================================================================== //
+    // ================================ ROLES TAB ================================ //
+    // =========================================================================== //
+    void BuildRolesTabUI()
     {
-      CreateMainHeader(VaMUI.LEFT, "Send Messages");
+      CreateMainHeader(VaMUI.LEFT, "Roles");
       UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
 
       UI(VaMUI.CreateInfoText(
         VaMUI.LEFT,
-        "A <b>Message</b> is a custom event that can be called from other atoms in your scene using the 'Send Message' action. Messages allow external management of the character's state.",
-        5
+        "A <b>Message</b> is a custom event that allows communication between characters or other triggers in the scene. Messages allow external management of the character's state in a more robust way than traditional triggers. Messages are automatically exchanged between all instances of CharacterStateManager.",
+        9
       ));
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      UI(VaMUI.CreateInfoText(
+        VaMUI.LEFT,
+        $"<b>Roles</b> define the identity of a character when sending messages. Characters can react to messages sent by specific roles. The predefined <b>{Role.Self}</b> role allows for communication between internal states.",
+        6
+      ));
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      UI(VaMUI.CreateInfoText(
+        VaMUI.LEFT,
+        "Default messages are automatically sent on state enter/exit. In addition, custom messages can be manually sent to this character with the <b>SendMessage</b> action, or broadcast from this character with the <b>BroadcastMessage</b> action.",
+        7
+      ));
+
+      UI(Role.addRoleInput.Draw(VaMUI.RIGHT));
+      UI(VaMUI.CreateButton(VaMUI.RIGHT, "Add Role", HandleAddRole));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
+
+      foreach (Role role in Role.list)
+      {
+        if (!role.isSelf)
+        {
+          UI(VaMUI.CreateLabelWithX(VaMUI.RIGHT, role.name, () => { HandleRemoveRole(role); }));
+          UI(role.useRoleToggle.Draw(VaMUI.RIGHT));
+          UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
+        }
+      }
 
 
       CreateBottomPadding();
     }
 
-
-    // ====================================================================================== //
-    // ================================ RECEIVE MESSAGES TAB ================================ //
-    // ====================================================================================== //
-    void BuildReceiveMessagesTabUI()
+    void HandleAddRole()
     {
-      CreateMainHeader(VaMUI.LEFT, "Receive Messages");
+      Role.AddRole(Role.addRoleInput.val);
+      Role.addRoleInput.val = "";
+      RequestRedraw();
+    }
+
+    void HandleRemoveRole(Role role)
+    {
+      Role.RemoveRole(role);
+      RequestRedraw();
+    }
+
+
+    // ============================================================================== //
+    // ================================ MESSAGES TAB ================================ //
+    // ============================================================================== //
+    void BuildMessagesTabUI()
+    {
+      CreateMainHeader(VaMUI.LEFT, "Messages");
       UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
 
       UI(VaMUI.CreateInfoText(
         VaMUI.LEFT,
-        "A <b>Message</b> is a custom event that can be called from other atoms in your scene using the 'Send Message' action. Messages allow external management of the character's state.",
+        $"Here you can trigger character <b>States</b> based on <b>Messages</b> sent by <b>Roles</b> in your scene. Messages sent by the <b>SendMessage</b> action will appear under the <b>{Role.Self}</b> role.",
         5
       ));
 
+      CreateSubHeader(VaMUI.RIGHT, "Listeners");
+      if (activeGroup == null || activeState == null)
+      {
+        UI(VaMUI.CreateInfoText(
+          VaMUI.RIGHT,
+          "You must select a <b>Group</b> with at least one <b>State</b> to add any listeners.",
+          2
+        ));
+        return;
+      }
+
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT, 10f));
+      UI(VaMUI.CreateInfoText(VaMUI.LEFT, "This state:", 1));
+      UI(VaMUI.CreateInfoText(VaMUI.LEFT, $"<b>{activeState.name}</b>", 1, background: false));
+      UI(VaMUI.CreateInfoText(VaMUI.LEFT, "will be triggered when this role:", 1));
+      Messages.SetRoleChooserChoices();
+      UI(Messages.roleChooser.Draw(VaMUI.LEFT));
+      UI(VaMUI.CreateInfoText(VaMUI.LEFT, $"sends this message:", 1));
+      UI(Messages.messageTypeChooser.Draw(VaMUI.LEFT));
+      if (Messages.messageTypeChooser.val == MessageType.Custom)
+      {
+        UI(Messages.customMessageInput.Draw(VaMUI.LEFT));
+      }
+      else
+      {
+        if (Messages.roleChooser.val == Role.Self)
+        {
+          Messages.SetGroupStateChooserChoices();
+          UI(Messages.groupChooser.Draw(VaMUI.LEFT));
+          UI(Messages.stateChooser.Draw(VaMUI.LEFT));
+        }
+        else
+        {
+          UI(Messages.groupInput.Draw(VaMUI.LEFT));
+          UI(Messages.stateInput.Draw(VaMUI.LEFT));
+        }
+      }
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "Add Listener", HandleAddListener));
+
+      UI(VaMUI.CreateInfoText(VaMUI.RIGHT, "This state will trigger when these messages are received:", 2));
+      foreach (MessageListener listener in Messages.GetListenersForState(activeState))
+      {
+        UI(VaMUI.CreateLabelWithX(VaMUI.RIGHT, $"<size=22>{listener.text}</size>", () => { HandleDeleteListener(listener); }));
+      }
 
       CreateBottomPadding();
+    }
+
+    void HandleAddListener()
+    {
+      if (activeState == null) return;
+      Messages.AddListener(activeState);
+      Messages.customMessageInput.val = "";
+      Messages.groupInput.val = "";
+      Messages.stateInput.val = "";
+      Messages.groupChooser.val = "";
+      Messages.stateChooser.val = "";
+      RequestRedraw();
+    }
+
+    void HandleDeleteListener(MessageListener listener)
+    {
+      Messages.RemoveListener(listener);
+      RequestRedraw();
     }
 
 

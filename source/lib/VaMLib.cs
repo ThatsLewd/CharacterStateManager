@@ -49,6 +49,11 @@ namespace VaMLib
   //       VaMUI.Init(this, CreateUIElement);
   // - In script OnDestroy(), call:
   //       VaMUI.Destroy();
+  //
+  //
+  // Note: Many CreateXXX methods have MANY optional arguments.
+  // You are HIGHLY encouraged to use C# named params for your own sanity.
+  //
 
   public static partial class VaMUI
   {
@@ -430,7 +435,7 @@ namespace VaMLib
     }
 
     // ================ CreateSlider ================ //
-    // Create a custom slider with less sucky behavior (Hint: use C# named params for optional args)
+    // Create a custom slider with less sucky behavior
     public static VaMSlider CreateSlider(string label, float defaultValue, float defaultRange, bool allowNegative = false, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, UnityAction<float> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
       float defaultMin = allowNegative ? -defaultRange : 0f;
@@ -667,6 +672,8 @@ namespace VaMLib
           customLabelWithTogglePrefab = uid.gameObject;
 
           RectTransform background = InstantiateBackground(uid.transform);
+          Image bgImage = background.GetComponent<Image>();
+          bgImage.color = new Color(1f, 1f, 1f, 0.35f);
 
           RectTransform labelRect = InstantiateLabel(uid.transform);
           Text labelText = labelRect.GetComponent<Text>();
@@ -1352,6 +1359,13 @@ namespace VaMLib
         storable.val = newVal;
       }
     }
+
+    public static string GetStringChooserDisplayFromVal(JSONStorableStringChooser storable, string val)
+    {
+      int index = storable.choices.FindIndex((v) => v == val);
+      if (index < 0 || index >= storable.displayChoices.Count) return "";
+      return storable.displayChoices[index];
+    } 
 
     // Add/Subtract slider range by current power of 10, clamping within range 1 - 100000
     public static void AddSliderRange(JSONStorableFloat storable, bool invert)

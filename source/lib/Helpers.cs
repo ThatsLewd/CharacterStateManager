@@ -30,6 +30,6 @@ namespace ThatsLewd
       }
       slider.min = min;
       slider.max = max;
-    } 
+    }
   }
 }
