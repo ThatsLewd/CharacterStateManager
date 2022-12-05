@@ -17,11 +17,11 @@ namespace ThatsLewd
       public const string Layers = "Layers";
       public const string Animations = "Animations";
       public const string Keyframes = "Keyframes";
-      public const string Transitions = "Transitions";
+      public const string Transitions = "Transitions"; // Currently unused
       public const string SendMessages = "Send Msgs";
       public const string ReceiveMessages = "Receive Msgs";
 
-      public static readonly string[] list = new string[] { Info, Groups, States, Layers, Animations, Keyframes, Transitions, SendMessages, ReceiveMessages };
+      public static readonly string[] list = new string[] { Info, Groups, States, Layers, Animations, Keyframes, SendMessages, ReceiveMessages };
     }
 
     bool uiNeedsRebuilt = false;
