@@ -20,8 +20,9 @@ namespace ThatsLewd
       public const string Transitions = "Transitions"; // Currently unused
       public const string SendMessages = "Send Msgs";
       public const string ReceiveMessages = "Receive Msgs";
+      public const string ExportImport = "Export/Import";
 
-      public static readonly string[] list = new string[] { Info, Groups, States, Layers, Animations, Keyframes, SendMessages, ReceiveMessages };
+      public static readonly string[] list = new string[] { Info, Groups, States, Layers, Animations, Keyframes, SendMessages, ReceiveMessages, ExportImport };
     }
 
     bool uiNeedsRebuilt = false;
@@ -356,8 +357,8 @@ namespace ThatsLewd
       }
 
       CreateSubHeader(VaMUI.LEFT, "Group Settings");
-      Draw(VaMUI.CreateButton(VaMUI.LEFT, "Set As Initial State", SetInitialState));
-      Draw(VaMUI.CreateButton(VaMUI.LEFT, "Remove Initial State", RemoveInitialState));
+      Draw(activeGroup.playbackEnabledToggle.Draw(VaMUI.LEFT));
+      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "Set Init. State", SetInitialState, "Unset Init. State", RemoveInitialState));
       Draw(VaMUI.CreateInfoText(VaMUI.LEFT, $"<b>Initial State</b>: {activeGroup.initialState?.name ?? "<none>"}", 1, background: false));
 
       Draw(VaMUI.CreateSpacer(VaMUI.LEFT));

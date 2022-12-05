@@ -19,18 +19,21 @@ namespace ThatsLewd
       public string name { get; set; }
       public List<State> states { get; private set; } = new List<State>();
 
-      public State initialState { get; set; } = null;
+      public State initialState = null;
+      public VaMUI.VaMToggle playbackEnabledToggle;
 
       public Group(string name = null)
       {
         this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "group";
+        playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true);
         Group.list.Add(this);
       }
 
       public Group Clone()
       {
         Group newGroup = new Group(Helpers.GetCopyName(name));
+        newGroup.playbackEnabledToggle.valNoCallback = playbackEnabledToggle.val;
         foreach (State state in states)
         {
           State newState = state.Clone(newGroup);
