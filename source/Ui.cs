@@ -62,12 +62,12 @@ namespace ThatsLewd
       VaMUI.Init(this, CreateUIElement);
 
       playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true);
-      hideTopUIToggle = VaMUI.CreateToggle("Hide Top UI", false, callback: HandleHideTopUI);
+      hideTopUIToggle = VaMUI.CreateToggle("Hide Top UI", false, callbackNoVal: RequestRedraw);
 
-      activeGroupIdChooser = VaMUI.CreateStringChooserKeyVal("Group", callback: HandleSelectGroup);
-      activeStateIdChooser = VaMUI.CreateStringChooserKeyVal("State", callback: HandleSelectState);
-      activeLayerIdChooser = VaMUI.CreateStringChooserKeyVal("Layer", callback: HandleSelectLayer);
-      activeAnimationIdChooser = VaMUI.CreateStringChooserKeyVal("Animation", callback: HandleSelectAnimation);
+      activeGroupIdChooser = VaMUI.CreateStringChooserKeyVal("Group", callbackNoVal: HandleSelectGroup);
+      activeStateIdChooser = VaMUI.CreateStringChooserKeyVal("State", callbackNoVal: HandleSelectState);
+      activeLayerIdChooser = VaMUI.CreateStringChooserKeyVal("Layer", callbackNoVal: HandleSelectLayer);
+      activeAnimationIdChooser = VaMUI.CreateStringChooserKeyVal("Animation", callbackNoVal: HandleSelectAnimation);
 
       editGroupNameInput = VaMUI.CreateTextInput("Name", callback: HandleRenameGroup);
       editStateNameInput = VaMUI.CreateTextInput("Name", callback: HandleRenameState);
@@ -76,7 +76,7 @@ namespace ThatsLewd
 
       transitionStateChooser = VaMUI.CreateStringChooserKeyVal("Select State", null, "");
       addMorphChooser = VaMUI.CreateStringChooserKeyVal("Select Morph", filterable: true, defaultValue: "");
-      morphChooserUseFavoritesToggle = VaMUI.CreateToggle("Favorites Only", true, callback: HandleToggleMorphChooserFavorites);
+      morphChooserUseFavoritesToggle = VaMUI.CreateToggle("Favorites Only", true, callbackNoVal: HandleToggleMorphChooserFavorites);
 
       RebuildUI();
     }
@@ -130,11 +130,6 @@ namespace ThatsLewd
       BuildActiveTabUI();
     }
 
-    void HandleHideTopUI(bool val)
-    {
-      RequestRedraw();
-    }
-
     void HandleTabSelect(string tabName)
     {
       activeTab = tabName;
@@ -181,7 +176,7 @@ namespace ThatsLewd
       }
     }
 
-    void HandleSelectGroup(string val)
+    void HandleSelectGroup()
     {
       VaMUtils.EnsureStringChooserValue(activeGroupIdChooser.storable, defaultToFirstChoice: true, noCallback: true);
       activeGroup = Group.list.Find((g) => g.id == activeGroupIdChooser.val);
@@ -189,28 +184,22 @@ namespace ThatsLewd
       RefreshStateList();
       VaMUtils.SelectStringChooserFirstValue(activeStateIdChooser.storable);
 
-      if (editGroupNameInput != null)
-      {
-        editGroupNameInput.valNoCallback = activeGroup?.name ?? "";
-      }
+      editGroupNameInput.valNoCallback = activeGroup?.name ?? "";
 
       RequestRedraw();
     }
 
-    void HandleSelectState(string val)
+    void HandleSelectState()
     {
       VaMUtils.EnsureStringChooserValue(activeStateIdChooser.storable, defaultToFirstChoice: true, noCallback: true);
       activeState = activeGroup?.states.Find((s) => s.id == activeStateIdChooser.val);
 
-      if (editStateNameInput != null)
-      {
-        editStateNameInput.valNoCallback = activeState?.name ?? "";
-      }
+      editStateNameInput.valNoCallback = activeState?.name ?? "";
 
       RequestRedraw();
     }
 
-    void HandleSelectLayer(string val)
+    void HandleSelectLayer()
     {
       VaMUtils.EnsureStringChooserValue(activeLayerIdChooser.storable, defaultToFirstChoice: true, noCallback: true);
       activeLayer = Layer.list.Find((l) => l.id == activeLayerIdChooser.val);
@@ -218,23 +207,17 @@ namespace ThatsLewd
       RefreshAnimationList();
       VaMUtils.SelectStringChooserFirstValue(activeAnimationIdChooser.storable);
 
-      if (editLayerNameInput != null)
-      {
-        editLayerNameInput.valNoCallback = activeLayer?.name ?? "";
-      }
+      editLayerNameInput.valNoCallback = activeLayer?.name ?? "";
 
       RequestRedraw();
     }
 
-    void HandleSelectAnimation(string val)
+    void HandleSelectAnimation()
     {
       VaMUtils.EnsureStringChooserValue(activeAnimationIdChooser.storable, defaultToFirstChoice: true, noCallback: true);
       activeAnimation = activeLayer?.animations.Find((a) => a.id == activeAnimationIdChooser.val);
 
-      if (editAnimationNameInput != null)
-      {
-        editAnimationNameInput.valNoCallback = activeAnimation?.name ?? "";
-      }
+      editAnimationNameInput.valNoCallback = activeAnimation?.name ?? "";
 
       RequestRedraw();
     }
@@ -390,7 +373,6 @@ namespace ThatsLewd
       UI(VaMUI.CreateSpacer(VaMUI.LEFT));
       CreateSubHeader(VaMUI.LEFT, "State Settings");
       UI(activeState.transitionModeChooser.Draw(VaMUI.LEFT));
-      activeState.transitionModeChooser.storable.setCallbackFunction = (string val) => { RequestRedraw(); };
       if (activeState.transitionModeChooser.val == TransitionMode.None)
       {
         UI(VaMUI.CreateInfoText(VaMUI.LEFT, "The state will not automatically advance.", 2));
@@ -477,14 +459,13 @@ namespace ThatsLewd
 
     void SetTransitionStateChooserChoices()
     {
-      if (transitionStateChooser == null || activeStateIdChooser == null) return;
       transitionStateChooser.choices = activeStateIdChooser.choices;
       transitionStateChooser.displayChoices = activeStateIdChooser.displayChoices;
     }
 
     void HandleAddStateTransition()
     {
-      if (transitionStateChooser == null || activeState == null || activeState == null) return;
+      if (activeGroup == null || activeState == null) return;
       State target = activeGroup.states.Find((s) => s.id == transitionStateChooser.val);
       if (target == null) return;
       activeState.AddTransition(target);
@@ -587,7 +568,6 @@ namespace ThatsLewd
       UI(VaMUI.CreateSpacer(VaMUI.LEFT));
       CreateSubHeader(VaMUI.LEFT, "Playlist Options");
       UI(activePlaylist.playModeChooser.Draw(VaMUI.LEFT));
-      activePlaylist.playModeChooser.storable.setCallbackFunction = (string val) => { RequestRedraw(); };
       if (activePlaylist.playModeChooser.val == PlaylistMode.Sequential)
       {
         UI(VaMUI.CreateInfoText(
@@ -614,7 +594,6 @@ namespace ThatsLewd
         1
       ));
       UI(activePlaylist.defaultTimingModeChooser.Draw(VaMUI.LEFT));
-      activePlaylist.defaultTimingModeChooser.storable.setCallbackFunction = (string val) => { RequestRedraw(); };
       UI(activePlaylist.defaultWeightSlider.Draw(VaMUI.LEFT));
       if (activePlaylist.defaultTimingModeChooser.val == TimingMode.RandomDuration)
       {
@@ -652,7 +631,6 @@ namespace ThatsLewd
         UI(VaMUI.CreateLabelWithX(VaMUI.RIGHT, $"<b>{entry.animation.name}</b>", () => { HandleDeletePlaylistEntry(entry); }));
         UI(VaMUI.CreateButtonPair(VaMUI.RIGHT, "Move Up", () => HandleMovePlaylistEntry(entry, -1), "Move Down", () => HandleMovePlaylistEntry(entry, 1)));
         UI(entry.timingModeChooser.Draw(VaMUI.RIGHT));
-        entry.timingModeChooser.storable.setCallbackFunction = (string val) => { RequestRedraw(); };
         if (activePlaylist.playModeChooser.val == PlaylistMode.Random)
         {
           UI(entry.weightSlider.Draw(VaMUI.RIGHT));
@@ -874,7 +852,7 @@ namespace ThatsLewd
 
     void HandleAddMorph()
     {
-      if (activeLayer == null || addMorphChooser == null) return;
+      if (activeLayer == null) return;
       DAZMorph morph = geometry.morphsControlUI.GetMorphByUid(addMorphChooser.val);
       if (morph == null) return;
       activeLayer.TrackMorph(morph);
@@ -890,7 +868,7 @@ namespace ThatsLewd
       RequestRedraw();
     }
 
-    void HandleToggleMorphChooserFavorites(bool val)
+    void HandleToggleMorphChooserFavorites()
     {
       SetMorphChooserChoices();
     }
@@ -902,7 +880,6 @@ namespace ThatsLewd
     bool? cachedUseFavorites = null;
     void SetMorphChooserChoices(bool forceRefresh = false)
     {
-      if (addMorphChooser == null || morphChooserUseFavoritesToggle == null) return;
       bool needsInitialized = cachedMorphChoices == null || cachedMorphDisplayChoices == null || cachedFavoriteMorphChoices == null || cachedFavoriteMorphDisplayChoices == null;
       if (needsInitialized || forceRefresh)
       {
@@ -1078,7 +1055,6 @@ namespace ThatsLewd
       if (activeKeyframe == null) return;
 
       UI(activeKeyframe.labelInput.Draw(VaMUI.LEFT));
-      activeKeyframe.labelInput.storable.setCallbackFunction = (string val) => { RequestRedraw(); };
 
       UI(activeKeyframe.colorPicker.Draw(VaMUI.LEFT));
       UI(VaMUI.CreateButton(VaMUI.LEFT, "Apply Color", () => { RequestRedraw(); }));

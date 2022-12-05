@@ -28,8 +28,8 @@ namespace ThatsLewd
         this.group = group;
         this.name = name ?? "state";
         this.group.states.Add(this);
-        this.transitionModeChooser = VaMUI.CreateStringChooser("Transition Condition", TransitionMode.list.ToList(), TransitionMode.None);
-        this.fixedDurationSlider = VaMUI.CreateSlider("Duration", 10f, 0f, 30f, callback: HandleFixedDurationChange);
+        this.transitionModeChooser = VaMUI.CreateStringChooser("Transition Condition", TransitionMode.list.ToList(), TransitionMode.None, callbackNoVal: instance.RequestRedraw);
+        this.fixedDurationSlider = VaMUI.CreateSlider("Duration", 10f, 0f, 30f, callbackNoVal: HandleFixedDurationChange);
         this.minDurationSlider = VaMUI.CreateSlider("Min Duration", 10f, 0f, 30f);
         this.maxDurationSlider = VaMUI.CreateSlider("Max Duration", 30f, 0f, 30f);
         Group.OnDelete += HandleGroupDeleted;
@@ -154,10 +154,10 @@ namespace ThatsLewd
       public AnimationPlaylist(Layer layer)
       {
         this.layer = layer;
-        playModeChooser = VaMUI.CreateStringChooser("Play Mode", PlaylistMode.list.ToList(), PlaylistMode.Sequential);
-        defaultTimingModeChooser = VaMUI.CreateStringChooser("Timing Mode", TimingMode.list.ToList(), TimingMode.DurationFromAnimation);
+        playModeChooser = VaMUI.CreateStringChooser("Play Mode", PlaylistMode.list.ToList(), PlaylistMode.Sequential, callbackNoVal: instance.RequestRedraw);
+        defaultTimingModeChooser = VaMUI.CreateStringChooser("Timing Mode", TimingMode.list.ToList(), TimingMode.DurationFromAnimation, callbackNoVal: instance.RequestRedraw);
         defaultWeightSlider = VaMUI.CreateSlider("Default Weight", 0.5f, 0f, 1f);
-        defaultDurationFixedSlider = VaMUI.CreateSlider("Default Duration", 10f, 0f, 30f, callback: HandleDurationFixedChange);
+        defaultDurationFixedSlider = VaMUI.CreateSlider("Default Duration", 10f, 0f, 30f, callbackNoVal: HandleDurationFixedChange);
         defaultDurationMinSlider = VaMUI.CreateSlider("Default Duration Min", 10f, 0f, 30f);
         defaultDurationMaxSlider = VaMUI.CreateSlider("Default Duration Max", 10f, 0f, 30f);
       }
@@ -185,7 +185,7 @@ namespace ThatsLewd
         entries.Add(new PlaylistEntry(this, animation));
       }
 
-      private void HandleDurationFixedChange(float val)
+      private void HandleDurationFixedChange()
       {
         Helpers.SetSliderValues(defaultDurationMinSlider, defaultDurationFixedSlider.val, defaultDurationFixedSlider.min, defaultDurationFixedSlider.max);
         Helpers.SetSliderValues(defaultDurationMaxSlider, defaultDurationFixedSlider.val, defaultDurationFixedSlider.min, defaultDurationFixedSlider.max);
@@ -207,10 +207,10 @@ namespace ThatsLewd
       {
         this.playlist = playlist;
         this.animation = animation;
-        timingModeChooser = VaMUI.CreateStringChooser("Timing Mode", TimingMode.list.ToList(), playlist.defaultTimingModeChooser.val);
+        timingModeChooser = VaMUI.CreateStringChooser("Timing Mode", TimingMode.list.ToList(), playlist.defaultTimingModeChooser.val, callbackNoVal: instance.RequestRedraw);
         weightSlider = VaMUI.CreateSlider("Weight", 0.5f, 0f, 1f);
         Helpers.SetSliderValues(weightSlider, playlist.defaultWeightSlider.val, playlist.defaultWeightSlider.min, playlist.defaultWeightSlider.max);
-        durationFixedSlider = VaMUI.CreateSlider("Duration", 10f, 0f, 30f, callback: HandleDurationFixedChange);
+        durationFixedSlider = VaMUI.CreateSlider("Duration", 10f, 0f, 30f, callbackNoVal: HandleDurationFixedChange);
         Helpers.SetSliderValues(durationFixedSlider, playlist.defaultDurationFixedSlider.val, playlist.defaultDurationFixedSlider.min, playlist.defaultDurationFixedSlider.max);
         durationMinSlider = VaMUI.CreateSlider("Duration Min", 10f, 0f, 30f);
         Helpers.SetSliderValues(durationMinSlider, playlist.defaultDurationMinSlider.val, playlist.defaultDurationMinSlider.min, playlist.defaultDurationMinSlider.max);
@@ -239,7 +239,7 @@ namespace ThatsLewd
         Helpers.SetSliderValues(durationMaxSlider, playlist.defaultDurationMaxSlider.val, playlist.defaultDurationMaxSlider.min, playlist.defaultDurationMaxSlider.max, noCallback: false);
       }
 
-      private void HandleDurationFixedChange(float val)
+      private void HandleDurationFixedChange()
       {
         Helpers.SetSliderValues(durationMinSlider, durationFixedSlider.val, durationFixedSlider.min, durationFixedSlider.max);
         Helpers.SetSliderValues(durationMaxSlider, durationFixedSlider.val, durationFixedSlider.min, durationFixedSlider.max);

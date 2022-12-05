@@ -109,7 +109,7 @@ namespace ThatsLewd
       {
         this.morph = morph;
         this.standardName = Helpers.GetStandardMorphName(morph);
-        this.slider = VaMUI.CreateSlider(standardName, morph.jsonFloat.defaultVal, -1f, 1f, callback: HandleValueChange);
+        this.slider = VaMUI.CreateSlider(standardName, morph.jsonFloat.defaultVal, -1f, 1f, callbackNoVal: HandleValueChange);
         UpdateSliderToMorph();
       }
 
@@ -130,7 +130,7 @@ namespace ThatsLewd
         slider.valNoCallback = value;
       }
 
-      private void HandleValueChange(float val)
+      private void HandleValueChange()
       {
         morph.morphValue = slider.val;
       }

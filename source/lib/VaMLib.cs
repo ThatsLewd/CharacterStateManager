@@ -228,7 +228,7 @@ namespace VaMLib
     // Create a list of buttons that spans both columns
     // NOTE that this creates a prefab, which you should clean up when your script exits
     // NOTE that this also means the tab bar is not dynamic -- it is setup once and the same prefab is reused
-    public static UIDynamicTabBar CreateTabBar(ref GameObject prefabReference, Column anchorSide, string[] menuItems, TabClickCallback callback, int tabsPerRow = 6)
+    public static UIDynamicTabBar CreateTabBar(ref GameObject prefabReference, Column anchorSide, string[] menuItems, UnityAction<string> callback, int tabsPerRow = 6)
     {
       if (prefabReference == null)
       {
@@ -330,7 +330,7 @@ namespace VaMLib
 
     // ================ CreateToggle ================ //
     // Create default VaM toggle
-    public static VaMToggle CreateToggle(string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
+    public static VaMToggle CreateToggle(string label, bool defaultValue, UnityAction<bool> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
       JSONStorableBool storable = new JSONStorableBool(label, defaultValue);
       if (register)
@@ -338,9 +338,9 @@ namespace VaMLib
         storable.storeType = JSONStorableParam.StoreType.Full;
         script.RegisterBool(storable);
       }
-      if (callback != null)
+      if (callback != null || callbackNoVal != null)
       {
-        storable.setCallbackFunction = callback;
+        storable.setCallbackFunction = (bool val) => { callback?.Invoke(val); callbackNoVal?.Invoke(); };
       }
       return new VaMToggle() { storable = storable };
     }
@@ -359,7 +359,7 @@ namespace VaMLib
 
     // ================ CreateStringChooser ================ //
     // Create default VaM string chooser
-    public static VaMStringChooser CreateStringChooser(string label, List<string> initialChoices = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
+    public static VaMStringChooser CreateStringChooser(string label, List<string> initialChoices = null, string defaultValue = null, bool filterable = false, UnityAction<string> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
       if (initialChoices == null)
       {
@@ -372,14 +372,14 @@ namespace VaMLib
         storable.storeType = JSONStorableParam.StoreType.Full;
         script.RegisterStringChooser(storable);
       }
-      if (callback != null)
+      if (callback != null || callbackNoVal != null)
       {
-        storable.setCallbackFunction = callback;
+        storable.setCallbackFunction = (string val) => { callback?.Invoke(val); callbackNoVal?.Invoke(); };
       }
       return new VaMStringChooser() { storable = storable, filterable = filterable };
     }
 
-    public static VaMStringChooser CreateStringChooserKeyVal(string label, List<KeyValuePair<string, string>> initialKeyValues = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
+    public static VaMStringChooser CreateStringChooserKeyVal(string label, List<KeyValuePair<string, string>> initialKeyValues = null, string defaultValue = null, bool filterable = false, UnityAction<string> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
       if (initialKeyValues == null)
       {
@@ -399,9 +399,9 @@ namespace VaMLib
         storable.storeType = JSONStorableParam.StoreType.Full;
         script.RegisterStringChooser(storable);
       }
-      if (callback != null)
+      if (callback != null || callbackNoVal != null)
       {
-        storable.setCallbackFunction = callback;
+        storable.setCallbackFunction = (string val) => { callback?.Invoke(val); callbackNoVal?.Invoke(); };
       }
       return new VaMStringChooser() { storable = storable, filterable = filterable };
     }
@@ -431,13 +431,14 @@ namespace VaMLib
 
     // ================ CreateSlider ================ //
     // Create a custom slider with less sucky behavior (Hint: use C# named params for optional args)
-    public static VaMSlider CreateSlider(string label, float defaultValue, float defaultRange, bool allowNegative = false, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
+    public static VaMSlider CreateSlider(string label, float defaultValue, float defaultRange, bool allowNegative = false, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, UnityAction<float> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
       float defaultMin = allowNegative ? -defaultRange : 0f;
       float defaultMax = defaultRange;
-      return CreateSlider(label, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
+      return CreateSlider(label, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable, callback, callbackNoVal, register);
     }
-    public static VaMSlider CreateSlider(string label, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
+
+    public static VaMSlider CreateSlider(string label, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, UnityAction<float> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
       JSONStorableFloat storable = new JSONStorableFloat(label, defaultValue, defaultMin, defaultMax, true, interactable);
       if (register)
@@ -445,9 +446,9 @@ namespace VaMLib
         storable.storeType = JSONStorableParam.StoreType.Full;
         script.RegisterFloat(storable);
       }
-      if (callback != null)
+      if (callback != null || callbackNoVal != null)
       {
-        storable.setCallbackFunction = callback;
+        storable.setCallbackFunction = (float val) => { callback?.Invoke(val); callbackNoVal?.Invoke(); };
       }
       return new VaMSlider()
       {
@@ -574,7 +575,7 @@ namespace VaMLib
 
     // ================ CreateTextInput ================ //
     // Create one-line text input with a label
-    public static VaMTextInput CreateTextInput(string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
+    public static VaMTextInput CreateTextInput(string label, string defaultValue = "", UnityAction<string> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
       JSONStorableString storable = new JSONStorableString(label, defaultValue);
       if (register)
@@ -582,9 +583,9 @@ namespace VaMLib
         storable.storeType = JSONStorableParam.StoreType.Full;
         script.RegisterString(storable);
       }
-      if (callback != null)
+      if (callback != null || callbackNoVal != null)
       {
-        storable.setCallbackFunction = callback;
+        storable.setCallbackFunction = (string val) => { callback?.Invoke(val); callbackNoVal?.Invoke(); };
       }
       return new VaMTextInput() { storable = storable };
     }
@@ -637,7 +638,7 @@ namespace VaMLib
     // ================ CreateLabelWithToggle ================ //
     // Create label that has a toggle on the right side
     // Not much different than a normal toggle -- but a good example of how to do a custom toggle
-    public static VaMLabelWithToggle CreateLabelWithToggle(string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
+    public static VaMLabelWithToggle CreateLabelWithToggle(string label, bool defaultValue, UnityAction<bool> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
       JSONStorableBool storable = new JSONStorableBool(label, defaultValue);
       if (register)
@@ -645,9 +646,9 @@ namespace VaMLib
         storable.storeType = JSONStorableParam.StoreType.Full;
         script.RegisterBool(storable);
       }
-      if (callback != null)
+      if (callback != null || callbackNoVal != null)
       {
-        storable.setCallbackFunction = callback;
+        storable.setCallbackFunction = (bool val) => { callback?.Invoke(val); callbackNoVal?.Invoke(); };
       }
       return new VaMLabelWithToggle() { storable = storable };
     }
@@ -693,7 +694,7 @@ namespace VaMLib
 
     // ================ CreateColorPicker ================ //
     // Create default VaM color picker
-    public static VaMColorPicker CreateColorPicker(string label, HSVColor defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = false)
+    public static VaMColorPicker CreateColorPicker(string label, HSVColor defaultValue, UnityAction<HSVColor> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
       JSONStorableColor storable = new JSONStorableColor(label, defaultValue);
       if (register)
@@ -701,9 +702,9 @@ namespace VaMLib
         storable.storeType = JSONStorableParam.StoreType.Full;
         script.RegisterColor(storable);
       }
-      if (callback != null)
+      if (callback != null || callbackNoVal != null)
       {
-        storable.setCallbackFunction = callback;
+        storable.setCallbackFunction = (float h, float s, float v) => { callback?.Invoke(new HSVColor() { H = h, S = s, V = v }); callbackNoVal?.Invoke(); };
       }
       return new VaMColorPicker() { storable = storable };
     }

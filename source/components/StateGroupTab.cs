@@ -36,7 +36,7 @@ namespace ThatsLewd
         transitions.Sort((a, b) => String.Compare(a.state.name, b.state.name));
       }
 
-      private void HandleFixedDurationChange(float val)
+      private void HandleFixedDurationChange()
       {
         Helpers.SetSliderValues(minDurationSlider, fixedDurationSlider.val, fixedDurationSlider.min, fixedDurationSlider.max);
         Helpers.SetSliderValues(maxDurationSlider, fixedDurationSlider.val, fixedDurationSlider.min, fixedDurationSlider.max);

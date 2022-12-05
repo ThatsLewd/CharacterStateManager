@@ -34,7 +34,7 @@ namespace ThatsLewd
         {
           this.id = VaMUtils.GenerateRandomID();
           this.animation = animation;
-          this.labelInput = VaMUI.CreateTextInput("Label", "");
+          this.labelInput = VaMUI.CreateTextInput("Label", "", callbackNoVal: instance.RequestRedraw);
           this.colorPicker = VaMUI.CreateColorPicker("Keyframe Color", GetRandomColor());
           this.easingChooser = VaMUI.CreateStringChooser("Select Easing", Easing.list.ToList(), animation.defaultEasingChooser.val);
           this.durationSlider = VaMUI.CreateSlider("Duration", 1f, 0f, 10f);
