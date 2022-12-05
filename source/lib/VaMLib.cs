@@ -330,11 +330,6 @@ namespace VaMLib
 
     // ================ CreateToggle ================ //
     // Create default VaM toggle
-    public static VaMToggle CreateToggle(ref VaMToggle reference, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateToggle(label, defaultValue, callback, register);
-    }
-
     public static VaMToggle CreateToggle(string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
     {
       JSONStorableBool storable = new JSONStorableBool(label, defaultValue);
@@ -364,11 +359,6 @@ namespace VaMLib
 
     // ================ CreateStringChooser ================ //
     // Create default VaM string chooser
-    public static VaMStringChooser CreateStringChooser(ref VaMStringChooser reference, string label, List<string> initialChoices = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateStringChooser(label, initialChoices, defaultValue, filterable, callback, register);
-    }
-
     public static VaMStringChooser CreateStringChooser(string label, List<string> initialChoices = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
     {
       if (initialChoices == null)
@@ -387,11 +377,6 @@ namespace VaMLib
         storable.setCallbackFunction = callback;
       }
       return new VaMStringChooser() { storable = storable, filterable = filterable };
-    }
-
-    public static VaMStringChooser CreateStringChooserKeyVal(ref VaMStringChooser reference, string label, List<KeyValuePair<string, string>> initialKeyValues = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateStringChooserKeyVal(label, initialKeyValues, defaultValue, filterable, callback, register);
     }
 
     public static VaMStringChooser CreateStringChooserKeyVal(string label, List<KeyValuePair<string, string>> initialKeyValues = null, string defaultValue = null, bool filterable = false, JSONStorableStringChooser.SetStringCallback callback = null, bool register = false)
@@ -446,23 +431,12 @@ namespace VaMLib
 
     // ================ CreateSlider ================ //
     // Create a custom slider with less sucky behavior (Hint: use C# named params for optional args)
-    public static VaMSlider CreateSlider(ref VaMSlider reference, string label, float defaultValue, float defaultRange, bool allowNegative = false, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateSlider(label, defaultValue, defaultRange, allowNegative, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
-    }
-
     public static VaMSlider CreateSlider(string label, float defaultValue, float defaultRange, bool allowNegative = false, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
     {
       float defaultMin = allowNegative ? -defaultRange : 0f;
       float defaultMax = defaultRange;
       return CreateSlider(label, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
     }
-
-    public static VaMSlider CreateSlider(ref VaMSlider reference, string label, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateSlider(label, defaultValue, defaultMin, defaultMax, fixedRange, exponentialRangeIncrement, integer, interactable, callback, register);
-    }
-
     public static VaMSlider CreateSlider(string label, float defaultValue, float defaultMin, float defaultMax, bool fixedRange = false, bool exponentialRangeIncrement = false, bool integer = false, bool interactable = true, JSONStorableFloat.SetFloatCallback callback = null, bool register = false)
     {
       JSONStorableFloat storable = new JSONStorableFloat(label, defaultValue, defaultMin, defaultMax, true, interactable);
@@ -600,11 +574,6 @@ namespace VaMLib
 
     // ================ CreateTextInput ================ //
     // Create one-line text input with a label
-    public static VaMTextInput CreateTextInput(ref VaMTextInput reference, string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateTextInput(label, defaultValue, callback, register);
-    }
-
     public static VaMTextInput CreateTextInput(string label, string defaultValue = "", JSONStorableString.SetStringCallback callback = null, bool register = false)
     {
       JSONStorableString storable = new JSONStorableString(label, defaultValue);
@@ -668,11 +637,6 @@ namespace VaMLib
     // ================ CreateLabelWithToggle ================ //
     // Create label that has a toggle on the right side
     // Not much different than a normal toggle -- but a good example of how to do a custom toggle
-    public static VaMLabelWithToggle CreateLabelWithToggle(ref VaMLabelWithToggle reference, string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateLabelWithToggle(label, defaultValue, callback, register);
-    }
-
     public static VaMLabelWithToggle CreateLabelWithToggle(string label, bool defaultValue, JSONStorableBool.SetBoolCallback callback = null, bool register = false)
     {
       JSONStorableBool storable = new JSONStorableBool(label, defaultValue);
@@ -729,11 +693,6 @@ namespace VaMLib
 
     // ================ CreateColorPicker ================ //
     // Create default VaM color picker
-    public static VaMColorPicker CreateColorPicker(ref VaMColorPicker reference, string label, HSVColor defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateColorPicker(label, defaultValue, callback, register);
-    }
-
     public static VaMColorPicker CreateColorPicker(string label, HSVColor defaultValue, JSONStorableColor.SetHSVColorCallback callback = null, bool register = false)
     {
       JSONStorableColor storable = new JSONStorableColor(label, defaultValue);
@@ -763,11 +722,6 @@ namespace VaMLib
 
     // ================ CreateTextureChooser ================ //
     // Create texture chooser -- note that you are responsible for destroying the texture when you don't need it anymore.
-    public static VaMTextureChooser CreateTextureChooser(ref VaMTextureChooser reference, string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateTextureChooser(label, defaultValue, settings, callback, register);
-    }
-
     public static VaMTextureChooser CreateTextureChooser(string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = false)
     {
       JSONStorableUrl storable = new JSONStorableUrl(label, string.Empty, (string url) => { QueueLoadTexture(url, settings, callback); }, "jpg|png|tif|tiff");
@@ -805,11 +759,6 @@ namespace VaMLib
 
     // ================ CreateAssetBundleChooser ================ //
     // Create asset bundle chooser
-    public static VaMAssetBundleChooser CreateAssetBundleChooser(ref VaMAssetBundleChooser reference, string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = false)
-    {
-      return reference = reference ?? CreateAssetBundleChooser(label, defaultValue, fileExtensions, callback, register);
-    }
-    
     public static VaMAssetBundleChooser CreateAssetBundleChooser(string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = false)
     {
       JSONStorableUrl storable = new JSONStorableUrl(label, defaultValue, fileExtensions);
