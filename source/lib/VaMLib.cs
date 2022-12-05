@@ -1161,6 +1161,13 @@ namespace VaMLib
       return trigger;
     }
 
+    public static T Clone<T>(T other, string newName) where T : CustomTrigger, new()
+    {
+      T trigger = new T();
+      trigger.Initialize(other, newName);
+      return trigger;
+    }
+
     // Restore an existing trigger from JSON
     public static void RestoreFromJSON<T>(ref T trigger, JSONClass jc, bool setMissingToDefault) where T : CustomTrigger, new()
     {
@@ -1689,6 +1696,17 @@ namespace VaMLib
 
       JSONClass jc = other.GetJSON();
       base.RestoreFromJSON(jc);
+    }
+
+    public void Initialize(CustomTrigger other, string newName)
+    {
+      this.name = other.name;
+      base.handler = VaMTrigger.handler;
+      this.initialized = true;
+
+      JSONClass jc = other.GetJSON();
+      base.RestoreFromJSON(jc);
+      this.name = newName;
     }
 
     public void OpenPanel()

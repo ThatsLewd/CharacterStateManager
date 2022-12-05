@@ -86,6 +86,23 @@ namespace ThatsLewd
         Animation.OnDelete -= HandleAnimationDeleted;
       }
 
+      public void CopyActions()
+      {
+        ActionClipboard.onEnterTrigger = onEnterTrigger;
+        ActionClipboard.onPlayingTrigger = null;
+        ActionClipboard.onExitTrigger = onExitTrigger;
+      }
+
+      public void PasteActions()
+      {
+        if (ActionClipboard.onEnterTrigger != null)
+          onEnterTrigger = VaMTrigger.Clone(ActionClipboard.onEnterTrigger, onEnterTrigger.name);
+        if (ActionClipboard.onExitTrigger != null)
+          onExitTrigger = VaMTrigger.Clone(ActionClipboard.onExitTrigger, onExitTrigger.name);
+
+        CharacterStateManager.instance.RequestRedraw();
+      }
+
       public AnimationPlaylist GetPlaylist(Layer layer)
       {
         return playlists.Find((p) => p.layer == layer);

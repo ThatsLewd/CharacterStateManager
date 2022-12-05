@@ -73,7 +73,7 @@ namespace ThatsLewd
       }
     }
 
-    void RequestRedraw()
+    public void RequestRedraw()
     {
       uiNeedsRebuilt = true;
     }
@@ -607,6 +607,7 @@ namespace ThatsLewd
       CreateSubHeader(VaMUI.LEFT, "Actions");
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Enter State", activeState.onEnterTrigger.OpenPanel));
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Exit State", activeState.onExitTrigger.OpenPanel));
+      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "Copy Actions", activeState.CopyActions, "Paste Actions", activeState.PasteActions));
 
       // PLAYLIST
       Draw(VaMUI.CreateInfoText(
@@ -975,6 +976,7 @@ namespace ThatsLewd
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Enter Animation", activeAnimation.onEnterTrigger.OpenPanel));
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Animation Playing", activeAnimation.onPlayingTrigger.OpenPanel));
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Exit Animation", activeAnimation.onExitTrigger.OpenPanel));
+      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "Copy Actions", activeAnimation.CopyActions, "Paste Actions", activeAnimation.PasteActions));
 
 
       CreateBottomPadding();
@@ -1067,6 +1069,7 @@ namespace ThatsLewd
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Enter Keyframe", activeKeyframe.onEnterTrigger.OpenPanel));
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Keyframe Playing", activeKeyframe.onPlayingTrigger.OpenPanel));
       Draw(VaMUI.CreateButton(VaMUI.LEFT, "On Exit Keyframe", activeKeyframe.onExitTrigger.OpenPanel));
+      Draw(VaMUI.CreateButtonPair(VaMUI.LEFT, "Copy Actions", activeKeyframe.CopyActions, "Paste Actions", activeKeyframe.PasteActions));
 
       // KEYFRAME DETAILS
       CreateSubHeader(VaMUI.RIGHT, "Keyframe Details");
@@ -1567,6 +1570,17 @@ namespace ThatsLewd
         uid.gameObject.SetActive(true);
         return uid;
       }
+    }
+
+
+    // ============================================================================== //
+    // ================================ MISC CLASSES ================================ //
+    // ============================================================================== //
+    public static class ActionClipboard
+    {
+      public static EventTrigger onEnterTrigger = null;
+      public static ValueTrigger onPlayingTrigger = null;
+      public static EventTrigger onExitTrigger = null;
     }
   }
 }
