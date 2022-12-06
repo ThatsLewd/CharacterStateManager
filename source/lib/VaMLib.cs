@@ -1125,20 +1125,6 @@ namespace VaMLib
       return trigger;
     }
 
-    // Restore an existing trigger from JSON
-    public static void RestoreFromJSON<T>(ref T trigger, JSONClass jc, bool setMissingToDefault) where T : CustomTrigger, new()
-    {
-      trigger.RestoreFromJSON(jc, script.subScenePrefix, script.mergeRestore, setMissingToDefault);
-    }
-
-    // Restore a trigger from JSON by name
-    public static void RestoreFromJSON<T>(out T trigger, string name, JSONClass jc, bool setMissingToDefault) where T : CustomTrigger, new()
-    {
-      trigger = new T();
-      trigger.Initialize(name);
-      trigger.RestoreFromJSON(jc, script.subScenePrefix, script.mergeRestore, setMissingToDefault);
-    }
-
     private static IEnumerator LoadAssets()
     {
       foreach (var x in LoadAsset("z_ui2", "TriggerActionsPanel", CreateTriggerActionsPrefab))
@@ -1299,7 +1285,7 @@ namespace VaMLib
 
       for (int i = 0; i < length; i++)
       {
-        int r = UnityEngine.Random.Range(0, length);
+        int r = UnityEngine.Random.Range(0, IDAlphabet.Length);
         str.Append(IDAlphabet[r]);
       }
 
@@ -1658,8 +1644,8 @@ namespace VaMLib
       base.handler = VaMTrigger.handler;
       this.initialized = true;
 
-      JSONClass jc = other.GetJSON();
-      base.RestoreFromJSON(jc);
+      JSONClass json = other.GetJSON();
+      base.RestoreFromJSON(json);
     }
 
     public void Initialize(CustomTrigger other, string newName)
@@ -1668,8 +1654,8 @@ namespace VaMLib
       base.handler = VaMTrigger.handler;
       this.initialized = true;
 
-      JSONClass jc = other.GetJSON();
-      base.RestoreFromJSON(jc);
+      JSONClass json = other.GetJSON();
+      base.RestoreFromJSON(json);
       this.name = newName;
     }
 
@@ -1702,18 +1688,14 @@ namespace VaMLib
       }
     }
 
-    public void RestoreFromJSON(JSONClass jc, string subScenePrefix, bool isMerge, bool setMissingToDefault)
+    public void StoreJSON(JSONClass json)
     {
-      if (jc.HasKey(name))
-      {
-        JSONClass tc = jc[name].AsObject;
-        if (tc != null)
-          base.RestoreFromJSON(tc, subScenePrefix, isMerge);
-      }
-      else if (setMissingToDefault)
-      {
-        base.RestoreFromJSON(new JSONClass());
-      }
+      json[name] = base.GetJSON();
+    }
+
+    public override void RestoreFromJSON(JSONClass json)
+    {
+      base.RestoreFromJSON(json[name].AsObject);
     }
   }
 

@@ -28,6 +28,8 @@ namespace ThatsLewd
         stateInput = VaMUI.CreateTextInput("State Name");
         groupChooser = VaMUI.CreateStringChooserKeyVal("Group", callbackNoVal: instance.RequestRedraw);
         stateChooser = VaMUI.CreateStringChooserKeyVal("State", callbackNoVal: instance.RequestRedraw);
+
+        State.OnDelete += HandleStateDeleted;
       }
 
       public static void AddListener(State activeState)
@@ -66,6 +68,11 @@ namespace ThatsLewd
         listeners.Remove(listener);
       }
 
+      private static void HandleStateDeleted(State state)
+      {
+        listeners.RemoveAll((l) => l.target == state);
+      }
+
       public static List<MessageListener> GetListenersForState(State state)
       {
         return listeners.FindAll((l) => l.target == state);
@@ -74,6 +81,7 @@ namespace ThatsLewd
       public static void SetRoleChooserChoices()
       {
         List<string> choices = new List<string>();
+        choices.Add(Role.Self);
         foreach (Role role in Role.list)
         {
           choices.Add(role.name);
@@ -105,6 +113,30 @@ namespace ThatsLewd
         VaMUtils.SetStringChooserChoices(groupChooser.storable, groupChoices);
         VaMUtils.SetStringChooserChoices(stateChooser.storable, stateChoices);
       }
+
+      public static JSONClass GetJSONTopLevel()
+      {
+        JSONClass json = new JSONClass();
+        json["listeners"] = new JSONArray();
+        foreach (MessageListener listener in Messages.listeners)
+        {
+          json["listeners"].AsArray.Add(listener.GetJSON());
+        }
+        return json;
+      }
+
+      public static void RestoreFromJSONTopLevel(JSONClass json)
+      {
+        Messages.listeners.Clear();
+        foreach (JSONNode node in json["listeners"].AsArray.Childs)
+        {
+          MessageListener listener = MessageListener.FromJSON(node.AsObject);
+          if (listener != null)
+          {
+            listeners.Add(listener);
+          }
+        }
+      }
     }
 
     public static class MessageType
@@ -129,7 +161,32 @@ namespace ThatsLewd
       {
         this.target = target;
         this.text = text;
-      } 
+      }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["state"] = target.id;
+        json["stateGroup"] = target.group.id;
+        json["text"] = text;
+        return json;
+      }
+
+      public static MessageListener FromJSON(JSONClass json)
+      {
+        string stateId = json["state"].Value;
+        string groupId = json["stateGroup"].Value;
+        Group group = Group.list.Find((g) => g.id == groupId);
+        State state = group?.states.Find((s) => s.id == stateId);
+        if (state == null)
+        {
+          LogError($"Could not find state: {stateId}");
+          return null;
+        }
+        string text = json["text"];
+        MessageListener listener = new MessageListener(state, text);
+        return listener;
+      }
     }
   }
 }

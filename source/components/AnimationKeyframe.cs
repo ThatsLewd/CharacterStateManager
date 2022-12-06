@@ -36,7 +36,8 @@ namespace ThatsLewd
           this.animation = animation;
           this.labelInput = VaMUI.CreateTextInput("Label", "", callbackNoVal: instance.RequestRedraw);
           this.colorPicker = VaMUI.CreateColorPicker("Keyframe Color", GetRandomColor());
-          this.easingChooser = VaMUI.CreateStringChooser("Select Easing", Easing.list.ToList(), animation.defaultEasingChooser.val);
+          this.easingChooser = VaMUI.CreateStringChooser("Select Easing", Easing.list.ToList(), Easing.EasingType.Linear);
+          this.easingChooser.valNoCallback = animation.defaultEasingChooser.val;
           this.durationSlider = VaMUI.CreateSlider("Duration", 1f, 0f, 10f);
           Helpers.SetSliderValues(durationSlider, animation.defaultDurationSlider.val, animation.defaultDurationSlider.min, animation.defaultDurationSlider.max);
           if (index == -1)
@@ -146,6 +147,56 @@ namespace ThatsLewd
           };
           return color;
         }
+
+        public JSONClass GetJSON()
+        {
+          JSONClass json = new JSONClass();
+          json["id"] = id;
+          labelInput.storable.StoreJSON(json);
+          colorPicker.storable.StoreJSON(json);
+          easingChooser.storable.StoreJSON(json);
+          durationSlider.storable.StoreJSON(json);
+          onEnterTrigger.StoreJSON(json);
+          onPlayingTrigger.StoreJSON(json);
+          onExitTrigger.StoreJSON(json);
+          json["capturedControllers"] = new JSONArray();
+          foreach (CapturedController capture in capturedControllers)
+          {
+            json["capturedControllers"].AsArray.Add(capture.GetJSON());
+          }
+          json["capturedMorphs"] = new JSONArray();
+          foreach (CapturedMorph capture in capturedMorphs)
+          {
+            json["capturedMorphs"].AsArray.Add(capture.GetJSON());
+          }
+          return json;
+        }
+
+        public void RestoreFromJSON(JSONClass json)
+        {
+          id = json["id"].Value;
+          labelInput.storable.RestoreFromJSON(json);
+          colorPicker.storable.RestoreFromJSON(json);
+          easingChooser.storable.RestoreFromJSON(json);
+          durationSlider.storable.RestoreFromJSON(json);
+          onEnterTrigger.RestoreFromJSON(json);
+          onPlayingTrigger.RestoreFromJSON(json);
+          onExitTrigger.RestoreFromJSON(json);
+          capturedControllers.Clear();
+          foreach (JSONNode node in json["capturedControllers"].AsArray)
+          {
+            CapturedController capture = new CapturedController();
+            capture.RestoreFromJSON(node.AsObject);
+            capturedControllers.Add(capture);
+          }
+          capturedMorphs.Clear();
+          foreach (JSONNode node in json["capturedMorphs"].AsArray)
+          {
+            CapturedMorph capture = new CapturedMorph();
+            capture.RestoreFromJSON(node.AsObject);
+            capturedMorphs.Add(capture);
+          }
+        }
       }
     }
 
@@ -164,6 +215,50 @@ namespace ThatsLewd
           rotation = rotation,
         };
       }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["name"] = name;
+        if (position != null)
+        {
+          json["position"] = new JSONClass();
+          json["position"]["x"].AsFloat = position.Value.x;
+          json["position"]["y"].AsFloat = position.Value.y;
+          json["position"]["z"].AsFloat = position.Value.z;
+        }
+        if (rotation != null)
+        {
+          json["rotation"] = new JSONClass();
+          json["rotation"]["x"].AsFloat = rotation.Value.x;
+          json["rotation"]["y"].AsFloat = rotation.Value.y;
+          json["rotation"]["z"].AsFloat = rotation.Value.z;
+          json["rotation"]["w"].AsFloat = rotation.Value.w;
+        }
+        return json;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        name = json["name"].Value;
+        if (json.HasKey("position"))
+        {
+          position = new Vector3(
+            json["position"]["x"].AsFloat,
+            json["position"]["y"].AsFloat,
+            json["position"]["z"].AsFloat
+          );
+        }
+        if (json.HasKey("rotation"))
+        {
+          rotation = new Quaternion(
+            json["rotation"]["x"].AsFloat,
+            json["rotation"]["y"].AsFloat,
+            json["rotation"]["z"].AsFloat,
+            json["rotation"]["w"].AsFloat
+          );
+        }
+      }
     }
 
     public class CapturedMorph
@@ -178,6 +273,20 @@ namespace ThatsLewd
           uid = uid,
           value = value,
         };
+      }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["uid"] = uid;
+        json["value"].AsFloat = value;
+        return json;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        uid = json["uid"].Value;
+        value = json["value"].AsFloat;
       }
     }
   }

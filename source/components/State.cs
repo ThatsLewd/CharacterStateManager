@@ -119,6 +119,64 @@ namespace ThatsLewd
         playlists.Add(new AnimationPlaylist(layer));
         playlists.Sort((a, b) => String.Compare(a.layer.name, b.layer.name));
       }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["id"] = id;
+        json["name"] = name;
+        onEnterTrigger.StoreJSON(json);
+        onExitTrigger.StoreJSON(json);
+        json["playlists"] = new JSONArray();
+        foreach (AnimationPlaylist playlist in playlists)
+        {
+          json["playlists"].AsArray.Add(playlist.GetJSON());
+        }
+        transitionModeChooser.storable.StoreJSON(json);
+        fixedDurationSlider.storable.StoreJSON(json);
+        minDurationSlider.storable.StoreJSON(json);
+        maxDurationSlider.storable.StoreJSON(json);
+        json["transitions"] = new JSONArray();
+        foreach (StateTransition transition in transitions)
+        {
+          json["transitions"].AsArray.Add(transition.GetJSON());
+        }
+        return json;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        id = json["id"].Value;
+        name = json["name"].Value;
+        onEnterTrigger.RestoreFromJSON(json);
+        onExitTrigger.RestoreFromJSON(json);
+        transitionModeChooser.storable.RestoreFromJSON(json);
+        fixedDurationSlider.storable.RestoreFromJSON(json);
+        minDurationSlider.storable.RestoreFromJSON(json);
+        maxDurationSlider.storable.RestoreFromJSON(json);
+      }
+
+      public void LateRestoreFromJSON(JSONClass json)
+      {
+        playlists.Clear();
+        foreach (JSONNode node in json["playlists"].AsArray.Childs)
+        {
+          AnimationPlaylist playlist = AnimationPlaylist.FromJSON(node.AsObject);
+          if (playlist != null)
+          {
+            playlists.Add(playlist);
+          }
+        }
+        transitions.Clear();
+        foreach (JSONNode node in json["transitions"].AsArray.Childs)
+        {
+          StateTransition transition = StateTransition.FromJSON(node.AsObject);
+          if (transition != null)
+          {
+            transitions.Add(transition);
+          }
+        }
+      }
     }
 
     public static class PlaylistMode
@@ -190,6 +248,57 @@ namespace ThatsLewd
         Helpers.SetSliderValues(defaultDurationMinSlider, defaultDurationFixedSlider.val, defaultDurationFixedSlider.min, defaultDurationFixedSlider.max);
         Helpers.SetSliderValues(defaultDurationMaxSlider, defaultDurationFixedSlider.val, defaultDurationFixedSlider.min, defaultDurationFixedSlider.max);
       }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["layer"] = layer.id;
+        json["entries"] = new JSONArray();
+        foreach (PlaylistEntry entry in entries)
+        {
+          json["entries"].AsArray.Add(entry.GetJSON());
+        }
+        playModeChooser.storable.StoreJSON(json);
+        defaultTimingModeChooser.storable.StoreJSON(json);
+        defaultWeightSlider.storable.StoreJSON(json);
+        defaultDurationFixedSlider.storable.StoreJSON(json);
+        defaultDurationMinSlider.storable.StoreJSON(json);
+        defaultDurationMaxSlider.storable.StoreJSON(json);
+        return json;
+      }
+
+      public static AnimationPlaylist FromJSON(JSONClass json)
+      {
+        string layerId = json["layer"].Value;
+        Layer layer = Layer.list.Find((l) => l.id == layerId);
+        if (layer == null)
+        {
+          LogError($"Could not find layer: {layerId}");
+          return null;
+        }
+        AnimationPlaylist playlist = new AnimationPlaylist(layer);
+        playlist.RestoreFromJSON(json);
+        return playlist;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        entries.Clear();
+        foreach (JSONNode node in json["entries"].AsArray.Childs)
+        {
+          PlaylistEntry entry = PlaylistEntry.FromJSON(this, node.AsObject);
+          if (entry != null)
+          {
+            entries.Add(entry);
+          }
+        }
+        playModeChooser.storable.RestoreFromJSON(json);
+        defaultTimingModeChooser.storable.RestoreFromJSON(json);
+        defaultWeightSlider.storable.RestoreFromJSON(json);
+        defaultDurationFixedSlider.storable.RestoreFromJSON(json);
+        defaultDurationMinSlider.storable.RestoreFromJSON(json);
+        defaultDurationMaxSlider.storable.RestoreFromJSON(json);
+      }
     }
 
     public class PlaylistEntry
@@ -207,7 +316,8 @@ namespace ThatsLewd
       {
         this.playlist = playlist;
         this.animation = animation;
-        timingModeChooser = VaMUI.CreateStringChooser("Timing Mode", TimingMode.list.ToList(), playlist.defaultTimingModeChooser.val, callbackNoVal: instance.RequestRedraw);
+        timingModeChooser = VaMUI.CreateStringChooser("Timing Mode", TimingMode.list.ToList(), TimingMode.DurationFromAnimation, callbackNoVal: instance.RequestRedraw);
+        timingModeChooser.valNoCallback = playlist.defaultTimingModeChooser.val;
         weightSlider = VaMUI.CreateSlider("Weight", 0.5f, 0f, 1f);
         Helpers.SetSliderValues(weightSlider, playlist.defaultWeightSlider.val, playlist.defaultWeightSlider.min, playlist.defaultWeightSlider.max);
         durationFixedSlider = VaMUI.CreateSlider("Duration", 10f, 0f, 30f, callbackNoVal: HandleDurationFixedChange);
@@ -243,6 +353,44 @@ namespace ThatsLewd
       {
         Helpers.SetSliderValues(durationMinSlider, durationFixedSlider.val, durationFixedSlider.min, durationFixedSlider.max);
         Helpers.SetSliderValues(durationMaxSlider, durationFixedSlider.val, durationFixedSlider.min, durationFixedSlider.max);
+      }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["animation"] = animation.id;
+        json["animationLayer"] = animation.layer.id;
+        timingModeChooser.storable.StoreJSON(json);
+        weightSlider.storable.StoreJSON(json);
+        durationFixedSlider.storable.StoreJSON(json);
+        durationMinSlider.storable.StoreJSON(json);
+        durationMaxSlider.storable.StoreJSON(json);
+        return json;
+      }
+
+      public static PlaylistEntry FromJSON(AnimationPlaylist playlist, JSONClass json)
+      {
+        string animationId = json["animation"].Value;
+        string layerId = json["animationLayer"].Value;
+        Layer layer = Layer.list.Find((l) => l.id == layerId);
+        Animation animation = layer?.animations.Find((a) => a.id == animationId);
+        if (animation == null)
+        {
+          LogError($"Could not find animation: {animationId}");
+          return null;
+        }
+        PlaylistEntry entry = new PlaylistEntry(playlist, animation);
+        entry.RestoreFromJSON(json);
+        return entry;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        timingModeChooser.storable.RestoreFromJSON(json);
+        weightSlider.storable.RestoreFromJSON(json);
+        durationFixedSlider.storable.RestoreFromJSON(json);
+        durationMinSlider.storable.RestoreFromJSON(json);
+        durationMaxSlider.storable.RestoreFromJSON(json);
       }
     }
   }

@@ -117,6 +117,44 @@ namespace ThatsLewd
 
         CharacterStateManager.instance.RequestRedraw();
       }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["id"] = id;
+        json["name"] = name;
+        json["keyframes"] = new JSONArray();
+        foreach (Keyframe keyframe in keyframes)
+        {
+          json["keyframes"].AsArray.Add(keyframe.GetJSON());
+        }
+        loopTypeChooser.storable.StoreJSON(json);
+        playbackSpeedSlider.storable.StoreJSON(json);
+        defaultEasingChooser.storable.StoreJSON(json);
+        defaultDurationSlider.storable.StoreJSON(json);
+        onEnterTrigger.StoreJSON(json);
+        onPlayingTrigger.StoreJSON(json);
+        onExitTrigger.StoreJSON(json);
+        return json;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        id = json["id"].Value;
+        name = json["name"].Value;
+        keyframes.Clear();
+        foreach (JSONNode node in json["keyframes"].AsArray)
+        {
+          new Keyframe(this).RestoreFromJSON(node.AsObject);
+        }
+        loopTypeChooser.storable.RestoreFromJSON(json);
+        playbackSpeedSlider.storable.RestoreFromJSON(json);
+        defaultEasingChooser.storable.RestoreFromJSON(json);
+        defaultDurationSlider.storable.RestoreFromJSON(json);
+        onEnterTrigger.RestoreFromJSON(json);
+        onPlayingTrigger.RestoreFromJSON(json);
+        onExitTrigger.RestoreFromJSON(json);
+      }
     }
   }
 }

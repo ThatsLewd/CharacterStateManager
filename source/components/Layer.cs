@@ -70,6 +70,74 @@ namespace ThatsLewd
           trackedControllers.Add(new TrackedController(controller));
         }
       }
+
+      public static JSONClass GetJSONTopLevel()
+      {
+        JSONClass json = new JSONClass();
+        json["list"] = new JSONArray();
+        foreach (Layer layer in Layer.list)
+        {
+          json["list"].AsArray.Add(layer.GetJSON());
+        }
+        return json;
+      }
+
+      public static void RestoreFromJSONTopLevel(JSONClass json)
+      {
+        Layer.list.Clear();
+        foreach (JSONNode node in json["list"].AsArray.Childs)
+        {
+          new Layer().RestoreFromJSON(node.AsObject);
+        }
+      }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["id"] = id;
+        json["name"] = name;
+        json["animations"] = new JSONArray();
+        foreach (Animation animation in animations)
+        {
+          json["animations"].AsArray.Add(animation.GetJSON());
+        }
+        json["trackedControllers"] = new JSONClass();
+        foreach (TrackedController tc in trackedControllers)
+        {
+          tc.StoreJSON(json["trackedControllers"].AsObject);
+        }
+        json["trackedMorphs"] = new JSONArray();
+        foreach (TrackedMorph tm in trackedMorphs)
+        {
+          json["trackedMorphs"].AsArray.Add(tm.GetJSON());
+        }
+        return json;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        id = json["id"].Value;
+        name = json["name"].Value;
+        animations.Clear();
+        foreach (JSONNode node in json["animations"].AsArray)
+        {
+          new Animation(this).RestoreFromJSON(node.AsObject);
+        }
+        InitializeControllers();
+        foreach (TrackedController tc in trackedControllers)
+        {
+          tc.RestoreFromJSON(json["trackedControllers"].AsObject);
+        }
+        trackedMorphs.Clear();
+        foreach (JSONNode node in json["trackedMorphs"].AsArray)
+        {
+          TrackedMorph tm = TrackedMorph.FromJSON(node.AsObject);
+          if (tm != null)
+          {
+            trackedMorphs.Add(tm);
+          }
+        }
+      }
     }
 
     public class TrackedController
@@ -83,19 +151,34 @@ namespace ThatsLewd
       public TrackedController(FreeControllerV3 controller)
       {
         this.controller = controller;
-        this.trackPositionToggle = VaMUI.CreateToggle($"Track {controller.name} Position", false);
-        this.trackRotationToggle = VaMUI.CreateToggle($"Track {controller.name} Rotation", false);
+        this.trackPositionToggle = VaMUI.CreateToggle($"Track Position", false);
+        this.trackRotationToggle = VaMUI.CreateToggle($"Track Rotation", false);
       }
 
       public void CopyFrom(TrackedController source)
       {
         if (controller.name != source.controller.name)
         {
-          SuperController.LogError("Tried to copy controller from wrong source!");
+          LogError("Tried to copy controller from wrong source!");
           return;
         }
         trackPositionToggle.valNoCallback = source.trackPositionToggle.val;
         trackRotationToggle.valNoCallback = source.trackRotationToggle.val;
+      }
+
+      public void StoreJSON(JSONClass json)
+      {
+        if (!isTracked) return;
+        json[controller.name] = new JSONClass();
+        trackPositionToggle.storable.StoreJSON(json[controller.name].AsObject);
+        trackRotationToggle.storable.StoreJSON(json[controller.name].AsObject);
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        if (!json.HasKey(controller.name)) return;
+        trackPositionToggle.storable.RestoreFromJSON(json[controller.name].AsObject);
+        trackRotationToggle.storable.RestoreFromJSON(json[controller.name].AsObject);
       }
     }
 
@@ -133,6 +216,25 @@ namespace ThatsLewd
       private void HandleValueChange()
       {
         morph.morphValue = slider.val;
+      }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["morph"] = morph.uid;
+        return json;
+      }
+
+      public static TrackedMorph FromJSON(JSONClass json)
+      {
+        string uid = json["morph"].Value;
+        DAZMorph morph = CharacterStateManager.instance.morphsControl.GetMorphByUid(uid);
+        if (morph == null)
+        {
+          LogError($"Failed to load tracked morph: {uid}");
+          return null;
+        }
+        return new TrackedMorph(morph);
       }
     }
   }

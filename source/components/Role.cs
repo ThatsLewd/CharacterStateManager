@@ -13,7 +13,7 @@ namespace ThatsLewd
       public const string Self = "__self";
 
       // static stuff
-      public static List<Role> list { get; private set; } = new List<Role>() { new Role(Self) };
+      public static List<Role> list { get; private set; } = new List<Role>();
       public static VaMUI.VaMTextInput addRoleInput;
 
       public static void Init()
@@ -48,8 +48,54 @@ namespace ThatsLewd
       public Role(string name)
       {
         this.name = name;
+        InitUI();
+      }
+
+      private void InitUI()
+      {
         useRoleToggle = VaMUI.CreateToggle("Broadcast as role", false);
         if (isSelf) useRoleToggle.valNoCallback = true;
+      }
+
+      public static JSONClass GetJSONTopLevel()
+      {
+        JSONClass json = new JSONClass();
+        json["list"] = new JSONArray();
+        foreach (Role role in Role.list)
+        {
+          json["list"].AsArray.Add(role.GetJSON());
+        }
+        return json;
+      }
+
+      public static void RestoreFromJSONTopLevel(JSONClass json)
+      {
+        Role.list.Clear();
+        foreach (JSONNode node in json["list"].AsArray.Childs)
+        {
+          Role.list.Add(Role.FromJSON(node.AsObject));
+        }
+      }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["name"] = name;
+        useRoleToggle.storable.StoreJSON(json);
+        return json;
+      }
+
+      public static Role FromJSON(JSONClass json)
+      {
+        string name = json["name"].Value;
+        Role role = new Role(name);
+        role.RestoreFromJSON(json);
+        return role;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        useRoleToggle.storable.RestoreFromJSON(json);
       }
     }
   }

@@ -8,18 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public static class TransitionMode
-    {
-      public const string None = "None";
-      public const string PlaylistCompleted = "Playlist Completed";
-      public const string FixedDuration = "Fixed Duration";
-      public const string RandomDuration = "Random Duration";
-
-      public static readonly string[] list = new string[] { None, PlaylistCompleted, FixedDuration, RandomDuration };
-    }
-
     // All the state properties related to the group tab are in this file for clarity
-    // TODO send messages to other groups on state enter/exit
     public partial class State : BaseComponentWithId
     {
       public VaMUI.VaMStringChooser transitionModeChooser { get; private set; }
@@ -43,6 +32,16 @@ namespace ThatsLewd
       }
     }
 
+    public static class TransitionMode
+    {
+      public const string None = "None";
+      public const string PlaylistCompleted = "Playlist Completed";
+      public const string FixedDuration = "Fixed Duration";
+      public const string RandomDuration = "Random Duration";
+
+      public static readonly string[] list = new string[] { None, PlaylistCompleted, FixedDuration, RandomDuration };
+    }
+
     public class StateTransition
     {
       public State state { get; private set; }
@@ -61,6 +60,36 @@ namespace ThatsLewd
         newStateTransition.weightSlider.min = weightSlider.min;
         newStateTransition.weightSlider.max = weightSlider.max;
         return newStateTransition;
+      }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["state"] = state.id;
+        json["stateGroup"] = state.group.id;
+        weightSlider.storable.StoreJSON(json);
+        return json;
+      }
+
+      public static StateTransition FromJSON(JSONClass json)
+      {
+        string stateId = json["state"].Value;
+        string groupId = json["stateGroup"].Value;
+        Group group = Group.list.Find((g) => g.id == groupId);
+        State state = group?.states.Find((s) => s.id == stateId);
+        if (state == null)
+        {
+          LogError($"Could not find state: {stateId}");
+          return null;
+        }
+        StateTransition transition = new StateTransition(state);
+        transition.RestoreFromJSON(json);
+        return transition;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        weightSlider.storable.RestoreFromJSON(json);
       }
     }
   }

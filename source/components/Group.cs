@@ -50,6 +50,60 @@ namespace ThatsLewd
         Group.list.Remove(this);
         Group.OnDelete?.Invoke(this);
       }
+
+      public static JSONClass GetJSONTopLevel()
+      {
+        JSONClass json = new JSONClass();
+        json["list"] = new JSONArray();
+        foreach (Group group in Group.list)
+        {
+          json["list"].AsArray.Add(group.GetJSON());
+        }
+        return json;
+      }
+
+      public static void RestoreFromJSONTopLevel(JSONClass json)
+      {
+        Group.list.Clear();
+        foreach (JSONNode node in json["list"].AsArray.Childs)
+        {
+          new Group().RestoreFromJSON(node.AsObject);
+        }
+      }
+
+      public JSONClass GetJSON()
+      {
+        JSONClass json = new JSONClass();
+        json["id"] = id;
+        json["name"] = name;
+        json["states"] = new JSONArray();
+        foreach (State state in states)
+        {
+          json["states"].AsArray.Add(state.GetJSON());
+        }
+        json["initialState"] = initialState?.id;
+        playbackEnabledToggle.storable.StoreJSON(json);
+        return json;
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        id = json["id"].Value;
+        name = json["name"].Value;
+        states.Clear();
+        foreach (JSONNode node in json["states"].AsArray.Childs)
+        {
+          new State(this).RestoreFromJSON(node.AsObject);
+        }
+        foreach (JSONNode node in json["states"].AsArray.Childs)
+        {
+          State state = states.Find((s) => s.id == node["id"].Value);
+          state.LateRestoreFromJSON(node.AsObject);
+        }
+        string initialStateId = json["initialState"]?.Value;
+        initialState = states.Find((s) => s.id == initialStateId);
+        playbackEnabledToggle.storable.RestoreFromJSON(json);
+      }
     }
   }
 }

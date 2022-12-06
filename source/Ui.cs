@@ -63,7 +63,7 @@ namespace ThatsLewd
       VaMTrigger.Init(this);
       VaMUI.Init(this, CreateUIElement);
 
-      playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true);
+      playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true, register: true);
       hideTopUIToggle = VaMUI.CreateToggle("Hide Top UI", false, callbackNoVal: RequestRedraw);
 
       activeGroupIdChooser = VaMUI.CreateStringChooserKeyVal("Group", callbackNoVal: HandleSelectGroup);
@@ -102,6 +102,14 @@ namespace ThatsLewd
         uiNeedsRebuilt = false;
         RebuildUI();
       }
+    }
+
+    void RefreshUIAfterJSONLoad()
+    {
+      RefreshGroupList();
+      RefreshLayerList();
+      VaMUtils.SelectStringChooserFirstValue(activeGroupIdChooser.storable);
+      VaMUtils.SelectStringChooserFirstValue(activeLayerIdChooser.storable);
     }
 
     public void RequestRedraw()
@@ -858,7 +866,7 @@ namespace ThatsLewd
     void HandleAddMorph()
     {
       if (activeLayer == null) return;
-      DAZMorph morph = geometry.morphsControlUI.GetMorphByUid(addMorphChooser.val);
+      DAZMorph morph = morphsControl.GetMorphByUid(addMorphChooser.val);
       if (morph == null) return;
       activeLayer.TrackMorph(morph);
 
@@ -896,7 +904,7 @@ namespace ThatsLewd
 
         List<KeyValuePair<string, string>> morphKeyValues = new List<KeyValuePair<string, string>>();
         List<KeyValuePair<string, string>> favoriteMorphKeyValues = new List<KeyValuePair<string, string>>();
-        List<DAZMorph> morphs = geometry.morphsControlUI.GetMorphs();
+        List<DAZMorph> morphs = morphsControl.GetMorphs();
         foreach (DAZMorph morph in morphs)
         {
           string uid = morph.uid;
