@@ -4,20 +4,20 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public abstract class BaseComponentWithId : IEquatable<BaseComponentWithId>
+    public abstract class BaseComponent : IEquatable<BaseComponent>
     {
       public abstract string id { get; protected set; }
 
-      public bool Equals(BaseComponentWithId other)
+      public bool Equals(BaseComponent other)
       {
         return other.id == this.id;
       }
 
       public override bool Equals(object other)
       {
-        if (other is BaseComponentWithId)
+        if (other is BaseComponent)
         {
-          return this.Equals((BaseComponentWithId)other);
+          return this.Equals((BaseComponent)other);
         }
         return false;
       }
@@ -27,14 +27,14 @@ namespace ThatsLewd
         return id.GetHashCode();
       }
 
-      public static bool operator ==(BaseComponentWithId a, BaseComponentWithId b)
+      public static bool operator ==(BaseComponent a, BaseComponent b)
       {
         if (ReferenceEquals(a, b)) return true;
         if (ReferenceEquals(a, null) || ReferenceEquals(b, null)) return false;
         return a.Equals(b);
       }
 
-      public static bool operator !=(BaseComponentWithId a, BaseComponentWithId b)
+      public static bool operator !=(BaseComponent a, BaseComponent b)
       {
         return !(a == b);
       }

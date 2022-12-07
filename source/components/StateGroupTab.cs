@@ -9,7 +9,7 @@ namespace ThatsLewd
   public partial class CharacterStateManager : MVRScript
   {
     // All the state properties related to the group tab are in this file for clarity
-    public partial class State : BaseComponentWithId
+    public partial class State : BaseComponent, IDisposable
     {
       public VaMUI.VaMStringChooser transitionModeChooser { get; private set; }
       public VaMUI.VaMSlider fixedDurationSlider { get; private set; }

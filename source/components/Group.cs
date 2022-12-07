@@ -8,7 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class Group : BaseComponentWithId
+    public class Group : BaseComponent, IDisposable
     {
       public delegate void OnDeleteCallback(Group group);
       public static event OnDeleteCallback OnDelete;
@@ -45,7 +45,7 @@ namespace ThatsLewd
         return newGroup;
       }
 
-      public void Delete()
+      public void Dispose()
       {
         Group.list.Remove(this);
         Group.OnDelete?.Invoke(this);

@@ -8,7 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class Layer : BaseComponentWithId
+    public class Layer : BaseComponent, IDisposable
     {
       public delegate void OnDeleteCallback(Layer layer);
       public static event OnDeleteCallback OnDelete;
@@ -19,6 +19,9 @@ namespace ThatsLewd
       public string name { get; set; }
       public List<Animation> animations { get; private set; } = new List<Animation>();
 
+      public VaMUI.VaMSlider defaultTransitionDurationSlider;
+      public VaMUI.VaMStringChooser defaultTransitionEasingChooser;
+
       public List<TrackedController> trackedControllers { get; private set; } = new List<TrackedController>();
       public List<TrackedMorph> trackedMorphs { get; private set; } = new List<TrackedMorph>();
 
@@ -26,6 +29,8 @@ namespace ThatsLewd
       {
         this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "layer";
+        defaultTransitionDurationSlider = VaMUI.CreateSlider("Transition Duration", 1f, 0f, 10f);
+        defaultTransitionEasingChooser = VaMUI.CreateStringChooser("Easing", Easing.list.ToList(), Easing.EasingType.Linear);
         InitializeControllers();
         Layer.list.Add(this);
       }
@@ -33,6 +38,8 @@ namespace ThatsLewd
       public Layer Clone()
       {
         Layer newLayer = new Layer(Helpers.GetCopyName(name));
+        Helpers.SetSliderValues(newLayer.defaultTransitionDurationSlider, defaultTransitionDurationSlider.val, defaultTransitionDurationSlider.min, defaultTransitionDurationSlider.max);
+        defaultTransitionEasingChooser.valNoCallback = defaultTransitionEasingChooser.val;
         foreach (TrackedController source in trackedControllers)
         {
           TrackedController target = newLayer.trackedControllers.Find((tc) => tc.controller.name == source.controller.name);
@@ -49,7 +56,7 @@ namespace ThatsLewd
         return newLayer;
       }
 
-      public void Delete()
+      public void Dispose()
       {
         Layer.list.Remove(this);
         Layer.OnDelete?.Invoke(this);
@@ -96,6 +103,8 @@ namespace ThatsLewd
         JSONClass json = new JSONClass();
         json["id"] = id;
         json["name"] = name;
+        defaultTransitionDurationSlider.storable.StoreJSON(json);
+        defaultTransitionEasingChooser.storable.StoreJSON(json);
         json["animations"] = new JSONArray();
         foreach (Animation animation in animations)
         {
@@ -118,6 +127,8 @@ namespace ThatsLewd
       {
         id = json["id"].Value;
         name = json["name"].Value;
+        defaultTransitionDurationSlider.storable.RestoreFromJSON(json);
+        defaultTransitionEasingChooser.storable.RestoreFromJSON(json);
         animations.Clear();
         foreach (JSONNode node in json["animations"].AsArray)
         {

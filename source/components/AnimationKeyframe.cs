@@ -8,15 +8,16 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public partial class Animation : BaseComponentWithId
+    public partial class Animation : BaseComponent
     {
-      public class Keyframe : BaseComponentWithId
+      public class Keyframe : BaseComponent, IKeyframe, IDisposable
       {
         public delegate void OnDeleteCallback(Keyframe keyframe);
         public static event OnDeleteCallback OnDelete;
 
         public override string id { get; protected set; }
         public Animation animation { get; private set; }
+        public Layer layer { get { return animation.layer; }}
 
         public VaMUI.VaMTextInput labelInput;
         public VaMUI.VaMColorPicker colorPicker;
@@ -27,8 +28,11 @@ namespace ThatsLewd
         public ValueTrigger onPlayingTrigger = VaMTrigger.Create<ValueTrigger>("On Keyframe Playing");
         public EventTrigger onExitTrigger = VaMTrigger.Create<EventTrigger>("On Exit Keyframe");
 
-        public List<CapturedController> capturedControllers = new List<CapturedController>();
-        public List<CapturedMorph> capturedMorphs = new List<CapturedMorph>();
+        public List<CapturedController> capturedControllers { get; private set; } = new List<CapturedController>();
+        public List<CapturedMorph> capturedMorphs { get; private set; } = new List<CapturedMorph>();
+
+        public float duration { get { return durationSlider.val; }}
+        public string easing { get { return easingChooser.val; }}
 
         public Keyframe(Animation animation, int index = -1)
         {
@@ -69,7 +73,7 @@ namespace ThatsLewd
           return newKeyframe;
         }
 
-        public void Delete()
+        public void Dispose()
         {
           animation.keyframes.Remove(this);
           Keyframe.OnDelete?.Invoke(this);
@@ -96,34 +100,8 @@ namespace ThatsLewd
 
         public void CaptureLayerState()
         {
-          Transform mainTransform = CharacterStateManager.instance.person.mainController.transform;
-
-          capturedControllers.Clear();
-          foreach (TrackedController tc in animation.layer.trackedControllers)
-          {
-            if (!tc.isTracked) continue;
-            Transform controllerTransform = tc.controller.transform;
-            CapturedController capture = new CapturedController();
-            capture.name = tc.controller.name;
-            if (tc.trackPositionToggle.val)
-            {
-              capture.position = mainTransform.InverseTransformPoint(controllerTransform.position);
-            }
-            if (tc.trackRotationToggle.val)
-            {
-              capture.rotation = Quaternion.Inverse(mainTransform.rotation) * controllerTransform.rotation;
-            }
-            capturedControllers.Add(capture);
-          }
-
-          capturedMorphs.Clear();
-          foreach (TrackedMorph tm in animation.layer.trackedMorphs)
-          {
-            CapturedMorph capture = new CapturedMorph();
-            capture.uid = tm.morph.uid;
-            capture.value = tm.morph.morphValue;
-            capturedMorphs.Add(capture);
-          }
+          capturedControllers = CapturedController.CaptureCurrentState(layer.trackedControllers);
+          capturedMorphs = CapturedMorph.CaptureCurrentState(layer.trackedMorphs);
         }
 
         public CapturedController GetCapturedController(string name)
@@ -206,6 +184,29 @@ namespace ThatsLewd
       public Vector3? position = null;
       public Quaternion? rotation = null;
 
+      public static List<CapturedController> CaptureCurrentState(List<TrackedController> trackedControllers)
+      {
+        List<CapturedController> captures = new List<CapturedController>();
+        Transform mainTransform = CharacterStateManager.instance.mainController.transform;
+        foreach (TrackedController tc in trackedControllers)
+        {
+          if (!tc.isTracked) continue;
+          Transform controllerTransform = tc.controller.transform;
+          CapturedController capture = new CapturedController();
+          capture.name = tc.controller.name;
+          if (tc.trackPositionToggle.val)
+          {
+            capture.position = mainTransform.InverseTransformPoint(controllerTransform.position);
+          }
+          if (tc.trackRotationToggle.val)
+          {
+            capture.rotation = Quaternion.Inverse(mainTransform.rotation) * controllerTransform.rotation;
+          }
+          captures.Add(capture);
+        }
+        return captures;
+      }
+
       public CapturedController Clone()
       {
         return new CapturedController()
@@ -265,6 +266,19 @@ namespace ThatsLewd
     {
       public string uid = "";
       public float value = 0f;
+
+      public static List<CapturedMorph> CaptureCurrentState(List<TrackedMorph> trackedMorphs)
+      {
+        List<CapturedMorph> captures = new List<CapturedMorph>();
+        foreach (TrackedMorph tm in trackedMorphs)
+        {
+          CapturedMorph capture = new CapturedMorph();
+          capture.uid = tm.morph.uid;
+          capture.value = tm.morph.morphValue;
+          captures.Add(capture);
+        }
+        return captures;
+      }
 
       public CapturedMorph Clone()
       {

@@ -8,7 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class Transition : BaseComponentWithId
+    public class Transition : BaseComponent, IDisposable
     {
       public delegate void OnDeleteCallback(Transition transition);
       public static event OnDeleteCallback OnDelete;
@@ -38,10 +38,10 @@ namespace ThatsLewd
 
       private void OnAnimationDeleted(Animation animation)
       {
-        if (from == animation || to == animation) Delete();
+        if (from == animation || to == animation) Dispose();
       }
 
-      public void Delete()
+      public void Dispose()
       {
         Transition.list.Remove(this);
         Transition.OnDelete?.Invoke(this);

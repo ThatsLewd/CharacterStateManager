@@ -31,5 +31,32 @@ namespace ThatsLewd
       slider.min = min;
       slider.max = max;
     }
+
+    public static T ChooseWeightedItem<T>(IEnumerable<T> items) where T : IWeightedItem
+    {
+      float totalWeight = 0f;
+      foreach (T item in items)
+      {
+        totalWeight += item.weight;
+      }
+      float r = UnityEngine.Random.Range(0f, totalWeight);
+      float sum = 0f;
+      T currentItem = default(T);
+      foreach (T item in items)
+      {
+        currentItem = item;
+        sum += item.weight;
+        if (sum >= r)
+        {
+          break;
+        }
+      }
+      return currentItem;
+    }
+  }
+
+  public interface IWeightedItem
+  {
+    float weight { get; }
   }
 }

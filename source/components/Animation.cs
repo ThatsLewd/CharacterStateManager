@@ -8,16 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public static class LoopType
-    {
-      public const string PlayOnce = "Play Once";
-      public const string Loop = "Loop";
-      public const string PingPong = "Ping Pong";
-
-      public static readonly string[] list = new string[] { PlayOnce, Loop, PingPong };
-    }
-    
-    public partial class Animation : BaseComponentWithId
+    public partial class Animation : BaseComponent, IDisposable
     {
       public delegate void OnDeleteCallback(Animation animation);
       public static event OnDeleteCallback OnDelete;
@@ -89,10 +80,10 @@ namespace ThatsLewd
 
       private void HandleLayerDeleted(Layer layer)
       {
-        if (layer == this.layer) Delete();
+        if (layer == this.layer) Dispose();
       }
 
-      public void Delete()
+      public void Dispose()
       {
         layer.animations.Remove(this);
         Animation.OnDelete?.Invoke(this);
@@ -116,6 +107,16 @@ namespace ThatsLewd
           onExitTrigger = VaMTrigger.Clone(ActionClipboard.onExitTrigger, onExitTrigger.name);
 
         CharacterStateManager.instance.RequestRedraw();
+      }
+
+      public float GetTotalDuration()
+      {
+        float t = 0f;
+        foreach (Keyframe keyframe in keyframes)
+        {
+          t += keyframe.durationSlider.val;
+        }
+        return t;
       }
 
       public JSONClass GetJSON()
@@ -155,6 +156,15 @@ namespace ThatsLewd
         onPlayingTrigger.RestoreFromJSON(json);
         onExitTrigger.RestoreFromJSON(json);
       }
+    }
+
+    public static class LoopType
+    {
+      public const string PlayOnce = "Play Once";
+      public const string Loop = "Loop";
+      public const string PingPong = "Ping Pong";
+
+      public static readonly string[] list = new string[] { PlayOnce, Loop, PingPong };
     }
   }
 }

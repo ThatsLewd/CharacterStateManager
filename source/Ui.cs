@@ -451,7 +451,7 @@ namespace ThatsLewd
     void HandleDeleteGroup()
     {
       if (activeGroup == null) return;
-      activeGroup.Delete();
+      activeGroup.Dispose();
       RefreshGroupList();
       VaMUtils.SelectStringChooserFirstValue(activeGroupIdChooser.storable);
     }
@@ -691,7 +691,7 @@ namespace ThatsLewd
     void HandleDeleteState()
     {
       if (activeState == null) return;
-      activeState.Delete();
+      activeState.Dispose();
       RefreshStateList();
       VaMUtils.SelectStringChooserFirstValue(activeStateIdChooser.storable);
     }
@@ -718,6 +718,7 @@ namespace ThatsLewd
     {
       if (activeState == null) return;
       activeState.playlists.Remove(playlist);
+      playlist.Dispose();
 
       RequestRedraw();
     }
@@ -834,7 +835,7 @@ namespace ThatsLewd
     void HandleDeleteLayer()
     {
       if (activeLayer == null) return;
-      activeLayer.Delete();
+      activeLayer.Dispose();
       RefreshLayerList();
       VaMUtils.SelectStringChooserFirstValue(activeLayerIdChooser.storable);
     }
@@ -1021,7 +1022,7 @@ namespace ThatsLewd
     void HandleDeleteAnimation()
     {
       if (activeAnimation == null) return;
-      activeAnimation.Delete();
+      activeAnimation.Dispose();
       RefreshAnimationList();
       VaMUtils.SelectStringChooserFirstValue(activeAnimationIdChooser.storable);
     }
@@ -1242,7 +1243,7 @@ namespace ThatsLewd
     void HandleDeleteKeyframe()
     {
       if (activeKeyframe == null) return;
-      activeKeyframe.Delete();
+      activeKeyframe.Dispose();
       RequestRedraw();
     }
 

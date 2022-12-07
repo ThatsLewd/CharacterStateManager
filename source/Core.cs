@@ -13,8 +13,10 @@ namespace ThatsLewd
 
     public Atom person { get; private set; }
     public DAZCharacterSelector geometry { get; private set; }
-    public List<FreeControllerV3> controllers { get; private set; }
     public GenerateDAZMorphsControlUI morphsControl { get { return geometry.morphsControlUI; }}
+    public List<FreeControllerV3> controllers { get; private set; }
+    public FreeControllerV3 mainController { get { return person.mainController; }}
+    public bool loadOnce { get; private set; } = false;
 
     public override void Init()
     {
@@ -41,6 +43,7 @@ namespace ThatsLewd
         controllers.Add(controller);
       }
 
+      EngineInit();
       UIInit();
     }
 
@@ -51,6 +54,7 @@ namespace ThatsLewd
 
     void Update()
     {
+      EngineUpdate();
       UIUpdate();
     }
 
@@ -58,7 +62,6 @@ namespace ThatsLewd
     {
       JSONClass json = base.GetJSON(includePhysical, includeAppearance, forceStore);
       this.needsStore = true;
-      SuperController.LogMessage("SAVE");
       
       json["SaveFormatVersion"] = SaveFormatVersion;
       json["Layers"] = Layer.GetJSONTopLevel();
@@ -72,13 +75,13 @@ namespace ThatsLewd
     public override void LateRestoreFromJSON(JSONClass json, bool restorePhysical = true, bool restoreAppearance = true, bool setMissingToDefault = true)
     {
       base.LateRestoreFromJSON(json, restorePhysical, restoreAppearance, setMissingToDefault);
-      if (json["id"]?.Value != this.storeId) return; // make sure this is our plugin
+      if (loadOnce) return; // LateRestoreFromJSON gets called twice for some reason? And it's fucking my shit with a race condition or something
+      if (json["id"]?.Value != this.storeId) return; // make sure this data is our plugin
       if (json["SaveFormatVersion"]?.Value != SaveFormatVersion)
       {
         LogError("Your save data is from an incompatible version of CharacterStateManager. Load Aborted.");
         return;
       }
-      SuperController.LogMessage("LOAD");
 
       Layer.RestoreFromJSONTopLevel(json["Layers"].AsObject);
       Group.RestoreFromJSONTopLevel(json["Groups"].AsObject);
@@ -86,6 +89,7 @@ namespace ThatsLewd
       Messages.RestoreFromJSONTopLevel(json["Messages"].AsObject);
 
       RefreshUIAfterJSONLoad();
+      loadOnce = true;
     }
 
     public static void LogMessage(string message)
