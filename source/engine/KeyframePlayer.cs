@@ -16,8 +16,9 @@ namespace ThatsLewd
       public IKeyframe targetKeyframe { get; private set; } = null;
       public float time { get; private set; } = 0f;
       public float progress { get; private set; } = 0f;
+      public bool playingTemporaryKeyframe { get; private set; } = false;
 
-      public bool keyframeCompleted { get { return currentKeyframe != null && time > currentKeyframe.duration; }}
+      public bool keyframeCompleted { get { return GetKeyframeCompleted(); } }
 
       public KeyframePlayer(AnimationPlayer animationPlayer)
       {
@@ -31,32 +32,60 @@ namespace ThatsLewd
 
       public void Update()
       {
+        playingTemporaryKeyframe = false;
         if (targetKeyframe == null) return;
         if (currentKeyframe == null)
         {
           currentKeyframe = TemporaryKeyframe.CaptureTemporaryKeyframe(targetKeyframe.layer);
+          Reset();
         }
-        time += Time.deltaTime;
-        
-        if (currentKeyframe.duration == 0f)
+        if (currentKeyframe is TemporaryKeyframe)
         {
-          progress = 0f; 
+          playingTemporaryKeyframe = true;
+        }
+        
+        time += Time.deltaTime;
+        progress = currentKeyframe.duration == 0f ? 0f : Mathf.Clamp01(time / currentKeyframe.duration);
+        if (animationPlayer.reverse) progress = 1f - progress;
+
+        if (animationPlayer.reverse)
+        {
+          (targetKeyframe as Animation.Keyframe)?.onPlayingTrigger.Trigger(progress);
         }
         else
         {
-          progress = Mathf.Clamp01(time / currentKeyframe.duration);
+          (currentKeyframe as Animation.Keyframe)?.onPlayingTrigger.Trigger(progress);
         }
-
-        (currentKeyframe as Animation.Keyframe)?.onPlayingTrigger.Trigger(progress);
 
         UpdateControllers();
         UpdateMorphs();
+      }
+
+      bool GetKeyframeCompleted()
+      {
+        if (currentKeyframe == null) return false;
+        return time >= currentKeyframe.duration;
+      }
+
+      void Reset()
+      {
+        time = 0f;
+        progress = 0f;
       }
 
       void UpdateControllers()
       {
         if (currentKeyframe == null || targetKeyframe == null) return;
         Transform mainTransform = CharacterStateManager.instance.mainController.transform;
+        float t;
+        if (animationPlayer.reverse)
+        {
+          t = 1f - Easing.ApplyEasingFromSelection(progress, targetKeyframe.easing);
+        }
+        else
+        {
+          t = Easing.ApplyEasingFromSelection(progress, currentKeyframe.easing);
+        }
 
         foreach (TrackedController tc in targetKeyframe.layer.trackedControllers)
         {
@@ -72,14 +101,14 @@ namespace ThatsLewd
             Vector3 currentPosition = mainTransform.TransformPoint(currentCapture.position.Value);
             Vector3 targetPosition = mainTransform.TransformPoint(targetCapture.position.Value);
 
-            controllerTransform.position = Vector3.Lerp(currentPosition, targetPosition, progress);
+            controllerTransform.position = Vector3.Lerp(currentPosition, targetPosition, t);
           }
           if (tc.trackRotationToggle.val && currentCapture?.rotation != null && targetCapture?.rotation != null)
           {
             Quaternion currentRotation = mainTransform.rotation * currentCapture.rotation.Value;
             Quaternion targetRotation = mainTransform.rotation * targetCapture.rotation.Value;
 
-            controllerTransform.rotation = Quaternion.Lerp(currentRotation, targetRotation, progress);
+            controllerTransform.rotation = Quaternion.Lerp(currentRotation, targetRotation, t);
           }
         }
       }
@@ -87,6 +116,7 @@ namespace ThatsLewd
       void UpdateMorphs()
       {
         if (currentKeyframe == null || targetKeyframe == null) return;
+        float t = Easing.ApplyEasingFromSelection(progress, currentKeyframe.easing);
 
         foreach (TrackedMorph tm in targetKeyframe.layer.trackedMorphs)
         {
@@ -95,7 +125,7 @@ namespace ThatsLewd
 
           if (currentCapture != null && targetCapture != null)
           {
-            tm.morph.morphValue = Mathf.Lerp(currentCapture.value, targetCapture.value, progress);
+            tm.morph.morphValue = Mathf.Lerp(currentCapture.value, targetCapture.value, t);
           }
         }
       }
@@ -104,16 +134,29 @@ namespace ThatsLewd
       {
         if (targetKeyframe != null)
         {
-          (targetKeyframe as Animation.Keyframe)?.onExitTrigger.Trigger();
+          if (animationPlayer.reverse)
+          {
+            (targetKeyframe as Animation.Keyframe)?.onEnterTrigger.Trigger();
+          }
+          else
+          {
+            (targetKeyframe as Animation.Keyframe)?.onExitTrigger.Trigger();
+          }
         }
         if (newKeyframe != null)
         {
-          (newKeyframe as Animation.Keyframe)?.animation.onEnterTrigger.Trigger();
+          if (animationPlayer.reverse)
+          {
+            (newKeyframe as Animation.Keyframe)?.animation.onExitTrigger.Trigger();
+          }
+          else
+          {
+            (newKeyframe as Animation.Keyframe)?.animation.onEnterTrigger.Trigger();
+          }
         }
         currentKeyframe = targetKeyframe;
         targetKeyframe = newKeyframe;
-        time = 0f;
-        progress = 0f;
+        Reset();
       }
     }
   }

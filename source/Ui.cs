@@ -28,6 +28,7 @@ namespace ThatsLewd
     bool uiNeedsRebuilt = false;
     List<object> uiItems = new List<object>();
 
+    const float INFO_REFRESH_TIME = 0.1f;
     float infoRefreshTimer = 0f;
 
     GameObject tabBarPrefab;
@@ -384,7 +385,7 @@ namespace ThatsLewd
       if (activeTab == Tabs.Info && infoTexts != null)
       {
         infoRefreshTimer += Time.deltaTime;
-        if (infoRefreshTimer < 0.1f) return;
+        if (infoRefreshTimer < INFO_REFRESH_TIME) return;
         infoRefreshTimer = 0f;
         foreach (KeyValuePair<Group, GroupPlayer> entry in GroupPlayer.list)
         {
@@ -408,14 +409,19 @@ namespace ThatsLewd
             PlaylistPlayer playlistPlayer = ppEntry.Value;
             AnimationPlayer animationPlayer = playlistPlayer.animationPlayer;
             KeyframePlayer keyframePlayer = animationPlayer.keyframePlayer;
+            int currentKeyframeIndex = animationPlayer.GetKeyframeIndex(keyframePlayer.currentKeyframe);
+            int targetKeyframeIndex = animationPlayer.GetKeyframeIndex(keyframePlayer.targetKeyframe);
+            string currentKeyframeStr = currentKeyframeIndex == -1 ? "<none>" : $"{currentKeyframeIndex}";
+            string targetKeyframeStr = targetKeyframeIndex == -1 ? "<none>" : $"{targetKeyframeIndex}";
 
             str += $"\n";
             str += $"\n<b>{playlist.layer.name}</b>";
             str += $"\n------";
             str += $"\nAnimation: <b>{animationPlayer.currentAnimation?.name ?? "<none>"}</b>";
-            str += $"\nTime: {animationPlayer.time:F1}s";
-            str += $"\nKeyframe Time: {keyframePlayer.time:F1}s";
-            lines += 6;
+            str += $"\nTime: {animationPlayer.time:F1}s ({animationPlayer.progress:F1})";
+            str += $"\nKeyframe: <b>{currentKeyframeStr}</b> -> <b>{targetKeyframeStr}</b>";
+            str += $"\nKeyframe Time: {keyframePlayer.time:F1}s ({keyframePlayer.progress:F1})";
+            lines += 7;
           }
 
           infoText.text.text = str;

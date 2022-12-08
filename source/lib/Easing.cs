@@ -95,14 +95,14 @@ namespace ThatsLewd
 
     public static float EaseOutQuad(float t)
     {
-      return 1 - (1 - t) * (1 - t);
+      return 1f - (1f - t) * (1f - t);
     }
 
     public static float EaseInOutQuad(float t)
     {
-      return t < 0.5
-        ? 2 * t * t
-        : 1 - (-2 * t + 2) * (-2 * t + 2) / 2;
+      return t < 0.5f
+        ? 2f * t * t
+        : 1f - (-2f * t + 2f) * (-2f * t + 2f) / 2f;
     }
 
     public static float EaseInCubic(float t)
@@ -112,14 +112,14 @@ namespace ThatsLewd
 
     public static float EaseOutCubic(float t)
     {
-      return 1 - (1 - t) * (1 - t) * (1 - t);
+      return 1f - (1f - t) * (1f - t) * (1f - t);
     }
 
     public static float EaseInOutCubic(float t)
     {
-      return t < 0.5
-        ? 4 * t * t * t
-        : 1 - (-2 * t + 2) * (-2 * t + 2) * (-2 * t + 2) / 2;
+      return t < 0.5f
+        ? 4f * t * t * t
+        : 1f - (-2f * t + 2f) * (-2f * t + 2f) * (-2f * t + 2f) / 2f;
     }
 
     public static float EaseInQuint(float t)
@@ -129,33 +129,33 @@ namespace ThatsLewd
 
     public static float EaseOutQuint(float t)
     {
-      return 1 - (1 - t) * (1 - t) * (1 - t) * (1 - t) * (1 - t);
+      return 1f - (1f - t) * (1f - t) * (1f - t) * (1f - t) * (1f - t);
     }
 
     public static float EaseInOutQuint(float t)
     {
-      return t < 0.5
-        ? 16 * t * t * t * t * t
-        : 1 - (-2 * t + 2) * (-2 * t + 2) * (-2 * t + 2) * (-2 * t + 2) * (-2 * t + 2) / 2;
+      return t < 0.5f
+        ? 16f * t * t * t * t * t
+        : 1f - (-2f * t + 2f) * (-2f * t + 2f) * (-2f * t + 2f) * (-2f * t + 2f) * (-2f * t + 2f) / 2f;
     }
 
     public static float EaseInExp(float t)
     {
-      return t == 0 ? 0 : Mathf.Exp(7 * t - 7);
+      return t == 0f ? 0f : Mathf.Exp(7f * t - 7f);
     }
 
     public static float EaseOutExp(float t)
     {
-      return t == 1 ? 1 : 1 - Mathf.Exp(-7 * t);
+      return t == 1f ? 1f : 1f - Mathf.Exp(-7f * t);
     }
 
     public static float EaseInOutExp(float t)
     {
-      return t == 0 ? 0
-        : t == 1 ? 1
-        : t < 0.5
-          ? Mathf.Exp(14 * t - 7) / 2
-          : 1 - Mathf.Exp(-14 * t + 7) / 2;
+      return t == 0f ? 0f
+        : t == 1f ? 1f
+        : t < 0.5f
+          ? Mathf.Exp(14f * t - 7f) / 2f
+          : 1f - Mathf.Exp(-14f * t + 7f) / 2f;
     }
   }
 }

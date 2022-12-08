@@ -109,11 +109,13 @@ namespace ThatsLewd
         CharacterStateManager.instance.RequestRedraw();
       }
 
-      public float GetTotalDuration()
+      public float GetTotalDuration(bool omitLast = false)
       {
         float t = 0f;
-        foreach (Keyframe keyframe in keyframes)
+        for (int i = 0; i < keyframes.Count; i++)
         {
+          if (omitLast && i == keyframes.Count - 1) break;
+          Keyframe keyframe = keyframes[i];
           t += keyframe.durationSlider.val;
         }
         return t;
