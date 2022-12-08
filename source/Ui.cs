@@ -28,8 +28,10 @@ namespace ThatsLewd
     bool uiNeedsRebuilt = false;
     List<object> uiItems = new List<object>();
 
+    float infoRefreshTimer = 0f;
+
     GameObject tabBarPrefab;
-    string activeTab;
+    string activeTab = Tabs.Info;
 
     // Global UI
     VaMUI.VaMToggle playbackEnabledToggle;
@@ -51,6 +53,8 @@ namespace ThatsLewd
     VaMUI.VaMTextInput editAnimationNameInput;
 
     // Section UI
+    Dictionary<Group, UIDynamicInfoText> infoTexts = new Dictionary<Group, UIDynamicInfoText>();
+
     AnimationPlaylist activePlaylist;
     Animation.Keyframe activeKeyframe;
 
@@ -99,9 +103,10 @@ namespace ThatsLewd
     {
       if (uiNeedsRebuilt)
       {
-        uiNeedsRebuilt = false;
         RebuildUI();
+        uiNeedsRebuilt = false;
       }
+      RefreshInfoText();
     }
 
     void RefreshUIAfterJSONLoad()
@@ -115,6 +120,7 @@ namespace ThatsLewd
     public void RequestRedraw()
     {
       uiNeedsRebuilt = true;
+      infoRefreshTimer = 1f;
     }
 
     void UI(object item)
@@ -125,6 +131,7 @@ namespace ThatsLewd
     void RebuildUI()
     {
       VaMUI.RemoveUIElements(ref uiItems);
+      infoTexts.Clear();
 
       UI(playbackEnabledToggle.Draw(VaMUI.LEFT));
       UI(hideTopUIToggle.Draw(VaMUI.RIGHT));
@@ -141,6 +148,7 @@ namespace ThatsLewd
       }
 
       BuildActiveTabUI();
+      CreateBottomPadding();
     }
 
     void HandleTabSelect(string tabName)
@@ -184,7 +192,6 @@ namespace ThatsLewd
           BuildExportImportTabUI();
           break;
         default:
-          BuildInfoTabUI();
           break;
       }
     }
@@ -332,17 +339,89 @@ namespace ThatsLewd
     // ========================================================================== //
     void BuildInfoTabUI()
     {
-      CreateMainHeader(VaMUI.LEFT, "Info");
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
+      // CreateMainHeader(VaMUI.LEFT, "Info");
+      CreateMainHeader(VaMUI.RIGHT, "Currently Playing");
 
       UI(VaMUI.CreateInfoText(
         VaMUI.LEFT,
-        "Info tab",
-        1
+        "Quickstart guide:\n\n"
+        + "- Create a <b>Group</b>, a <b>State</b>, a <b>Layer</b>, and an <b>Animation</b>\n\n"
+        + "- In the <b>Layers</b> tab, select the controllers and morphs you want to capture\n\n"
+        + "- In the <b>Keyframes</b> tab, add a keyframe, pose your model, and click <b>Capture Current State</b>\n\n"
+        + "- In the <b>States</b> tab, click <b>Add Current Layer</b> and then click <b>Add Current Animation</b>\n\n"
+        + "- In the <b>Groups</b> tab, click <b>Set Init. State</b>\n\n"
+        + "- Congratulations! You now have a basic animation with a single keyframe.",
+        23
       ));
 
+      UI(VaMUI.CreateInfoText(
+        VaMUI.LEFT,
+        "<b>CharacterStateManager</b> is meant to be a powerful tool for layering multiple state machines to control a character in complex ways. The main goal was to create an all-in-one plugin that could create dynamic procedural behavior. It has many options and there are many ways to do things, so have fun exploring and thinking creatively.",
+        10
+      ));
 
-      CreateBottomPadding();
+      if (GroupPlayer.list.Count == 0)
+      {
+        UI(VaMUI.CreateInfoText(
+          VaMUI.RIGHT,
+          "Nothing is currently playing",
+          1
+        ));
+      }
+      else
+      {
+        foreach (KeyValuePair<Group, GroupPlayer> entry in GroupPlayer.list)
+        {
+          CreateSubHeader(VaMUI.RIGHT, entry.Key.name);
+          infoTexts[entry.Key] = VaMUI.CreateInfoText(VaMUI.RIGHT, "", 0f);
+          UI(infoTexts[entry.Key]);
+        }
+      }
+    }
+
+    void RefreshInfoText()
+    {
+      if (activeTab == Tabs.Info && infoTexts != null)
+      {
+        infoRefreshTimer += Time.deltaTime;
+        if (infoRefreshTimer < 0.1f) return;
+        infoRefreshTimer = 0f;
+        foreach (KeyValuePair<Group, GroupPlayer> entry in GroupPlayer.list)
+        {
+          if (!infoTexts.ContainsKey(entry.Key)) continue;
+          UIDynamicInfoText infoText = infoTexts[entry.Key];
+
+          Group group = entry.Key;
+          GroupPlayer groupPlayer = entry.Value;
+          StatePlayer statePlayer = groupPlayer.statePlayer;
+
+          string str = "";
+          int lines = 0;
+
+          str += $"State: <b>{statePlayer.currentState?.name ?? "<none>"}</b>";
+          str += $"\nTime: {statePlayer.time:F1}s";
+          lines += 2;
+
+          foreach (KeyValuePair<AnimationPlaylist, PlaylistPlayer> ppEntry in statePlayer.playlistPlayers)
+          {
+            AnimationPlaylist playlist = ppEntry.Key;
+            PlaylistPlayer playlistPlayer = ppEntry.Value;
+            AnimationPlayer animationPlayer = playlistPlayer.animationPlayer;
+            KeyframePlayer keyframePlayer = animationPlayer.keyframePlayer;
+
+            str += $"\n";
+            str += $"\n<b>{playlist.layer.name}</b>";
+            str += $"\n------";
+            str += $"\nAnimation: <b>{animationPlayer.currentAnimation?.name ?? "<none>"}</b>";
+            str += $"\nTime: {animationPlayer.time:F1}s";
+            str += $"\nKeyframe Time: {keyframePlayer.time:F1}s";
+            lines += 6;
+          }
+
+          infoText.text.text = str;
+          infoText.height = lines * 32f + 8f;
+        }
+      }
     }
 
 
@@ -354,7 +433,7 @@ namespace ThatsLewd
       CreateMainHeader(VaMUI.LEFT, "Groups");
       UI(VaMUI.CreateInfoText(
         VaMUI.LEFT,
-        "A <b>Group</b> is a collection of <b>States</b> that are independent of other groups. Only one state can be active per group. For example, you might use one group for walking and one group for gestures.",
+        "A <b>Group</b> is a collection of <b>States</b> that are independent from other groups -- basically a self-contained state machine. Use multiple groups to layer multiple behaviors together.",
         185f
       ));
 
@@ -367,12 +446,14 @@ namespace ThatsLewd
         HandleDeleteGroup
       );
 
-      if (activeGroup == null || activeState == null)
+      if (activeGroup == null) return;
+
+      if (activeState == null)
       {
         UI(VaMUI.CreateSpacer(VaMUI.LEFT, 50f));
         UI(VaMUI.CreateInfoText(
           VaMUI.LEFT,
-          "You must add a <b>Group</b> with at least one <b>State</b> to configure this group.",
+          "You must add at least one <b>State</b> to configure this group.",
           2
         ));
         return;
@@ -420,9 +501,6 @@ namespace ThatsLewd
         UI(transition.weightSlider.Draw(VaMUI.RIGHT));
         UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
       }
-
-
-      CreateBottomPadding();
     }
 
     void HandleNewGroup()
@@ -541,9 +619,11 @@ namespace ThatsLewd
       {
         UI(VaMUI.CreateInfoText(
           VaMUI.LEFT,
-          "You must create a <b>Layer</b> before you can edit this <b>State</b>.",
-          2
+          "You have not created any <b>Layers</b>.",
+          1
         ));
+
+        DrawStateActions();
         return;
       }
 
@@ -564,6 +644,7 @@ namespace ThatsLewd
           "Select or add a <b>Layer</b> to the list to edit its animation playlist.",
           2
         ));
+        DrawStateActions();
         return;
       }
 
@@ -574,6 +655,7 @@ namespace ThatsLewd
           "There are no <b>Animations</b> available for this <b>Layer</b>.",
           2
         ));
+        DrawStateActions();
         return;
       }
 
@@ -620,11 +702,7 @@ namespace ThatsLewd
       UI(VaMUI.CreateButton(VaMUI.LEFT, "Apply to All", HandleApplyDefaultsToAll));
 
       // ACTIONS
-      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
-      CreateSubHeader(VaMUI.LEFT, "Actions");
-      UI(VaMUI.CreateButton(VaMUI.LEFT, "On Enter State", activeState.onEnterTrigger.OpenPanel));
-      UI(VaMUI.CreateButton(VaMUI.LEFT, "On Exit State", activeState.onExitTrigger.OpenPanel));
-      UI(VaMUI.CreateButtonPair(VaMUI.LEFT, "Copy Actions", activeState.CopyActions, "Paste Actions", activeState.PasteActions));
+      DrawStateActions();
 
       // PLAYLIST
       UI(VaMUI.CreateInfoText(
@@ -659,9 +737,15 @@ namespace ThatsLewd
         }
         UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
       }
+    }
 
-
-      CreateBottomPadding();
+    void DrawStateActions()
+    {
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      CreateSubHeader(VaMUI.LEFT, "Actions");
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "On Enter State", activeState.onEnterTrigger.OpenPanel));
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "On Exit State", activeState.onExitTrigger.OpenPanel));
+      UI(VaMUI.CreateButtonPair(VaMUI.LEFT, "Copy Actions", activeState.CopyActions, "Paste Actions", activeState.PasteActions));
     }
 
     void HandleNewState()
@@ -804,9 +888,6 @@ namespace ThatsLewd
       {
         UI(VaMUI.CreateLabelWithX(VaMUI.RIGHT, tm.standardName, () => { HandleDeleteMorph(tm); }));
       }
-
-
-      CreateBottomPadding();
     }
 
     void HandleNewLayer()
@@ -990,9 +1071,6 @@ namespace ThatsLewd
       UI(VaMUI.CreateButton(VaMUI.LEFT, "On Animation Playing", activeAnimation.onPlayingTrigger.OpenPanel));
       UI(VaMUI.CreateButton(VaMUI.LEFT, "On Exit Animation", activeAnimation.onExitTrigger.OpenPanel));
       UI(VaMUI.CreateButtonPair(VaMUI.LEFT, "Copy Actions", activeAnimation.CopyActions, "Paste Actions", activeAnimation.PasteActions));
-
-
-      CreateBottomPadding();
     }
 
     void HandleNewAnimation()
@@ -1140,9 +1218,6 @@ namespace ThatsLewd
       {
         UI(VaMUI.CreateInfoText(VaMUI.RIGHT, "<none>", 1, background: false));
       }
-
-
-      CreateBottomPadding();
     }
 
     int? GetActiveKeyframeIndex()
@@ -1299,9 +1374,6 @@ namespace ThatsLewd
         "A <b>Transition</b> defines how to move from one animation to another. The default transition is a simple tween, but if more control is needed <b>Keyframes</b> may be added for precision.",
         5
       ));
-
-
-      CreateBottomPadding();
     }
 
 
@@ -1344,9 +1416,6 @@ namespace ThatsLewd
           UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
         }
       }
-
-
-      CreateBottomPadding();
     }
 
     void HandleAddRole()
@@ -1389,7 +1458,7 @@ namespace ThatsLewd
       }
 
       UI(VaMUI.CreateSpacer(VaMUI.LEFT, 10f));
-      UI(VaMUI.CreateInfoText(VaMUI.LEFT, "This state:", 1));
+      UI(VaMUI.CreateInfoText(VaMUI.LEFT, "The following state:", 1));
       UI(VaMUI.CreateInfoText(VaMUI.LEFT, $"<b>{activeState.name}</b>", 1, background: false));
       UI(VaMUI.CreateInfoText(VaMUI.LEFT, "will be triggered when this role:", 1));
       Messages.SetRoleChooserChoices();
@@ -1421,8 +1490,6 @@ namespace ThatsLewd
       {
         UI(VaMUI.CreateLabelWithX(VaMUI.RIGHT, $"<size=22>{listener.text}</size>", () => { HandleDeleteListener(listener); }));
       }
-
-      CreateBottomPadding();
     }
 
     void HandleAddListener()
@@ -1457,9 +1524,6 @@ namespace ThatsLewd
         "Export / Import tab",
         1
       ));
-
-
-      CreateBottomPadding();
     }
 
 
