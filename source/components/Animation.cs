@@ -46,7 +46,7 @@ namespace ThatsLewd
         this.loopTypeChooser = VaMUI.CreateStringChooser("Loop Type", LoopType.list.ToList(), LoopType.Loop);
         this.playbackSpeedSlider = VaMUI.CreateSlider("Playback Speed", 1f, 0f, 2f);
         this.defaultEasingChooser = VaMUI.CreateStringChooser("Default Easing", Easing.list.ToList(), Easing.EasingType.Linear);
-        this.defaultDurationSlider = VaMUI.CreateSlider("Default Duration", 1f, 0f, 10f);
+        this.defaultDurationSlider = VaMUI.CreateSlider("Default Duration", 0.5f, 0f, 1f);
         layer.animations.Add(this);
         Layer.OnDelete += HandleLayerDeleted;
       }

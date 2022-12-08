@@ -42,7 +42,7 @@ namespace ThatsLewd
           this.colorPicker = VaMUI.CreateColorPicker("Keyframe Color", GetRandomColor());
           this.easingChooser = VaMUI.CreateStringChooser("Select Easing", Easing.list.ToList(), Easing.EasingType.Linear);
           this.easingChooser.valNoCallback = animation.defaultEasingChooser.val;
-          this.durationSlider = VaMUI.CreateSlider("Duration", 1f, 0f, 10f);
+          this.durationSlider = VaMUI.CreateSlider("Duration", 0.5f, 0f, 1f);
           Helpers.SetSliderValues(durationSlider, animation.defaultDurationSlider.val, animation.defaultDurationSlider.min, animation.defaultDurationSlider.max);
           if (index == -1)
           {

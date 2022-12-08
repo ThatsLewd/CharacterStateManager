@@ -44,9 +44,9 @@ namespace ThatsLewd
           playingTemporaryKeyframe = true;
         }
         
-        time += Time.deltaTime;
+        time += Time.deltaTime * animationPlayer.playbackSpeed;
         progress = currentKeyframe.duration == 0f ? 0f : Mathf.Clamp01(time / currentKeyframe.duration);
-        if (animationPlayer.reverse) progress = 1f - progress;
+        if (animationPlayer.reverse) progress = 1f - Mathf.Clamp01(time / targetKeyframe.duration);
 
         if (animationPlayer.reverse)
         {
@@ -64,7 +64,7 @@ namespace ThatsLewd
       bool GetKeyframeCompleted()
       {
         if (currentKeyframe == null) return false;
-        return time >= currentKeyframe.duration;
+        return animationPlayer.reverse ? time >= targetKeyframe.duration : time >= currentKeyframe.duration;
       }
 
       void Reset()

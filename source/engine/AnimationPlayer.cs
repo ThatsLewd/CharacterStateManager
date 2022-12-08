@@ -18,6 +18,7 @@ namespace ThatsLewd
       public float progress { get; private set; } = 0f;
       public bool donePlaying { get; private set; } = false;
       public bool reverse { get; private set; } = false;
+      public float playbackSpeed { get { return currentAnimation?.playbackSpeedSlider.val ?? 1f; }}
 
       public KeyframePlayer keyframePlayer { get; private set; }
 
@@ -42,7 +43,7 @@ namespace ThatsLewd
         }
         if (!keyframePlayer.playingTemporaryKeyframe)
         {
-          time += Time.deltaTime;
+          time += Time.deltaTime * playbackSpeed;
         }
 
         float totalAnimationTime = currentAnimation.GetTotalDuration(currentAnimation.loopTypeChooser.val == LoopType.PingPong);
