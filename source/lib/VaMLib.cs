@@ -32,10 +32,10 @@ namespace VaMLib
     public readonly static Column RIGHT = Column.RIGHT;
 
     // Colors
-    public readonly static Color GREEN = new Color(0.5f, 1.0f, 0.5f);
+    public readonly static Color GREEN = new Color(0.55f, 1.0f, 0.55f);
     public readonly static Color RED = new Color(1.0f, 0.5f, 0.5f);
-    public readonly static Color BLUE = new Color(0.5f, 0.5f, 1.0f);
-    public readonly static Color YELLOW = new Color(1.0f, 1.0f, 0.5f);
+    public readonly static Color BLUE = new Color(0.5f, 0.65f, 1.0f);
+    public readonly static Color YELLOW = new Color(1.0f, 1.0f, 0.6f);
     public readonly static Color WHITE = new Color(1.0f, 1.0f, 1.0f);
     public readonly static Color BLACK = new Color(0.0f, 0.0f, 0.0f);
     public readonly static Color TRANSPARENT = new Color(0.0f, 0.0f, 0.0f, 0.0f);

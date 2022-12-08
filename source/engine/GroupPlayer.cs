@@ -36,6 +36,15 @@ namespace ThatsLewd
         return list[group];
       }
 
+      public static void PlayState(Group group, State state)
+      {
+        if (list.ContainsKey(group))
+        {
+          GroupPlayer player = list[group];
+          player.PlayState(state);
+        }
+      }
+
       // instance
       public Group group { get; private set; }
       public StatePlayer statePlayer { get; private set; }
@@ -76,6 +85,11 @@ namespace ThatsLewd
       {
         if (statePlayer.currentState.transitions.Count == 0) return null;
         return Helpers.ChooseWeightedItem(statePlayer.currentState.transitions).state;
+      }
+
+      public void PlayState(State state)
+      {
+        statePlayer.SetState(state);
       }
     }
   }

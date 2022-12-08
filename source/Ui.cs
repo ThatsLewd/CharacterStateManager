@@ -468,8 +468,11 @@ namespace ThatsLewd
       }
 
       CreateSubHeader(VaMUI.LEFT, "Group Settings");
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "Play Initial State", HandlePlayInitialState, VaMUI.YELLOW));
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "Play Selected State", HandlePlayCurrentState, VaMUI.YELLOW));
       UI(activeGroup.playbackEnabledToggle.Draw(VaMUI.LEFT));
-      UI(VaMUI.CreateButtonPair(VaMUI.LEFT, "Set Init. State", SetInitialState, "Unset Init. State", RemoveInitialState));
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "Set As Initial State", SetInitialState));
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "Unset Initial State", RemoveInitialState));
       UI(VaMUI.CreateInfoText(VaMUI.LEFT, $"<b>Initial State</b>: {activeGroup.initialState?.name ?? "<none>"}", 1, background: false));
 
       UI(VaMUI.CreateSpacer(VaMUI.LEFT));
@@ -541,6 +544,19 @@ namespace ThatsLewd
       RefreshGroupList();
       VaMUtils.SelectStringChooserFirstValue(activeGroupIdChooser.storable);
     }
+
+    void HandlePlayInitialState()
+    {
+      if (activeGroup?.initialState == null) return;
+      GroupPlayer.PlayState(activeGroup, activeGroup.initialState);
+    }
+
+    void HandlePlayCurrentState()
+    {
+      if (activeGroup == null || activeState == null) return;
+      GroupPlayer.PlayState(activeGroup, activeState);
+    }
+
 
     void SetInitialState()
     {

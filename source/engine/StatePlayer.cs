@@ -70,10 +70,7 @@ namespace ThatsLewd
         }
         if (val == TransitionMode.PlaylistCompleted)
         {
-          foreach (var entry in playlistPlayers)
-          {
-            entry.Value.playlistCompleted = false;
-          }
+          RefreshPlaylists();
         }
       }
 
@@ -118,6 +115,14 @@ namespace ThatsLewd
         randomTargetTime = UnityEngine.Random.Range(currentState.minDurationSlider.val, currentState.maxDurationSlider.val);
       }
 
+      void RefreshPlaylists()
+      {
+        foreach (var entry in playlistPlayers)
+        {
+          entry.Value.playlistCompleted = false;
+        }
+      }
+
       public void Update()
       {
         if (currentState == null) return;
@@ -143,6 +148,7 @@ namespace ThatsLewd
         UnregisterHandlers(currentState);
         RegisterHandlers(newState);
         currentState = newState;
+        playlistPlayers.Clear();
         NewRandomTargetTime();
         time = 0f;
       }
