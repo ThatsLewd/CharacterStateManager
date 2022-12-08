@@ -411,17 +411,19 @@ namespace ThatsLewd
             KeyframePlayer keyframePlayer = animationPlayer.keyframePlayer;
             int currentKeyframeIndex = animationPlayer.GetKeyframeIndex(keyframePlayer.currentKeyframe);
             int targetKeyframeIndex = animationPlayer.GetKeyframeIndex(keyframePlayer.targetKeyframe);
-            string currentKeyframeStr = currentKeyframeIndex == -1 ? "<none>" : $"{currentKeyframeIndex}";
-            string targetKeyframeStr = targetKeyframeIndex == -1 ? "<none>" : $"{targetKeyframeIndex}";
+            string playlistTimeStr = $"{animationPlayer.entryTime:F1}s / {animationPlayer.targetTime:F1}s";
+            string animationTimeStr = $"{animationPlayer.animationTime:F1}s ({animationPlayer.progress:F1})";
+            string currentKeyframeStr = currentKeyframeIndex == -1 ? "?" : $"{currentKeyframeIndex}";
+            string targetKeyframeStr = targetKeyframeIndex == -1 ? "?" : $"{targetKeyframeIndex}";
 
-            str += $"\n";
-            str += $"\n<b>{playlist.layer.name}</b>";
+            str += $"\n\n<b>{playlist.layer.name}</b>";
             str += $"\n------";
             str += $"\nAnimation: <b>{animationPlayer.currentAnimation?.name ?? "<none>"}</b>";
-            str += $"\nTime: {animationPlayer.time:F1}s ({animationPlayer.progress:F1})";
+            str += $"\nPlaylist Time: {(keyframePlayer.playingInBetweenKeyframe ? "<transitioning>" : playlistTimeStr)}";
+            str += $"\nTime: {(keyframePlayer.playingInBetweenKeyframe ? "<transitioning>" : animationTimeStr)}";
             str += $"\nKeyframe: <b>{currentKeyframeStr}</b> -> <b>{targetKeyframeStr}</b>";
             str += $"\nKeyframe Time: {keyframePlayer.time:F1}s ({keyframePlayer.progress:F1})";
-            lines += 7;
+            lines += 8;
           }
 
           infoText.text.text = str;
@@ -723,20 +725,32 @@ namespace ThatsLewd
       for (int i = 0; i < activePlaylist.entries.Count; i++)
       {
         PlaylistEntry entry = activePlaylist.entries[i];
-        UI(CreatePlaylistEntryContainer(activePlaylist.playModeChooser.val, entry.timingModeChooser.val, i + 1, VaMUI.RIGHT));
+        string playlistMode = activePlaylist.playModeChooser.val;
+        string timingMode = entry.timingModeChooser.val;
+        string loopType = entry.animation.loopTypeChooser.val;
+
+        UI(CreatePlaylistEntryContainer(playlistMode, timingMode, loopType, i + 1, VaMUI.RIGHT));
         UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 10f));
         UI(VaMUI.CreateLabelWithX(VaMUI.RIGHT, $"<b>{entry.animation.name}</b>", () => { HandleDeletePlaylistEntry(entry); }));
         UI(VaMUI.CreateButtonPair(VaMUI.RIGHT, "Move Up", () => HandleMovePlaylistEntry(entry, -1), "Move Down", () => HandleMovePlaylistEntry(entry, 1)));
         UI(entry.timingModeChooser.Draw(VaMUI.RIGHT));
-        if (activePlaylist.playModeChooser.val == PlaylistMode.Random)
+        if (timingMode == TimingMode.DurationFromAnimation && loopType != LoopType.PlayOnce)
+        {
+          UI(VaMUI.CreateInfoText(
+            VaMUI.RIGHT,
+            "<b>Note</b>: this animation is set to loop and will play indefinitely.",
+            2
+          ));
+        }
+        if (playlistMode == PlaylistMode.Random)
         {
           UI(entry.weightSlider.Draw(VaMUI.RIGHT));
         }
-        if (entry.timingModeChooser.val == TimingMode.FixedDuration)
+        if (timingMode == TimingMode.FixedDuration)
         {
           UI(entry.durationFixedSlider.Draw(VaMUI.RIGHT));
         }
-        else if (entry.timingModeChooser.val == TimingMode.RandomDuration)
+        else if (timingMode == TimingMode.RandomDuration)
         {
           UI(entry.durationMinSlider.Draw(VaMUI.RIGHT));
           UI(entry.durationMaxSlider.Draw(VaMUI.RIGHT));
@@ -1729,14 +1743,12 @@ namespace ThatsLewd
     // ====== PlaylistEntry Container ====== //
     public class UIDynamicPlaylistEntryContainer : UIDynamicBase
     {
-      public string playlistMode;
-      public string timingMode;
       public RectTransform background;
       public Text indexText;
     }
     
     private GameObject playlistEntryContainerPrefab;
-    public UIDynamicPlaylistEntryContainer CreatePlaylistEntryContainer(string playlistMode, string timingMode, int index, VaMUI.Column side)
+    public UIDynamicPlaylistEntryContainer CreatePlaylistEntryContainer(string playlistMode, string timingMode, string loopType, int index, VaMUI.Column side)
     {
       if (playlistEntryContainerPrefab == null)
       {
@@ -1763,6 +1775,7 @@ namespace ThatsLewd
         UIDynamicPlaylistEntryContainer uid = t.GetComponent<UIDynamicPlaylistEntryContainer>();
         uid.indexText.text = index.ToString();
         float height = 280f;
+        if (timingMode == TimingMode.DurationFromAnimation && loopType != LoopType.PlayOnce) height += 88f;
         if (playlistMode == PlaylistMode.Random) height += sliderHeight;
         if (timingMode == TimingMode.FixedDuration) height += sliderHeight;
         if (timingMode == TimingMode.RandomDuration) height += 2f * sliderHeight;

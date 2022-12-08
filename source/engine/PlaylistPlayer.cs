@@ -28,7 +28,7 @@ namespace ThatsLewd
 
       public void Update()
       {
-        if (animationPlayer.currentEntry == null)
+        if (animationPlayer.currentEntry == null || animationPlayer.donePlaying)
         {
           GetNextAnimation();
         }

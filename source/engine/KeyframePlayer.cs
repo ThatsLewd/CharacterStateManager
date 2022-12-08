@@ -14,10 +14,13 @@ namespace ThatsLewd
 
       public IKeyframe currentKeyframe { get; private set; } = null;
       public IKeyframe targetKeyframe { get; private set; } = null;
+
       public float time { get; private set; } = 0f;
       public float progress { get; private set; } = 0f;
-      public bool playingTemporaryKeyframe { get; private set; } = false;
 
+      public bool playingInBetweenKeyframe { get { return keyframeIsTemporary || keyframeIsNewAnimation; }}
+      bool keyframeIsTemporary = false;
+      bool keyframeIsNewAnimation = false;
       public bool keyframeCompleted { get { return GetKeyframeCompleted(); } }
 
       public KeyframePlayer(AnimationPlayer animationPlayer)
@@ -32,7 +35,7 @@ namespace ThatsLewd
 
       public void Update()
       {
-        playingTemporaryKeyframe = false;
+        keyframeIsTemporary = false;
         if (targetKeyframe == null) return;
         if (currentKeyframe == null)
         {
@@ -41,7 +44,7 @@ namespace ThatsLewd
         }
         if (currentKeyframe is TemporaryKeyframe)
         {
-          playingTemporaryKeyframe = true;
+          keyframeIsTemporary = true;
         }
         
         time += Time.deltaTime * animationPlayer.playbackSpeed;
@@ -130,7 +133,7 @@ namespace ThatsLewd
         }
       }
 
-      public void SetTargetKeyframe(IKeyframe newKeyframe)
+      public void SetTargetKeyframe(IKeyframe newKeyframe, bool isNewAnimation = false)
       {
         if (targetKeyframe != null)
         {
@@ -156,7 +159,11 @@ namespace ThatsLewd
         }
         currentKeyframe = targetKeyframe;
         targetKeyframe = newKeyframe;
-        Reset();
+        keyframeIsNewAnimation = isNewAnimation;
+        if (!animationPlayer.playOnceDone)
+        {
+          Reset();
+        }
       }
     }
   }

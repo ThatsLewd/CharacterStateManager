@@ -14,11 +14,21 @@ namespace ThatsLewd
 
       public PlaylistEntry currentEntry { get; private set; } = null;
       public Animation currentAnimation { get { return currentEntry?.animation; }}
-      public float time { get; private set; } = 0f;
+
+      public float entryTime { get; private set; } = 0f;
+      public float animationTime { get; private set; } = 0f;
       public float progress { get; private set; } = 0f;
-      public bool donePlaying { get; private set; } = false;
-      public bool reverse { get; private set; } = false;
+
+      public bool donePlaying { get { return GetIsDonePlaying(); }}
+      public bool reverse { get; private set; } = false;      
       public float playbackSpeed { get { return currentAnimation?.playbackSpeedSlider.val ?? 1f; }}
+
+      public string loopType { get { return currentAnimation.loopTypeChooser.val; }}
+      public string timingMode { get { return currentEntry.timingModeChooser.val; }}
+      
+      public bool playOnceDone { get; private set; } = false;
+      float randomTargetTime = 0f;
+      public float targetTime { get { return GetTargetTime(); }}
 
       public KeyframePlayer keyframePlayer { get; private set; }
 
@@ -30,28 +40,103 @@ namespace ThatsLewd
 
       public void Dispose()
       {
+        UnregisterHandlers(currentEntry);
         keyframePlayer.Dispose();
+      }
+
+      void RegisterHandlers(PlaylistEntry newEntry)
+      {
+        if (newEntry == null) return;
+        newEntry.animation.loopTypeChooser.storable.setCallbackFunction += HandleSetLoopType;
+        newEntry.timingModeChooser.storable.setCallbackFunction += HandleSetTimingMode;
+        newEntry.durationMinSlider.storable.setCallbackFunction += HandleSetRandomDuration;
+        newEntry.durationMaxSlider.storable.setCallbackFunction += HandleSetRandomDuration;
+      }
+
+      void UnregisterHandlers(PlaylistEntry oldEntry)
+      {
+        if (oldEntry == null) return;
+        oldEntry.animation.loopTypeChooser.storable.setCallbackFunction -= HandleSetLoopType;
+        oldEntry.timingModeChooser.storable.setCallbackFunction -= HandleSetTimingMode;
+        oldEntry.durationMinSlider.storable.setCallbackFunction -= HandleSetRandomDuration;
+        oldEntry.durationMaxSlider.storable.setCallbackFunction -= HandleSetRandomDuration;
+      }
+
+      void HandleSetLoopType(string val)
+      {
+        ResetPlayMode();
+      }
+
+      void HandleSetTimingMode(string val)
+      {
+        if (val == TimingMode.RandomDuration)
+        {
+          NewRandomTargetTime();
+        }
+      }
+
+      void HandleSetRandomDuration(float val)
+      {
+        NewRandomTargetTime();
+      }
+
+      bool GetIsDonePlaying()
+      {
+        if (currentEntry == null) return false;
+        switch (timingMode)
+        {
+          case TimingMode.DurationFromAnimation:
+            return playOnceDone;
+          case TimingMode.FixedDuration:
+            return entryTime >= currentEntry.durationFixedSlider.val;
+          case TimingMode.RandomDuration:
+            return entryTime >= randomTargetTime;
+          default:
+            return false;
+        }
+      }
+
+      float GetTargetTime()
+      {
+        if (currentEntry == null) return 0f;
+        switch (timingMode)
+        {
+          case TimingMode.DurationFromAnimation:
+            return 0f;
+          case TimingMode.FixedDuration:
+            return currentEntry.durationFixedSlider.val;
+          case TimingMode.RandomDuration:
+            return randomTargetTime;
+          default:
+            return 0f;
+        }
+      }
+
+      float NewRandomTargetTime()
+      {
+        if (currentEntry == null) return 0f;
+        return UnityEngine.Random.Range(currentEntry.durationMinSlider.val, currentEntry.durationMaxSlider.val);
       }
 
       public void Update()
       {
         if (currentEntry == null) return;
-        if (donePlaying)
+        if (!keyframePlayer.playingInBetweenKeyframe)
         {
-          if (currentAnimation.loopTypeChooser.val == LoopType.PlayOnce) return;
-          donePlaying = false;
-        }
-        if (!keyframePlayer.playingTemporaryKeyframe)
-        {
-          time += Time.deltaTime * playbackSpeed;
+          entryTime += Time.deltaTime;
+          if (playOnceDone) return;
+          animationTime += Time.deltaTime * playbackSpeed;
         }
 
-        float totalAnimationTime = currentAnimation.GetTotalDuration(currentAnimation.loopTypeChooser.val == LoopType.PingPong);
+        float totalAnimationTime = currentAnimation.GetTotalDuration(loopType != LoopType.Loop);
         if (totalAnimationTime == 0f) progress = 0f;
-        else if (reverse) progress = 1f - Mathf.Clamp01((time - totalAnimationTime) / totalAnimationTime);
-        else progress = Mathf.Clamp01(time / totalAnimationTime);
+        else if (reverse) progress = 1f - Mathf.Clamp01((animationTime - totalAnimationTime) / totalAnimationTime);
+        else progress = Mathf.Clamp01(animationTime / totalAnimationTime);
 
-        currentAnimation.onPlayingTrigger.Trigger(progress);
+        if (!keyframePlayer.playingInBetweenKeyframe)
+        {
+          currentAnimation.onPlayingTrigger.Trigger(progress);
+        }
 
         if (keyframePlayer.targetKeyframe == null || keyframePlayer.keyframeCompleted)
         {
@@ -68,9 +153,13 @@ namespace ThatsLewd
 
       void Reset()
       {
-        time = 0f;
+        animationTime = 0f;
         progress = 0f;
-        donePlaying = false;
+      }
+
+      void ResetPlayMode()
+      {
+        playOnceDone = false;
         reverse = false;
       }
 
@@ -84,8 +173,15 @@ namespace ThatsLewd
         {
           newEntry.animation.onEnterTrigger.Trigger();
         }
+        UnregisterHandlers(currentEntry);
+        RegisterHandlers(newEntry);
         currentEntry = newEntry;
+        entryTime = 0f;
         Reset();
+        ResetPlayMode();
+        NewRandomTargetTime();
+        Animation.Keyframe firstKeyframe = newEntry.animation.keyframes.Count > 0 ? newEntry.animation.keyframes[0] : null;
+        keyframePlayer.SetTargetKeyframe(firstKeyframe, true);
       }
 
       public int GetKeyframeIndex(IKeyframe keyframe)
@@ -112,7 +208,7 @@ namespace ThatsLewd
           return currentAnimation.keyframes.Count > 0 ? currentAnimation.keyframes[0] : null;
         }
 
-        switch (currentAnimation.loopTypeChooser.val)
+        switch (loopType)
         {
           case LoopType.PlayOnce:
             return GetNextKeyframePlayOnce(currentIndex);
@@ -130,7 +226,7 @@ namespace ThatsLewd
         int nextIndex = currentIndex + 1;
         if (nextIndex >= currentAnimation.keyframes.Count)
         {
-          donePlaying = true;
+          playOnceDone = true;
           return currentAnimation.keyframes[currentAnimation.keyframes.Count - 1];
         }
         return currentAnimation.keyframes[nextIndex];
