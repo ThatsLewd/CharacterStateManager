@@ -413,8 +413,8 @@ namespace ThatsLewd
             int targetKeyframeIndex = animationPlayer.GetKeyframeIndex(keyframePlayer.targetKeyframe);
             string playlistTimeStr = $"{animationPlayer.entryTime:F1}s / {animationPlayer.targetTime:F1}s";
             string animationTimeStr = $"{animationPlayer.animationTime:F1}s ({animationPlayer.progress:F1})";
-            string currentKeyframeStr = currentKeyframeIndex == -1 ? "?" : $"{currentKeyframeIndex}";
-            string targetKeyframeStr = targetKeyframeIndex == -1 ? "?" : $"{targetKeyframeIndex}";
+            string currentKeyframeStr = currentKeyframeIndex == -1 ? "?" : $"{currentKeyframeIndex + 1}";
+            string targetKeyframeStr = targetKeyframeIndex == -1 ? "?" : $"{targetKeyframeIndex + 1}";
 
             str += $"\n\n<b>{playlist.layer.name}</b>";
             str += $"\n------";
@@ -481,7 +481,7 @@ namespace ThatsLewd
       }
       else if (activeState.transitionModeChooser.val == TransitionMode.PlaylistCompleted)
       {
-        UI(VaMUI.CreateInfoText(VaMUI.LEFT, "The state will advance when the first layer's playlist completes.", 2));
+        UI(VaMUI.CreateInfoText(VaMUI.LEFT, "The state will advance when any layer's playlist completes.", 2));
       }
       else if (activeState.transitionModeChooser.val == TransitionMode.FixedDuration)
       {

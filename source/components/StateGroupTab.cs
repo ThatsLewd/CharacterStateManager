@@ -42,10 +42,12 @@ namespace ThatsLewd
       public static readonly string[] list = new string[] { None, PlaylistCompleted, FixedDuration, RandomDuration };
     }
 
-    public class StateTransition
+    public class StateTransition : IWeightedItem
     {
       public State state { get; private set; }
       public VaMUI.VaMSlider weightSlider { get; private set; }
+
+      public float weight { get { return weightSlider.val; }}
 
       public StateTransition(State state)
       {

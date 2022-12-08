@@ -40,6 +40,8 @@ namespace ThatsLewd
       public Group group { get; private set; }
       public StatePlayer statePlayer { get; private set; }
 
+      bool initialized = false;
+
       public GroupPlayer(Group group)
       {
         this.group = group;
@@ -55,12 +57,25 @@ namespace ThatsLewd
       {
         if (!group.playbackEnabledToggle.val) return;
 
-        if (statePlayer.currentState == null && group.initialState != null)
+        if (!initialized && statePlayer.currentState == null && group.initialState != null)
         {
           statePlayer.SetState(group.initialState);
+          initialized = true;
+        }
+
+        if (statePlayer.donePlaying)
+        {
+          State next = GetNextState();
+          statePlayer.SetState(next);
         }
 
         statePlayer.Update();
+      }
+
+      State GetNextState()
+      {
+        if (statePlayer.currentState.transitions.Count == 0) return null;
+        return Helpers.ChooseWeightedItem(statePlayer.currentState.transitions).state;
       }
     }
   }

@@ -14,16 +14,35 @@ namespace ThatsLewd
       public AnimationPlaylist playlist { get; private set; }
       public AnimationPlayer animationPlayer { get; private set; }
 
+      public bool playlistCompleted { get; set; } = false;
+
       public PlaylistPlayer(StatePlayer statePlayer, AnimationPlaylist playlist)
       {
         this.statePlayer = statePlayer;
         this.playlist = playlist;
         this.animationPlayer = new AnimationPlayer(this);
+        RegisterHandlers();
       }
 
       public void Dispose()
       {
+        UnregisterHandlers();
         animationPlayer.Dispose();
+      }
+
+      void RegisterHandlers()
+      {
+        playlist.playModeChooser.storable.setCallbackFunction += HandleSetPlayMode;
+      }
+
+      void UnregisterHandlers()
+      {
+        playlist.playModeChooser.storable.setCallbackFunction += HandleSetPlayMode;
+      }
+
+      void HandleSetPlayMode(string val)
+      {
+        playlistCompleted = false;
       }
 
       public void Update()
@@ -63,7 +82,12 @@ namespace ThatsLewd
           int currentIndex = playlist.entries.FindIndex((e) => e == animationPlayer.currentEntry);
           if (currentIndex >= 0)
           {
-            nextIndex = (currentIndex + 1) % playlist.entries.Count;
+            nextIndex = currentIndex + 1;
+            if (nextIndex >= playlist.entries.Count)
+            {
+              playlistCompleted = true;
+              nextIndex = 0;
+            }
           }
           else
           {

@@ -101,8 +101,6 @@ namespace ThatsLewd
         if (currentEntry == null) return 0f;
         switch (timingMode)
         {
-          case TimingMode.DurationFromAnimation:
-            return 0f;
           case TimingMode.FixedDuration:
             return currentEntry.durationFixedSlider.val;
           case TimingMode.RandomDuration:
@@ -112,10 +110,10 @@ namespace ThatsLewd
         }
       }
 
-      float NewRandomTargetTime()
+      void NewRandomTargetTime()
       {
-        if (currentEntry == null) return 0f;
-        return UnityEngine.Random.Range(currentEntry.durationMinSlider.val, currentEntry.durationMaxSlider.val);
+        if (currentEntry == null) randomTargetTime = 0f;
+        randomTargetTime = UnityEngine.Random.Range(currentEntry.durationMinSlider.val, currentEntry.durationMaxSlider.val);
       }
 
       public void Update()
