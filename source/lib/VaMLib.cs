@@ -80,6 +80,45 @@ namespace VaMLib
       VaMUtils.SafeDestroy(ref buttonElementPrefab);
     }
 
+    // ================ CreateAction ================ //
+    // Create an action that other objects in the scene can use
+    public static JSONStorableAction CreateAction(string name, JSONStorableAction.ActionCallback callback)
+    {
+      JSONStorableAction storable = new JSONStorableAction(name, callback);
+      script.RegisterAction(storable);
+      return storable;
+    }
+
+    // ================ CreateBoolAction ================ //
+    // Create an action that other objects in the scene can use
+    public static JSONStorableBool CreateBoolAction(string name, bool defaultValue, JSONStorableBool.SetBoolCallback callback)
+    {
+      JSONStorableBool storable = new JSONStorableBool(name, defaultValue, callback);
+      storable.isStorable = storable.isRestorable = false;
+      script.RegisterBool(storable);
+      return storable;
+    }
+
+    // ================ CreateFloatAction ================ //
+    // Create an action that other objects in the scene can use
+    public static JSONStorableFloat CreateFloatAction(string name, float defaultValue, float minValue, float maxValue, JSONStorableFloat.SetFloatCallback callback)
+    {
+      JSONStorableFloat storable = new JSONStorableFloat(name, defaultValue, callback, minValue, maxValue, false, true);
+      storable.isStorable = storable.isRestorable = false;
+      script.RegisterFloat(storable);
+      return storable;
+    }
+
+    // ================ CreateStringAction ================ //
+    // Create an action that other objects in the scene can use
+    public static JSONStorableString CreateStringAction(string name, string defaultValue, JSONStorableString.SetStringCallback callback)
+    {
+      JSONStorableString storable = new JSONStorableString(name, defaultValue, callback);
+      storable.isStorable = storable.isRestorable = false;
+      script.RegisterString(storable);
+      return storable;
+    }
+
     // ================ CreateButton ================ //
     // Create default VaM Button
     public static UIDynamicButton CreateButton(Column side, string label, UnityAction callback, Color? color = null)
@@ -322,15 +361,6 @@ namespace VaMLib
         uid.gameObject.SetActive(true);
         return uid;
       }
-    }
-
-    // ================ CreateAction ================ //
-    // Create an action that other objects in the scene can use
-    public static JSONStorableAction CreateAction(string name, JSONStorableAction.ActionCallback callback)
-    {
-      JSONStorableAction action = new JSONStorableAction(name, callback);
-      script.RegisterAction(action);
-      return action;
     }
 
     // ================ CreateToggle ================ //

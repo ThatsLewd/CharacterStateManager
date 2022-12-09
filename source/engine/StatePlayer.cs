@@ -143,10 +143,12 @@ namespace ThatsLewd
         if (currentState != null)
         {
           currentState.onExitTrigger.Trigger();
+          CharacterStateManager.instance.BroadcastStateExit(currentState);
         }
         if (newState != null)
         {
           newState.onEnterTrigger.Trigger();
+          CharacterStateManager.instance.BroadcastStateEnter(newState);
         }
         UnregisterHandlers(currentState);
         RegisterHandlers(newState);

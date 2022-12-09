@@ -90,6 +90,7 @@
     <Compile Include="source/lib/Easing.cs" />
     <Compile Include="source/lib/Helpers.cs" />
     <Compile Include="source/lib/VaMLib.cs" />
+    <Compile Include="source/Actions.cs" />
     <Compile Include="source/Core.cs" />
     <Compile Include="source/Engine.cs" />
     <Compile Include="source/Ui.cs" />

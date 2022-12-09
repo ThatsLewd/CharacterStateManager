@@ -73,6 +73,7 @@ namespace ThatsLewd
 
       EngineInit();
       UIInit();
+      ActionsInit();
     }
 
     void OnDestroy()

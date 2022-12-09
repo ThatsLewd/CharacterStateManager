@@ -19,6 +19,7 @@ source/engine/TemporaryKeyframe.cs
 source/lib/Easing.cs
 source/lib/Helpers.cs
 source/lib/VaMLib.cs
+source/Actions.cs
 source/Core.cs
 source/Engine.cs
 source/Ui.cs
