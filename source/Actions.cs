@@ -18,12 +18,15 @@ namespace ThatsLewd
       broadcastMessageAction = VaMUI.CreateStringAction("Broadcast Message", "", HandleBroadcastMessageAction);
     }
 
-    public new void BroadcastMessage(string message)
+    public void CharacterStateManagerBroadcastMessage(string message)
     {
-
+      foreach (MVRScript other in otherInstances)
+      {
+        other.SendMessage("CharacterStateManagerReceiveMessage", message);
+      }
     }
 
-    public void ReceiveMessage(string message)
+    public void CharacterStateManagerReceiveMessage(string message)
     {
       foreach (MessageListener listener in Messages.listeners)
       {
@@ -37,7 +40,7 @@ namespace ThatsLewd
     void HandleSendMessageAction(string val)
     {
       sendMessageAction.valNoCallback = "";
-      ReceiveMessage(MessageType.GetMessageTextCustom(Role.Self, val));
+      CharacterStateManagerReceiveMessage(MessageType.GetMessageTextCustom(Role.Self, val));
     }
 
     void HandleBroadcastMessageAction(string val)
@@ -47,31 +50,31 @@ namespace ThatsLewd
       {
         if (role.isSelf) continue;
         if (!role.useRoleToggle.val) continue;
-        BroadcastMessage(MessageType.GetMessageTextCustom(role.name, val));
+        CharacterStateManagerBroadcastMessage(MessageType.GetMessageTextCustom(role.name, val));
       }
     }
 
     void BroadcastStateEnter(State state)
     {
       if (state == null) return;
-      ReceiveMessage(MessageType.GetMessageTextEnterState(Role.Self, state.group.name, state.name));
+      CharacterStateManagerReceiveMessage(MessageType.GetMessageTextEnterState(Role.Self, state.group.name, state.name));
       foreach (Role role in Role.list)
       {
         if (role.isSelf) continue;
         if (!role.useRoleToggle.val) continue;
-        BroadcastMessage(MessageType.GetMessageTextEnterState(role.name, state.group.name, state.name));
+        CharacterStateManagerBroadcastMessage(MessageType.GetMessageTextEnterState(role.name, state.group.name, state.name));
       }
     }
 
     void BroadcastStateExit(State state)
     {
       if (state == null) return;
-      ReceiveMessage(MessageType.GetMessageTextExitState(Role.Self, state.group.name, state.name));
+      CharacterStateManagerReceiveMessage(MessageType.GetMessageTextExitState(Role.Self, state.group.name, state.name));
       foreach (Role role in Role.list)
       {
         if (role.isSelf) continue;
         if (!role.useRoleToggle.val) continue;
-        BroadcastMessage(MessageType.GetMessageTextExitState(role.name, state.group.name, state.name));
+        CharacterStateManagerBroadcastMessage(MessageType.GetMessageTextExitState(role.name, state.group.name, state.name));
       }
     }
   }

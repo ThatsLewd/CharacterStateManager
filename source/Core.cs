@@ -8,15 +8,19 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
+    public const string StorableName = "ThatsLewd.CharacterStateManager";
     public const string SaveFormatVersion = "v1";
     public static CharacterStateManager instance { get; private set; }
 
+    List<MVRScript> otherInstances = new List<MVRScript>();
     public Atom person { get; private set; }
     public DAZCharacterSelector geometry { get; private set; }
     public GenerateDAZMorphsControlUI morphsControl { get { return geometry.morphsControlUI; }}
     public List<FreeControllerV3> controllers { get; private set; }
     public FreeControllerV3 mainController { get { return person.mainController; }}
     public bool loadOnce { get; private set; } = false;
+
+    float instancePollTimer = 69f; // nice
 
     readonly string[] orderedControllerNames = new string[]
     {
@@ -83,6 +87,12 @@ namespace ThatsLewd
 
     void Update()
     {
+      instancePollTimer += Time.deltaTime;
+      if (instancePollTimer >= 5f)
+      {
+        instancePollTimer = 0f;
+        GetOtherInstancesInScene();
+      }
       EngineUpdate();
       UIUpdate();
     }
@@ -96,6 +106,26 @@ namespace ThatsLewd
         string fullName = $"{name}Control";
         FreeControllerV3 controller = allControllers.Find((c) => c.name == fullName);
         controllers.Add(controller);
+      }
+    }
+
+    void GetOtherInstancesInScene()
+    {
+      otherInstances.Clear();
+      List<Atom> allAtoms = SuperController.singleton.GetAtoms();
+      foreach (Atom atom in allAtoms)
+      {
+        bool isPerson = (atom.GetStorableByID("geometry") as DAZCharacterSelector) != null;
+        if (!isPerson) continue;
+        MVRPluginManager pluginManager = atom.GetStorableByID("PluginManager") as MVRPluginManager;
+        if (pluginManager == null) continue;
+        foreach (Transform transform in pluginManager.gameObject.transform.Find("Plugins"))
+        {
+          MVRScript plugin = transform.gameObject.GetComponent<MVRScript>();
+          if (!plugin.storeId.EndsWith(StorableName)) continue;
+          if (atom == containingAtom && plugin.storeId == storeId) continue;
+          otherInstances.Add(plugin);
+        }
       }
     }
 
