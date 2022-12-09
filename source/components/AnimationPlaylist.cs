@@ -19,10 +19,11 @@ namespace ThatsLewd
     public static class TimingMode
     {
       public const string DurationFromAnimation = "Duration From Animation";
+      public const string InfiniteDuration = "Infinite Duration";
       public const string FixedDuration = "Fixed Duration";
       public const string RandomDuration = "Random Duration";
 
-      public static readonly string[] list = new string[] { DurationFromAnimation, FixedDuration, RandomDuration };
+      public static readonly string[] list = new string[] { DurationFromAnimation, InfiniteDuration, FixedDuration, RandomDuration };
     }
 
     public partial class AnimationPlaylist : IDisposable

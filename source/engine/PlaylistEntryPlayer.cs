@@ -72,6 +72,8 @@ namespace ThatsLewd
         {
           case TimingMode.DurationFromAnimation:
             return animationPlayer.playOnceDone;
+          case TimingMode.InfiniteDuration:
+            return false;
           case TimingMode.FixedDuration:
             return time >= currentEntry.durationFixedSlider.val;
           case TimingMode.RandomDuration:
