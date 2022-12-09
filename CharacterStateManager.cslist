@@ -8,7 +8,6 @@ source/components/Messages.cs
 source/components/Role.cs
 source/components/State.cs
 source/components/StateGroupTab.cs
-source/components/Transition.cs
 source/engine/AnimationPlayer.cs
 source/engine/GroupPlayer.cs
 source/engine/KeyframePlayer.cs

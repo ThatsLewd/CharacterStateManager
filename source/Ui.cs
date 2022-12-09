@@ -17,7 +17,6 @@ namespace ThatsLewd
       public const string Layers = "Layers";
       public const string Animations = "Animations";
       public const string Keyframes = "Keyframes";
-      public const string Transitions = "Transitions"; // Currently unused
       public const string Roles = "Roles";
       public const string Messages = "Messages";
       public const string ExportImport = "Export/Import";
@@ -185,9 +184,6 @@ namespace ThatsLewd
           break;
         case Tabs.Keyframes:
           BuildKeyframesTabUI();
-          break;
-        case Tabs.Transitions:
-          BuildTransitionsTabUI();
           break;
         case Tabs.Roles:
           BuildRolesTabUI();
@@ -358,7 +354,7 @@ namespace ThatsLewd
         + "- In the <b>Layers</b> tab, select the controllers and morphs you want to capture\n\n"
         + "- In the <b>Keyframes</b> tab, add a keyframe, pose your model, and click <b>Capture Current State</b>\n\n"
         + "- In the <b>States</b> tab, click <b>Add Current Layer</b> and then click <b>Add Current Animation</b>\n\n"
-        + "- In the <b>Groups</b> tab, click <b>Set Init. State</b>\n\n"
+        + "- In the <b>Groups</b> tab, click <b>Set As Initial State</b>\n\n"
         + "- Congratulations! You now have a basic animation with a single keyframe.",
         23
       ));
@@ -1433,22 +1429,6 @@ namespace ThatsLewd
       {
         previewAnimationPlayer.Update();
       }
-    }
-
-
-    // ================================================================================= //
-    // ================================ TRANSITIONS TAB ================================ //
-    // ================================================================================= //
-    void BuildTransitionsTabUI()
-    {
-      CreateMainHeader(VaMUI.LEFT, "Transitions");
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
-
-      UI(VaMUI.CreateInfoText(
-        VaMUI.LEFT,
-        "A <b>Transition</b> defines how to move from one animation to another. The default transition is a simple tween, but if more control is needed <b>Keyframes</b> may be added for precision.",
-        5
-      ));
     }
 
 

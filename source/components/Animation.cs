@@ -28,16 +28,6 @@ namespace ThatsLewd
       public ValueTrigger onPlayingTrigger = VaMTrigger.Create<ValueTrigger>("On Animation Playing");
       public EventTrigger onExitTrigger = VaMTrigger.Create<EventTrigger>("On Exit Animation");
 
-      public List<Transition> fromTransitions
-      {
-        get { return Transition.list.FindAll((transition) => transition.from == this); }
-      }
-
-      public List<Transition> toTransitions
-      {
-        get { return Transition.list.FindAll((transition) => transition.to == this); }
-      }
-
       public Animation(Layer layer, string name = null)
       {
         this.id = VaMUtils.GenerateRandomID();
@@ -67,14 +57,6 @@ namespace ThatsLewd
         foreach (Keyframe keyframe in keyframes)
         {
           keyframe.Clone(newAnimation);
-        }
-        foreach (Transition transition in fromTransitions)
-        {
-          transition.Clone(from: newAnimation);
-        }
-        foreach (Transition transition in toTransitions)
-        {
-          transition.Clone(to: newAnimation);
         }
         return newAnimation;
       }

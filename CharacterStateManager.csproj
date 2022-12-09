@@ -79,7 +79,6 @@
     <Compile Include="source/components/Role.cs" />
     <Compile Include="source/components/State.cs" />
     <Compile Include="source/components/StateGroupTab.cs" />
-    <Compile Include="source/components/Transition.cs" />
     <Compile Include="source/engine/AnimationPlayer.cs" />
     <Compile Include="source/engine/GroupPlayer.cs" />
     <Compile Include="source/engine/KeyframePlayer.cs" />
