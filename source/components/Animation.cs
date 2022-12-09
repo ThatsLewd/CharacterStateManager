@@ -8,7 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public partial class Animation : BaseComponent, IDisposable
+    public partial class Animation : BaseComponent, IDisposable, INamedItem
     {
       public delegate void OnDeleteCallback(Animation animation);
       public static event OnDeleteCallback OnDelete;
@@ -42,6 +42,7 @@ namespace ThatsLewd
       {
         this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "animation";
+        Helpers.EnsureUniqueName(layer.animations, this);
         this.layer = layer;
         this.loopTypeChooser = VaMUI.CreateStringChooser("Loop Type", LoopType.list.ToList(), LoopType.Loop);
         this.playbackSpeedSlider = VaMUI.CreateSlider("Playback Speed", 1f, 0f, 2f);

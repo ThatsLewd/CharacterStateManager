@@ -8,7 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class Group : BaseComponent, IDisposable
+    public class Group : BaseComponent, IDisposable, INamedItem
     {
       public delegate void OnDeleteCallback(Group group);
       public static event OnDeleteCallback OnDelete;
@@ -26,6 +26,7 @@ namespace ThatsLewd
       {
         this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "group";
+        Helpers.EnsureUniqueName(Group.list, this);
         playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true);
         Group.list.Add(this);
       }

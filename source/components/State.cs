@@ -8,7 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public partial class State : BaseComponent, IDisposable
+    public partial class State : BaseComponent, IDisposable, INamedItem
     {
       public delegate void OnDeleteCallback(State state);
       public static event OnDeleteCallback OnDelete;
@@ -27,6 +27,7 @@ namespace ThatsLewd
         this.id = VaMUtils.GenerateRandomID();
         this.group = group;
         this.name = name ?? "state";
+        Helpers.EnsureUniqueName(group.states, this);
         this.group.states.Add(this);
         this.transitionModeChooser = VaMUI.CreateStringChooser("Transition Condition", TransitionMode.list.ToList(), TransitionMode.None, callbackNoVal: instance.RequestRedraw);
         this.fixedDurationSlider = VaMUI.CreateSlider("Duration", 10f, 0f, 30f, callbackNoVal: HandleFixedDurationChange);

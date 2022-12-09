@@ -8,7 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public class Layer : BaseComponent, IDisposable
+    public class Layer : BaseComponent, IDisposable, INamedItem
     {
       public delegate void OnDeleteCallback(Layer layer);
       public static event OnDeleteCallback OnDelete;
@@ -29,6 +29,7 @@ namespace ThatsLewd
       {
         this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "layer";
+        Helpers.EnsureUniqueName(Layer.list, this);
         defaultTransitionDurationSlider = VaMUI.CreateSlider("Transition Duration", 0.3f, 0f, 1f);
         defaultTransitionEasingChooser = VaMUI.CreateStringChooser("Easing", Easing.list.ToList(), Easing.EasingType.EaseInOutQuad);
         InitializeControllers();
