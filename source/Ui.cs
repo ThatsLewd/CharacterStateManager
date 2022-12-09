@@ -58,6 +58,7 @@ namespace ThatsLewd
 
     AnimationPlaylist activePlaylist;
     Animation.Keyframe activeKeyframe;
+    AnimationPlayer previewAnimationPlayer = null;
 
     VaMUI.VaMStringChooser transitionStateChooser;
     VaMUI.VaMStringChooser addMorphChooser;
@@ -68,7 +69,7 @@ namespace ThatsLewd
       VaMTrigger.Init(this);
       VaMUI.Init(this, CreateUIElement);
 
-      playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true, register: true);
+      playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true, register: true, callbackNoVal: DestroyPreviewPlayer);
       hideTopUIToggle = VaMUI.CreateToggle("Hide Top UI", false, callbackNoVal: RequestRedraw);
 
       activeGroupIdChooser = VaMUI.CreateStringChooserKeyVal("Group", callbackNoVal: HandleSelectGroup);
@@ -108,6 +109,7 @@ namespace ThatsLewd
         uiNeedsRebuilt = false;
       }
       RefreshInfoText();
+      UpdatePreviewAnimationPlayer();
     }
 
     void RefreshUIAfterJSONLoad()
@@ -155,6 +157,10 @@ namespace ThatsLewd
     void HandleTabSelect(string tabName)
     {
       activeTab = tabName;
+      if (activeTab != Tabs.Keyframes)
+      {
+        DestroyPreviewPlayer();
+      } 
       RequestRedraw();
     }
 
@@ -239,6 +245,8 @@ namespace ThatsLewd
       activeAnimation = activeLayer?.animations.Find((a) => a.id == activeAnimationIdChooser.val);
 
       editAnimationNameInput.valNoCallback = activeAnimation?.name ?? "";
+
+      DestroyPreviewPlayer();
 
       RequestRedraw();
     }
@@ -407,12 +415,13 @@ namespace ThatsLewd
           {
             AnimationPlaylist playlist = ppEntry.Key;
             PlaylistPlayer playlistPlayer = ppEntry.Value;
-            AnimationPlayer animationPlayer = playlistPlayer.animationPlayer;
+            PlaylistEntryPlayer playlistEntryPlayer = playlistPlayer.playlistEntryPlayer;
+            AnimationPlayer animationPlayer = playlistEntryPlayer.animationPlayer;
             KeyframePlayer keyframePlayer = animationPlayer.keyframePlayer;
             int currentKeyframeIndex = animationPlayer.GetKeyframeIndex(keyframePlayer.currentKeyframe);
             int targetKeyframeIndex = animationPlayer.GetKeyframeIndex(keyframePlayer.targetKeyframe);
-            string playlistTimeStr = $"{animationPlayer.entryTime:F1}s / {animationPlayer.targetTime:F1}s";
-            string animationTimeStr = $"{animationPlayer.animationTime:F1}s ({animationPlayer.progress:F1})";
+            string playlistTimeStr = $"{playlistEntryPlayer.time:F1}s / {playlistEntryPlayer.targetTime:F1}s";
+            string animationTimeStr = $"{animationPlayer.time:F1}s ({animationPlayer.progress:F1})";
             string currentKeyframeStr = currentKeyframeIndex == -1 ? "?" : $"{currentKeyframeIndex + 1}";
             string targetKeyframeStr = targetKeyframeIndex == -1 ? "?" : $"{targetKeyframeIndex + 1}";
 
@@ -906,6 +915,10 @@ namespace ThatsLewd
 
       if (activeLayer == null) return;
 
+      CreateSubHeader(VaMUI.LEFT, "Default Transition");
+      UI(activeLayer.defaultTransitionDurationSlider.Draw(VaMUI.LEFT));
+      UI(activeLayer.defaultTransitionEasingChooser.Draw(VaMUI.LEFT));
+
       CreateSubHeader(VaMUI.LEFT, "Controllers");
       UI(VaMUI.CreateButtonPair(VaMUI.LEFT, "Select All Position", () => { HandleSelectAllControllers(true, false); }, "Select All Rotation", () => { HandleSelectAllControllers(false, true); }));
       UI(VaMUI.CreateButton(VaMUI.LEFT, "Deselect All", HandleDeselectAllControllers));
@@ -1165,6 +1178,8 @@ namespace ThatsLewd
         return;
       }
 
+      UI(VaMUI.CreateButtonPair(VaMUI.LEFT, "Preview Animation", CreatePreviewPlayer, "Stop Preview", DestroyPreviewPlayer));
+
       EnsureSelectedKeyframe();
 
       // KEYFRAME SELECTOR
@@ -1393,6 +1408,30 @@ namespace ThatsLewd
           tm.morph.morphValue = capture.value;
           tm.UpdateSliderToMorph();
         }
+      }
+    }
+
+    void CreatePreviewPlayer()
+    {
+      DestroyPreviewPlayer();
+      if (activeAnimation == null) return;
+      playbackEnabledToggle.valNoCallback = false;
+      previewAnimationPlayer = new AnimationPlayer(null);
+      previewAnimationPlayer.SetAnimation(activeAnimation);
+    }
+
+    void DestroyPreviewPlayer()
+    {
+      if (previewAnimationPlayer == null) return;
+      previewAnimationPlayer.Dispose();
+      previewAnimationPlayer = null;
+    }
+
+    void UpdatePreviewAnimationPlayer()
+    {
+      if (previewAnimationPlayer != null && activeTab == Tabs.Keyframes && !playbackEnabledToggle.val)
+      {
+        previewAnimationPlayer.Update();
       }
     }
 

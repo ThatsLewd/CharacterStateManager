@@ -48,7 +48,7 @@ namespace ThatsLewd
       // instance
       public Group group { get; private set; }
       public StatePlayer statePlayer { get; private set; }
-
+      bool disposed = false;
       bool initialized = false;
 
       public GroupPlayer(Group group)
@@ -59,11 +59,13 @@ namespace ThatsLewd
 
       public void Dispose()
       {
+        disposed = true;
         statePlayer.Dispose();
       }
 
       public void Update()
       {
+        if (disposed) return;
         if (!group.playbackEnabledToggle.val) return;
 
         if (!initialized && statePlayer.currentState == null && group.initialState != null)

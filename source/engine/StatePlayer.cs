@@ -12,6 +12,7 @@ namespace ThatsLewd
     {
       public GroupPlayer groupPlayer { get; private set; }
       public Dictionary<AnimationPlaylist, PlaylistPlayer> playlistPlayers { get; private set; } = new Dictionary<AnimationPlaylist, PlaylistPlayer>();
+      bool disposed = false;
 
       public State currentState { get; private set; } = null;
       public float time { get; private set; } = 0f;
@@ -44,6 +45,7 @@ namespace ThatsLewd
 
       public void Dispose()
       {
+        disposed = true;
         UnregisterHandlers(currentState);
         AnimationPlaylist.OnDelete -= HandlePlaylistDeleted;
         foreach (KeyValuePair<AnimationPlaylist, PlaylistPlayer> entry in playlistPlayers)
@@ -125,6 +127,7 @@ namespace ThatsLewd
 
       public void Update()
       {
+        if (disposed) return;
         if (currentState == null) return;
         time += Time.deltaTime;
 

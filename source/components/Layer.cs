@@ -30,7 +30,7 @@ namespace ThatsLewd
         this.id = VaMUtils.GenerateRandomID();
         this.name = name ?? "layer";
         defaultTransitionDurationSlider = VaMUI.CreateSlider("Transition Duration", 0.5f, 0f, 1f);
-        defaultTransitionEasingChooser = VaMUI.CreateStringChooser("Easing", Easing.list.ToList(), Easing.EasingType.Linear);
+        defaultTransitionEasingChooser = VaMUI.CreateStringChooser("Easing", Easing.list.ToList(), Easing.EasingType.EaseOutQuad);
         InitializeControllers();
         Layer.list.Add(this);
       }

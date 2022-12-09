@@ -83,6 +83,7 @@
     <Compile Include="source/engine/AnimationPlayer.cs" />
     <Compile Include="source/engine/GroupPlayer.cs" />
     <Compile Include="source/engine/KeyframePlayer.cs" />
+    <Compile Include="source/engine/PlaylistEntryPlayer.cs" />
     <Compile Include="source/engine/PlaylistPlayer.cs" />
     <Compile Include="source/engine/StatePlayer.cs" />
     <Compile Include="source/engine/TemporaryKeyframe.cs" />

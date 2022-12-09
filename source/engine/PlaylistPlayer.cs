@@ -12,7 +12,8 @@ namespace ThatsLewd
     {
       public StatePlayer statePlayer { get; private set; }
       public AnimationPlaylist playlist { get; private set; }
-      public AnimationPlayer animationPlayer { get; private set; }
+      public PlaylistEntryPlayer playlistEntryPlayer { get; private set; }
+      bool disposed = false;
 
       public bool playlistCompleted { get; set; } = false;
 
@@ -20,14 +21,15 @@ namespace ThatsLewd
       {
         this.statePlayer = statePlayer;
         this.playlist = playlist;
-        this.animationPlayer = new AnimationPlayer(this);
+        this.playlistEntryPlayer = new PlaylistEntryPlayer(this);
         RegisterHandlers();
       }
 
       public void Dispose()
       {
+        disposed = true;
         UnregisterHandlers();
-        animationPlayer.Dispose();
+        playlistEntryPlayer.Dispose();
       }
 
       void RegisterHandlers()
@@ -37,7 +39,7 @@ namespace ThatsLewd
 
       void UnregisterHandlers()
       {
-        playlist.playModeChooser.storable.setCallbackFunction += HandleSetPlayMode;
+        playlist.playModeChooser.storable.setCallbackFunction -= HandleSetPlayMode;
       }
 
       void HandleSetPlayMode(string val)
@@ -47,11 +49,12 @@ namespace ThatsLewd
 
       public void Update()
       {
-        if (animationPlayer.currentEntry == null || animationPlayer.donePlaying)
+        if (disposed) return;
+        if (playlistEntryPlayer.currentEntry == null || playlistEntryPlayer.donePlaying)
         {
           GetNextAnimation();
         }
-        animationPlayer.Update();
+        playlistEntryPlayer.Update();
       }
 
       void GetNextAnimation()
@@ -66,20 +69,20 @@ namespace ThatsLewd
             next = GetNextAnimationRandom();
             break;
         }
-        animationPlayer.SetAnimation(next);
+        playlistEntryPlayer.SetPlaylistEntry(next);
       }
 
       PlaylistEntry GetNextAnimationSequential()
       {
         if (playlist.entries.Count == 0) return null;
         int nextIndex;
-        if (animationPlayer.currentEntry == null)
+        if (playlistEntryPlayer.currentEntry == null)
         {
           nextIndex = 0;
         }
         else
         {
-          int currentIndex = playlist.entries.FindIndex((e) => e == animationPlayer.currentEntry);
+          int currentIndex = playlist.entries.FindIndex((e) => e == playlistEntryPlayer.currentEntry);
           if (currentIndex >= 0)
           {
             nextIndex = currentIndex + 1;

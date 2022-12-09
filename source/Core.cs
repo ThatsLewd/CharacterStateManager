@@ -18,6 +18,40 @@ namespace ThatsLewd
     public FreeControllerV3 mainController { get { return person.mainController; }}
     public bool loadOnce { get; private set; } = false;
 
+    readonly string[] orderedControllerNames = new string[]
+    {
+      "eyeTarget",
+      "head",
+      "neck",
+      "rShoulder",
+      "lShoulder",
+      "rArm",
+      "lArm",
+      "rElbow",
+      "lElbow",
+      "rHand",
+      "lHand",
+      "chest",
+      "rNipple",
+      "lNipple",
+      "abdomen2",
+      "hip",
+      "pelvis",
+      "abdomen",
+      "testes",
+      "penisBase",
+      "penisMid",
+      "penisTip",
+      "rThigh",
+      "lThigh",
+      "rKnee",
+      "lKnee",
+      "rFoot",
+      "lFoot",
+      "rToe",
+      "lToe",
+    };
+
     public override void Init()
     {
       CharacterStateManager.instance = this;
@@ -29,18 +63,12 @@ namespace ThatsLewd
         this.enabled = false;
         return;
       }
-      controllers = new List<FreeControllerV3>();
-      foreach (FreeControllerV3 controller in GetAllControllers())
+      PopulateControllers();
+      if (controllers.Count != 30)
       {
-        if (controller == person.mainController)
-        {
-          continue;
-        }
-        if (controller.name.StartsWith("hair"))
-        {
-          continue;
-        }
-        controllers.Add(controller);
+        LogError("CharacterStateManager failed to load -- missing expected controllers!");
+        this.enabled = false;
+        return;
       }
 
       EngineInit();
@@ -56,6 +84,18 @@ namespace ThatsLewd
     {
       EngineUpdate();
       UIUpdate();
+    }
+
+    void PopulateControllers()
+    {
+      List<FreeControllerV3> allControllers = GetAllControllers().ToList();
+      controllers = new List<FreeControllerV3>();
+      foreach (string name in orderedControllerNames)
+      {
+        string fullName = $"{name}Control";
+        FreeControllerV3 controller = allControllers.Find((c) => c.name == fullName);
+        controllers.Add(controller);
+      }
     }
 
     public override JSONClass GetJSON(bool includePhysical = true, bool includeAppearance = true, bool forceStore = false)

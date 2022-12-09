@@ -10,56 +10,43 @@ namespace ThatsLewd
   {
     public class AnimationPlayer : IDisposable
     {
-      public PlaylistPlayer playlistPlayer { get; private set; } = null;
+      public PlaylistEntryPlayer playlistEntryPlayer { get; private set; } = null;
+      public Animation currentAnimation { get; private set; } = null;
+      bool disposed = false;
 
-      public PlaylistEntry currentEntry { get; private set; } = null;
-      public Animation currentAnimation { get { return currentEntry?.animation; }}
-
-      public float entryTime { get; private set; } = 0f;
-      public float animationTime { get; private set; } = 0f;
+      public float time { get; private set; } = 0f;
       public float progress { get; private set; } = 0f;
 
-      public bool donePlaying { get { return GetIsDonePlaying(); }}
+      public bool playOnceDone { get; private set; } = false;
       public bool reverse { get; private set; } = false;      
       public float playbackSpeed { get { return currentAnimation?.playbackSpeedSlider.val ?? 1f; }}
-
       public string loopType { get { return currentAnimation.loopTypeChooser.val; }}
-      public string timingMode { get { return currentEntry.timingModeChooser.val; }}
-      
-      public bool playOnceDone { get; private set; } = false;
-      float randomTargetTime = 0f;
-      public float targetTime { get { return GetTargetTime(); }}
 
       public KeyframePlayer keyframePlayer { get; private set; }
 
-      public AnimationPlayer(PlaylistPlayer playlistPlayer)
+      public AnimationPlayer(PlaylistEntryPlayer playlistEntryPlayer)
       {
-        this.playlistPlayer = playlistPlayer;
+        this.playlistEntryPlayer = playlistEntryPlayer;
         keyframePlayer = new KeyframePlayer(this);
       }
 
       public void Dispose()
       {
-        UnregisterHandlers(currentEntry);
+        disposed = true;
+        UnregisterHandlers(currentAnimation);
         keyframePlayer.Dispose();
       }
 
-      void RegisterHandlers(PlaylistEntry newEntry)
+      void RegisterHandlers(Animation newAnimation)
       {
-        if (newEntry == null) return;
-        newEntry.animation.loopTypeChooser.storable.setCallbackFunction += HandleSetLoopType;
-        newEntry.timingModeChooser.storable.setCallbackFunction += HandleSetTimingMode;
-        newEntry.durationMinSlider.storable.setCallbackFunction += HandleSetRandomDuration;
-        newEntry.durationMaxSlider.storable.setCallbackFunction += HandleSetRandomDuration;
+        if (newAnimation == null) return;
+        newAnimation.loopTypeChooser.storable.setCallbackFunction += HandleSetLoopType;
       }
 
-      void UnregisterHandlers(PlaylistEntry oldEntry)
+      void UnregisterHandlers(Animation oldAnimation)
       {
-        if (oldEntry == null) return;
-        oldEntry.animation.loopTypeChooser.storable.setCallbackFunction -= HandleSetLoopType;
-        oldEntry.timingModeChooser.storable.setCallbackFunction -= HandleSetTimingMode;
-        oldEntry.durationMinSlider.storable.setCallbackFunction -= HandleSetRandomDuration;
-        oldEntry.durationMaxSlider.storable.setCallbackFunction -= HandleSetRandomDuration;
+        if (oldAnimation == null) return;
+        oldAnimation.loopTypeChooser.storable.setCallbackFunction -= HandleSetLoopType;
       }
 
       void HandleSetLoopType(string val)
@@ -67,69 +54,20 @@ namespace ThatsLewd
         ResetPlayMode();
       }
 
-      void HandleSetTimingMode(string val)
-      {
-        if (val == TimingMode.RandomDuration)
-        {
-          NewRandomTargetTime();
-        }
-      }
-
-      void HandleSetRandomDuration(float val)
-      {
-        NewRandomTargetTime();
-      }
-
-      bool GetIsDonePlaying()
-      {
-        if (currentEntry == null) return false;
-        switch (timingMode)
-        {
-          case TimingMode.DurationFromAnimation:
-            return playOnceDone;
-          case TimingMode.FixedDuration:
-            return entryTime >= currentEntry.durationFixedSlider.val;
-          case TimingMode.RandomDuration:
-            return entryTime >= randomTargetTime;
-          default:
-            return false;
-        }
-      }
-
-      float GetTargetTime()
-      {
-        if (currentEntry == null) return 0f;
-        switch (timingMode)
-        {
-          case TimingMode.FixedDuration:
-            return currentEntry.durationFixedSlider.val;
-          case TimingMode.RandomDuration:
-            return randomTargetTime;
-          default:
-            return 0f;
-        }
-      }
-
-      void NewRandomTargetTime()
-      {
-        if (currentEntry == null) randomTargetTime = 0f;
-        randomTargetTime = UnityEngine.Random.Range(currentEntry.durationMinSlider.val, currentEntry.durationMaxSlider.val);
-      }
-
       public void Update()
       {
-        if (currentEntry == null) return;
+        if (disposed) return;
+        if (currentAnimation == null) return;
         if (!keyframePlayer.playingInBetweenKeyframe)
         {
-          entryTime += Time.deltaTime;
           if (playOnceDone) return;
-          animationTime += Time.deltaTime * playbackSpeed;
+          time += Time.deltaTime * playbackSpeed;
         }
 
         float totalAnimationTime = currentAnimation.GetTotalDuration(loopType != LoopType.Loop);
         if (totalAnimationTime == 0f) progress = 0f;
-        else if (reverse) progress = 1f - Mathf.Clamp01((animationTime - totalAnimationTime) / totalAnimationTime);
-        else progress = Mathf.Clamp01(animationTime / totalAnimationTime);
+        else if (reverse) progress = 1f - Mathf.Clamp01((time - totalAnimationTime) / totalAnimationTime);
+        else progress = Mathf.Clamp01(time / totalAnimationTime);
 
         if (!keyframePlayer.playingInBetweenKeyframe)
         {
@@ -151,7 +89,7 @@ namespace ThatsLewd
 
       void Reset()
       {
-        animationTime = 0f;
+        time = 0f;
         progress = 0f;
       }
 
@@ -161,24 +99,23 @@ namespace ThatsLewd
         reverse = false;
       }
 
-      public void SetAnimation(PlaylistEntry newEntry)
+      public void SetAnimation(Animation newAnimation)
       {
-        if (currentEntry != null)
+        if (newAnimation == currentAnimation) return;
+        if (currentAnimation != null)
         {
           currentAnimation.onExitTrigger.Trigger();
         }
-        if (newEntry != null)
+        if (newAnimation != null)
         {
-          newEntry.animation.onEnterTrigger.Trigger();
+          newAnimation.onEnterTrigger.Trigger();
         }
-        UnregisterHandlers(currentEntry);
-        RegisterHandlers(newEntry);
-        currentEntry = newEntry;
-        entryTime = 0f;
+        UnregisterHandlers(currentAnimation);
+        RegisterHandlers(newAnimation);
+        currentAnimation = newAnimation;
         Reset();
         ResetPlayMode();
-        NewRandomTargetTime();
-        Animation.Keyframe firstKeyframe = newEntry.animation.keyframes.Count > 0 ? newEntry.animation.keyframes[0] : null;
+        Animation.Keyframe firstKeyframe = newAnimation.keyframes.Count > 0 ? newAnimation.keyframes[0] : null;
         keyframePlayer.SetTargetKeyframe(firstKeyframe, true);
       }
 

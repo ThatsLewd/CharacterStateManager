@@ -12,6 +12,7 @@ source/components/Transition.cs
 source/engine/AnimationPlayer.cs
 source/engine/GroupPlayer.cs
 source/engine/KeyframePlayer.cs
+source/engine/PlaylistEntryPlayer.cs
 source/engine/PlaylistPlayer.cs
 source/engine/StatePlayer.cs
 source/engine/TemporaryKeyframe.cs

@@ -11,6 +11,7 @@ namespace ThatsLewd
     public class KeyframePlayer : IDisposable
     {
       public AnimationPlayer animationPlayer { get; private set; } = null;
+      bool disposed = false;
 
       public IKeyframe currentKeyframe { get; private set; } = null;
       public IKeyframe targetKeyframe { get; private set; } = null;
@@ -30,11 +31,12 @@ namespace ThatsLewd
 
       public void Dispose()
       {
-
+        disposed = true;
       }
 
       public void Update()
       {
+        if (disposed) return;
         keyframeIsTemporary = false;
         if (targetKeyframe == null) return;
         if (currentKeyframe == null)
@@ -160,6 +162,10 @@ namespace ThatsLewd
         currentKeyframe = targetKeyframe;
         targetKeyframe = newKeyframe;
         keyframeIsNewAnimation = isNewAnimation;
+        if (isNewAnimation)
+        {
+          currentKeyframe = null;
+        }
         if (!animationPlayer.playOnceDone)
         {
           Reset();
