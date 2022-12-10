@@ -152,11 +152,11 @@ namespace ThatsLewd
         {
           if (animationPlayer.reverse)
           {
-            (newKeyframe as Animation.Keyframe)?.animation.onExitTrigger.Trigger();
+            (newKeyframe as Animation.Keyframe)?.onExitTrigger.Trigger();
           }
           else
           {
-            (newKeyframe as Animation.Keyframe)?.animation.onEnterTrigger.Trigger();
+            (newKeyframe as Animation.Keyframe)?.onEnterTrigger.Trigger();
           }
         }
         currentKeyframe = targetKeyframe;

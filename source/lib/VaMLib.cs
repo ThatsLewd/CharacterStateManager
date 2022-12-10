@@ -1060,11 +1060,11 @@ namespace VaMLib
   //       VaMTrigger.Destroy();
   //
   // Credit to AcidBubbles for figuring out how to do custom triggers.
-  public static class VaMTrigger
+  public static partial class VaMTrigger
   {
     public static bool initialized { get; private set; }
     public static bool loaded { get; private set; }
-    public static SimpleTriggerHandler handler { get; private set; } = new SimpleTriggerHandler();
+    public static CustomTriggerHandler handler { get; private set; }
     public static MVRScript script { get; private set; }
 
     private static GameObject customTriggerActionsPrefab;
@@ -1075,6 +1075,7 @@ namespace VaMLib
     public static void Init(MVRScript script)
     {
       VaMTrigger.script = script;
+      VaMTrigger.handler = script.gameObject.AddComponent<CustomTriggerHandler>();
       SuperController.singleton.StartCoroutine(LoadAssets());
       VaMTrigger.initialized = true;
     }
@@ -1085,6 +1086,10 @@ namespace VaMLib
       VaMUtils.SafeDestroy(ref customTriggerActionMiniPrefab);
       VaMUtils.SafeDestroy(ref customTriggerActionDiscretePrefab);
       VaMUtils.SafeDestroy(ref customTriggerActionTransitionPrefab);
+      if (handler != null)
+      {
+        UnityEngine.Object.Destroy(handler);
+      }
     }
 
     // Create a trigger
@@ -1136,62 +1141,23 @@ namespace VaMLib
 
     private static void CreateTriggerActionsPrefab(GameObject basePrefab)
     {
-      customTriggerActionsPrefab = UnityEngine.GameObject.Instantiate(basePrefab);
+      customTriggerActionsPrefab = GameObject.Instantiate(basePrefab);
     }
 
     private static void CreateTriggerActionMiniPrefab(GameObject basePrefab)
     {
-      customTriggerActionMiniPrefab = UnityEngine.GameObject.Instantiate(basePrefab);
+      customTriggerActionMiniPrefab = GameObject.Instantiate(basePrefab);
     }
 
     private static void CreateTriggerActionDiscretePrefab(GameObject basePrefab)
     {
-      customTriggerActionDiscretePrefab = UnityEngine.GameObject.Instantiate(basePrefab);
+      customTriggerActionDiscretePrefab = GameObject.Instantiate(basePrefab);
     }
 
     private static void CreateTriggerActionTransitionPrefab(GameObject basePrefab)
     {
-      customTriggerActionTransitionPrefab = UnityEngine.GameObject.Instantiate(basePrefab);
+      customTriggerActionTransitionPrefab = GameObject.Instantiate(basePrefab);
       customTriggerActionTransitionPrefab.GetComponent<TriggerActionTransitionUI>().startWithCurrentValToggle.gameObject.SetActive(false);
-    }
-
-    // Helper class since we need a non-static handler
-    public class SimpleTriggerHandler : TriggerHandler
-    {
-      void TriggerHandler.RemoveTrigger(Trigger t)
-      {
-        // unused
-      }
-
-      void TriggerHandler.DuplicateTrigger(Trigger t)
-      {
-        // unused
-      }
-
-      RectTransform TriggerHandler.CreateTriggerActionsUI()
-      {
-        return UnityEngine.Object.Instantiate(customTriggerActionsPrefab.transform as RectTransform);
-      }
-
-      RectTransform TriggerHandler.CreateTriggerActionMiniUI()
-      {
-        return UnityEngine.Object.Instantiate(customTriggerActionMiniPrefab.transform as RectTransform);
-      }
-
-      RectTransform TriggerHandler.CreateTriggerActionDiscreteUI()
-      {
-        return UnityEngine.Object.Instantiate(customTriggerActionDiscretePrefab.transform as RectTransform);
-      }
-
-      RectTransform TriggerHandler.CreateTriggerActionTransitionUI()
-      {
-        return UnityEngine.Object.Instantiate(customTriggerActionTransitionPrefab.transform as RectTransform);
-      }
-
-      void TriggerHandler.RemoveTriggerActionUI(RectTransform rt)
-      {
-        UnityEngine.Object.Destroy(rt?.gameObject);
-      }
     }
   }
 
@@ -1530,6 +1496,7 @@ namespace VaMLib
   // ========================================================================================================= //
   // You shouldn't need to mess with these at all
 
+  // delegates
   public delegate Transform CreateUIElement(Transform prefab, bool rightSide);
 
   // dumb custom enum stuff since VaM explodes if you make an enum
@@ -1577,6 +1544,62 @@ namespace VaMLib
     }
   }
 
+  // Helper for managing triggers
+  public static partial class VaMTrigger
+  {
+    public class CustomTriggerHandler : MonoBehaviour, TriggerHandler
+    {
+      List<TriggerActionDiscrete> actionsNeedingUpdate = new List<TriggerActionDiscrete>();
+
+      // discrete actions with a timer need updated every frame
+      void Update()
+      {
+        foreach (TriggerActionDiscrete action in actionsNeedingUpdate)
+        {
+          action.Update();
+        }
+        actionsNeedingUpdate.RemoveAll((a) => !a.timerActive);
+      }
+
+      public void AddActionToManager(TriggerActionDiscrete action)
+      {
+        if (action.useTimer)
+        {
+          actionsNeedingUpdate.Add(action);
+        }
+      }
+
+      // unused
+      void TriggerHandler.RemoveTrigger(Trigger t) {}
+      void TriggerHandler.DuplicateTrigger(Trigger t) {}
+
+      RectTransform TriggerHandler.CreateTriggerActionsUI()
+      {
+        return Instantiate(customTriggerActionsPrefab.transform as RectTransform);
+      }
+
+      RectTransform TriggerHandler.CreateTriggerActionMiniUI()
+      {
+        return Instantiate(customTriggerActionMiniPrefab.transform as RectTransform);
+      }
+
+      RectTransform TriggerHandler.CreateTriggerActionDiscreteUI()
+      {
+        return Instantiate(customTriggerActionDiscretePrefab.transform as RectTransform);
+      }
+
+      RectTransform TriggerHandler.CreateTriggerActionTransitionUI()
+      {
+        return Instantiate(customTriggerActionTransitionPrefab.transform as RectTransform);
+      }
+
+      void TriggerHandler.RemoveTriggerActionUI(RectTransform rt)
+      {
+        Destroy(rt?.gameObject);
+      }
+    }
+  }
+
   // Base class for easier handling of custom triggers.
   // You shouldn't need to instantiate these directly -- use VaMTrigger.Create()
   public abstract class CustomTrigger : Trigger
@@ -1595,14 +1618,12 @@ namespace VaMLib
     public void Initialize(string name)
     {
       this.name = name;
-      base.handler = VaMTrigger.handler;
       this.initialized = true;
     }
 
     public void Initialize(CustomTrigger other)
     {
       this.name = other.name;
-      base.handler = VaMTrigger.handler;
       this.initialized = true;
 
       JSONClass json = other.GetJSON();
@@ -1612,7 +1633,6 @@ namespace VaMLib
     public void Initialize(CustomTrigger other, string newName)
     {
       this.name = other.name;
-      base.handler = VaMTrigger.handler;
       this.initialized = true;
 
       JSONClass json = other.GetJSON();
@@ -1631,6 +1651,10 @@ namespace VaMLib
       {
         SuperController.LogError("CustomTrigger: Trigger is not initialized correctly. Use VaMTrigger.Create() to instantiate triggers.");
         return;
+      }
+      if (base.handler == null)
+      {
+        base.handler = VaMTrigger.handler;
       }
       if (!panelInitialized)
       {
@@ -1674,8 +1698,11 @@ namespace VaMLib
 
     public void Trigger()
     {
-      active = true;
-      active = false;
+      foreach (TriggerActionDiscrete action in discreteActionsStart)
+      {
+        action.Trigger(force: true);
+        VaMTrigger.handler.AddActionToManager(action);
+      }
     }
   }
 
@@ -1696,9 +1723,13 @@ namespace VaMLib
     {
       _transitionInterpValue = Mathf.Clamp01(v);
       if (transitionInterpValueSlider != null)
+      {
         transitionInterpValueSlider.value = _transitionInterpValue;
-      for (int i = 0; i < transitionActions.Count; ++i)
-        transitionActions[i].TriggerInterp(_transitionInterpValue, true);
+      }
+      foreach (TriggerActionTransition action in transitionActions)
+      {
+        action.TriggerInterp(_transitionInterpValue, true);
+      }
     }
   }
 
