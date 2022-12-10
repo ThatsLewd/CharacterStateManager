@@ -765,7 +765,7 @@ namespace VaMLib
 
     // ================ CreateFileSelect ================ //
     // Create a button for choosing a file
-    public static VaMFileSelect CreateFileSelect(string label, string fileExtension = "", string path = "", bool browsePathOnly = false, bool browseFullComputer = false, bool clearStorableAfterSelect = true, UnityAction<string> callback = null, UnityAction callbackNoVal = null, bool register = false)
+    public static VaMFileSelect CreateFileSelect(string label, string fileExtension = "", string path = "", bool browsePathOnly = false, bool browseFullComputer = false, bool clearStorableAfterSelect = true, UnityAction<string> callback = null, UnityAction callbackNoVal = null, bool register = false, Color? buttonColor = null)
     {
       JSONStorableUrl storable = new JSONStorableUrl(label, "", fileExtension, path);
       if (register)
@@ -787,7 +787,7 @@ namespace VaMLib
       }
       storable.allowBrowseAboveSuggestedPath = !browsePathOnly;
       storable.allowFullComputerBrowse = browseFullComputer;
-      return new VaMFileSelect() { storable = storable };
+      return new VaMFileSelect() { storable = storable, buttonColor = buttonColor };
     }
 
     public class VaMFileSelect
@@ -795,9 +795,14 @@ namespace VaMLib
       public JSONStorableUrl storable;
       public string val { get { return storable.val; } set { storable.val = value; } }
       public string valNoCallback { set { storable.valNoCallback = value; } }
+      public Color? buttonColor;
       public UIDynamicButton Draw(Column side)
       {
         UIDynamicButton button = CreateButton(side, storable.name);
+        if (buttonColor != null)
+        {
+          button.buttonColor = buttonColor.Value;
+        }
         storable.RegisterFileBrowseButton(button.button);
         return button;
       }
@@ -805,7 +810,7 @@ namespace VaMLib
 
     // ================ CreateFileSave ================ //
     // Create a button for saving a file
-    public static UIDynamicButton CreateFileSave(Column side, string label, string defaultFilename = null, string fileExtension = "", string path = "", UnityAction<string> callback = null)
+    public static UIDynamicButton CreateFileSave(Column side, string label, string defaultFilename = null, string fileExtension = "", string path = "", UnityAction<string> callback = null, Color? buttonColor = null)
     {
       UIDynamicButton button = CreateButton(side, label, () =>
       {
@@ -830,6 +835,10 @@ namespace VaMLib
           sc.mediaFileBrowserUI.ActivateFileNameField();
         }
       });
+      if (buttonColor != null)
+      {
+        button.buttonColor = buttonColor.Value;
+      }
       return button;
     }
 

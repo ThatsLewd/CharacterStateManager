@@ -64,7 +64,14 @@ namespace ThatsLewd
     VaMUI.VaMStringChooser addMorphChooser;
     VaMUI.VaMToggle morphChooserUseFavoritesToggle;
 
-    VaMUI.VaMFileSelect loadInstanceButton;
+    VaMUI.VaMFileSelect loadInstanceOverwriteButton;
+    VaMUI.VaMFileSelect loadInstanceMergeButton;
+    VaMUI.VaMFileSelect loadGroupCreateButton;
+    VaMUI.VaMFileSelect loadGroupMergeButton;
+    VaMUI.VaMFileSelect loadLayerCreateButton;
+    VaMUI.VaMFileSelect loadLayerMergeButton;
+    VaMUI.VaMFileSelect loadAnimationCreateButton;
+    VaMUI.VaMFileSelect loadAnimationMergeButton;
 
     void UIInit()
     {
@@ -88,7 +95,14 @@ namespace ThatsLewd
       addMorphChooser = VaMUI.CreateStringChooserKeyVal("Select Morph", filterable: true, defaultValue: "");
       morphChooserUseFavoritesToggle = VaMUI.CreateToggle("Favorites Only", true, callbackNoVal: HandleToggleMorphChooserFavorites);
 
-      loadInstanceButton = VaMUI.CreateFileSelect("Load Instance", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance);
+      loadInstanceOverwriteButton = VaMUI.CreateFileSelect("Load Instance And Replace", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
+      loadInstanceMergeButton = VaMUI.CreateFileSelect("Load Instance And Merge", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
+      loadGroupCreateButton = VaMUI.CreateFileSelect("Load Group As New", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
+      loadGroupMergeButton = VaMUI.CreateFileSelect("Load Group And Merge", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
+      loadLayerCreateButton = VaMUI.CreateFileSelect("Load Layer As New", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
+      loadLayerMergeButton = VaMUI.CreateFileSelect("Load Group And Merge", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
+      loadAnimationCreateButton = VaMUI.CreateFileSelect("Load Anim. To New Layer", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
+      loadAnimationMergeButton = VaMUI.CreateFileSelect("Load Anim. To This Layer", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
 
       Role.Init();
       Messages.Init();
@@ -1577,16 +1591,72 @@ namespace ThatsLewd
     void BuildExportImportTabUI()
     {
       CreateMainHeader(VaMUI.LEFT, "Export / Import");
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 45f));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
 
       UI(VaMUI.CreateInfoText(
         VaMUI.LEFT,
-        "Export / Import tab",
+        "CAREFUL: Merge loads should be considered beta/unstable and possibly destructive if something goes wrong. Please back up any work you don't want to lose with <b>Save Instance</b> first.",
+        5
+      ));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 168f));
+
+      CreateSubHeader(VaMUI.LEFT, "Instance");
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 38f));
+      UI(VaMUI.CreateInfoText(
+        VaMUI.LEFT,
+        "Save the entire plugin instance.",
         1
       ));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 40f));
+      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Instance", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
+      UI(loadInstanceOverwriteButton.Draw(VaMUI.LEFT));
+      UI(loadInstanceMergeButton.Draw(VaMUI.RIGHT));
 
-      UI(loadInstanceButton.Draw(VaMUI.LEFT));
-      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Instance", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance));
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
+      CreateSubHeader(VaMUI.LEFT, "Group");
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 38f));
+      UI(VaMUI.CreateInfoText(
+        VaMUI.LEFT,
+        "Save the current group and all of its states.",
+        2
+      ));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 72f));
+      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Current Group", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
+      UI(loadGroupCreateButton.Draw(VaMUI.LEFT));
+      UI(loadGroupMergeButton.Draw(VaMUI.RIGHT));
+
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
+      CreateSubHeader(VaMUI.LEFT, "Layer");
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 38f));
+      UI(VaMUI.CreateInfoText(
+        VaMUI.LEFT,
+        "Save the current layer and all of its animations.",
+        2
+      ));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 72f));
+      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Current Layer", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
+      UI(loadLayerCreateButton.Draw(VaMUI.LEFT));
+      UI(loadLayerMergeButton.Draw(VaMUI.RIGHT));
+
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
+      CreateSubHeader(VaMUI.LEFT, "Animation");
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 38f));
+      UI(VaMUI.CreateInfoText(
+        VaMUI.LEFT,
+        "Save the current animation.",
+        1
+      ));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 40f));
+      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Current Animation", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
+      UI(loadAnimationCreateButton.Draw(VaMUI.LEFT));
+      UI(loadAnimationMergeButton.Draw(VaMUI.RIGHT));
     }
 
     void HandleLoadInstance(string path)
