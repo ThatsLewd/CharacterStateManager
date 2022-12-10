@@ -24,9 +24,9 @@ namespace ThatsLewd
       public VaMUI.VaMStringChooser defaultEasingChooser;
       public VaMUI.VaMSlider defaultDurationSlider;
 
-      public EventTrigger onEnterTrigger = VaMTrigger.Create<EventTrigger>("On Enter Animation");
-      public ValueTrigger onPlayingTrigger = VaMTrigger.Create<ValueTrigger>("On Animation Playing");
-      public EventTrigger onExitTrigger = VaMTrigger.Create<EventTrigger>("On Exit Animation");
+      public VaMUI.EventTrigger onEnterTrigger = VaMUI.CreateEventTrigger("On Enter Animation");
+      public VaMUI.ValueTrigger onPlayingTrigger = VaMUI.CreateValueTrigger("On Animation Playing");
+      public VaMUI.EventTrigger onExitTrigger = VaMUI.CreateEventTrigger("On Exit Animation");
 
       public Animation(Layer layer, string name = null)
       {
@@ -51,9 +51,9 @@ namespace ThatsLewd
         Helpers.SetSliderValues(newAnimation.playbackSpeedSlider, playbackSpeedSlider.val, playbackSpeedSlider.min, playbackSpeedSlider.max);
         newAnimation.defaultEasingChooser.valNoCallback = defaultEasingChooser.val;
         Helpers.SetSliderValues(newAnimation.defaultDurationSlider, defaultDurationSlider.val, defaultDurationSlider.min, defaultDurationSlider.max);
-        newAnimation.onEnterTrigger = VaMTrigger.Clone(onEnterTrigger);
-        newAnimation.onPlayingTrigger = VaMTrigger.Clone(onPlayingTrigger);
-        newAnimation.onExitTrigger = VaMTrigger.Clone(onExitTrigger);
+        newAnimation.onEnterTrigger = onEnterTrigger.Clone();
+        newAnimation.onPlayingTrigger = onPlayingTrigger.Clone();
+        newAnimation.onExitTrigger = onExitTrigger.Clone();
         foreach (Keyframe keyframe in keyframes)
         {
           keyframe.Clone(newAnimation);
@@ -83,11 +83,11 @@ namespace ThatsLewd
       public void PasteActions()
       {
         if (ActionClipboard.onEnterTrigger != null)
-          onEnterTrigger = VaMTrigger.Clone(ActionClipboard.onEnterTrigger, onEnterTrigger.name);
+          onEnterTrigger = ActionClipboard.onEnterTrigger.Clone(onEnterTrigger.name);
         if (ActionClipboard.onPlayingTrigger != null)
-          onPlayingTrigger = VaMTrigger.Clone(ActionClipboard.onPlayingTrigger, onPlayingTrigger.name);
+          onPlayingTrigger = ActionClipboard.onPlayingTrigger.Clone(onPlayingTrigger.name);
         if (ActionClipboard.onExitTrigger != null)
-          onExitTrigger = VaMTrigger.Clone(ActionClipboard.onExitTrigger, onExitTrigger.name);
+          onExitTrigger = ActionClipboard.onExitTrigger.Clone(onExitTrigger.name);
 
         CharacterStateManager.instance.RequestRedraw();
       }

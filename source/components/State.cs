@@ -17,8 +17,8 @@ namespace ThatsLewd
       public string name { get; set; }
       public Group group { get; private set; }
 
-      public EventTrigger onEnterTrigger = VaMTrigger.Create<EventTrigger>("On Enter State");
-      public EventTrigger onExitTrigger = VaMTrigger.Create<EventTrigger>("On Exit State");
+      public VaMUI.EventTrigger onEnterTrigger = VaMUI.CreateEventTrigger("On Enter State");
+      public VaMUI.EventTrigger onExitTrigger = VaMUI.CreateEventTrigger("On Exit State");
 
       public List<AnimationPlaylist> playlists { get; private set; } = new List<AnimationPlaylist>(); 
 
@@ -43,8 +43,8 @@ namespace ThatsLewd
         string name = group == null ? Helpers.GetCopyName(this.name) : this.name;
         group = group ?? this.group;
         State newState = new State(group, name);
-        newState.onEnterTrigger = VaMTrigger.Clone(onEnterTrigger);
-        newState.onExitTrigger = VaMTrigger.Clone(onExitTrigger);
+        newState.onEnterTrigger = onEnterTrigger.Clone();
+        newState.onExitTrigger = onExitTrigger.Clone();
         foreach (AnimationPlaylist playlist in playlists)
         {
           newState.playlists.Add(playlist.Clone());
@@ -97,9 +97,9 @@ namespace ThatsLewd
       public void PasteActions()
       {
         if (ActionClipboard.onEnterTrigger != null)
-          onEnterTrigger = VaMTrigger.Clone(ActionClipboard.onEnterTrigger, onEnterTrigger.name);
+          onEnterTrigger = ActionClipboard.onEnterTrigger.Clone(onEnterTrigger.name);
         if (ActionClipboard.onExitTrigger != null)
-          onExitTrigger = VaMTrigger.Clone(ActionClipboard.onExitTrigger, onExitTrigger.name);
+          onExitTrigger = ActionClipboard.onExitTrigger.Clone(onExitTrigger.name);
 
         CharacterStateManager.instance.RequestRedraw();
       }

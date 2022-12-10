@@ -68,8 +68,8 @@ namespace ThatsLewd
 
     void UIInit()
     {
-      VaMTrigger.Init(this);
       VaMUI.Init(this, CreateUIElement);
+      VaMUI.InitTriggerUtils(this);
 
       playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true, register: true, callbackNoVal: DestroyPreviewPlayer);
       hideTopUIToggle = VaMUI.CreateToggle("Hide Top UI", false, callbackNoVal: RequestRedraw);
@@ -102,7 +102,7 @@ namespace ThatsLewd
       VaMUtils.SafeDestroy(ref tabBarPrefab);
       VaMUtils.SafeDestroy(ref keyframeSelectorPrefab);
       VaMUtils.SafeDestroy(ref playlistEntryContainerPrefab);
-      VaMTrigger.Destroy();
+      VaMUI.DestroyTriggerUtils();
     }
 
     void UIUpdate()
@@ -1849,9 +1849,9 @@ namespace ThatsLewd
     // ============================================================================== //
     public static class ActionClipboard
     {
-      public static EventTrigger onEnterTrigger = null;
-      public static ValueTrigger onPlayingTrigger = null;
-      public static EventTrigger onExitTrigger = null;
+      public static VaMUI.EventTrigger onEnterTrigger = null;
+      public static VaMUI.ValueTrigger onPlayingTrigger = null;
+      public static VaMUI.EventTrigger onExitTrigger = null;
     }
   }
 }
