@@ -24,7 +24,7 @@ namespace ThatsLewd
 
       public State(Group group, string name = null)
       {
-        this.id = VaMUtils.GenerateRandomID();
+        this.id = VaMUtils.GenerateRandomID(32);
         this.group = group;
         this.name = name ?? "state";
         Helpers.EnsureUniqueName(group.states, this);
@@ -159,7 +159,7 @@ namespace ThatsLewd
 
       public void LateRestoreFromJSON(JSONClass json)
       {
-        playlists.Clear();
+        Helpers.DisposeList(playlists);
         foreach (JSONNode node in json["playlists"].AsArray.Childs)
         {
           AnimationPlaylist playlist = AnimationPlaylist.FromJSON(node.AsObject);

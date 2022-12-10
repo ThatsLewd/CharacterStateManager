@@ -30,7 +30,7 @@ namespace ThatsLewd
 
       public Animation(Layer layer, string name = null)
       {
-        this.id = VaMUtils.GenerateRandomID();
+        this.id = VaMUtils.GenerateRandomID(32);
         this.name = name ?? "animation";
         Helpers.EnsureUniqueName(layer.animations, this);
         this.layer = layer;
@@ -128,7 +128,7 @@ namespace ThatsLewd
       {
         id = json["id"].Value;
         name = json["name"].Value;
-        keyframes.Clear();
+        Helpers.DisposeList(keyframes);
         foreach (JSONNode node in json["keyframes"].AsArray)
         {
           new Keyframe(this).RestoreFromJSON(node.AsObject);

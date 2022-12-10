@@ -92,6 +92,15 @@ namespace ThatsLewd
         i++;
       }
     }
+
+    public static void DisposeList<T>(List<T> list) where T : IDisposable
+    {
+      foreach (T item in list.ToArray())
+      {
+        item.Dispose();
+      }
+      list.Clear();
+    }
   }
 
   public interface IWeightedItem

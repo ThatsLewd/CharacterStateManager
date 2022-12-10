@@ -36,7 +36,7 @@ namespace ThatsLewd
 
         public Keyframe(Animation animation, int index = -1)
         {
-          this.id = VaMUtils.GenerateRandomID();
+          this.id = VaMUtils.GenerateRandomID(32);
           this.animation = animation;
           this.labelInput = VaMUI.CreateTextInput("Label", "", callbackNoVal: instance.RequestRedraw);
           this.colorPicker = VaMUI.CreateColorPicker("Keyframe Color", GetRandomColor());

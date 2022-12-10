@@ -3,6 +3,7 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
+using SimpleJSON;
 using VaMLib;
 
 namespace ThatsLewd
@@ -63,6 +64,8 @@ namespace ThatsLewd
     VaMUI.VaMStringChooser addMorphChooser;
     VaMUI.VaMToggle morphChooserUseFavoritesToggle;
 
+    VaMUI.VaMFileSelect loadInstanceButton;
+
     void UIInit()
     {
       VaMTrigger.Init(this);
@@ -84,6 +87,8 @@ namespace ThatsLewd
       transitionStateChooser = VaMUI.CreateStringChooserKeyVal("Select State", null, "");
       addMorphChooser = VaMUI.CreateStringChooserKeyVal("Select Morph", filterable: true, defaultValue: "");
       morphChooserUseFavoritesToggle = VaMUI.CreateToggle("Favorites Only", true, callbackNoVal: HandleToggleMorphChooserFavorites);
+
+      loadInstanceButton = VaMUI.CreateFileSelect("Load Instance", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance);
 
       Role.Init();
       Messages.Init();
@@ -1579,6 +1584,24 @@ namespace ThatsLewd
         "Export / Import tab",
         1
       ));
+
+      UI(loadInstanceButton.Draw(VaMUI.LEFT));
+      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Instance", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance));
+    }
+
+    void HandleLoadInstance(string path)
+    {
+      if (path.Length == 0) return;
+      JSONClass json = LoadJSON(path).AsObject;
+      InstanceRestoreFromJSON(json);
+    }
+
+    void HandleSaveInstance(string path)
+    {
+      if (path.Length == 0) return;
+      JSONClass json = new JSONClass();
+      InstanceStoreJSON(json);
+      SaveJSONWithExtension(json, path);
     }
 
 

@@ -92,6 +92,7 @@
     <Compile Include="source/Actions.cs" />
     <Compile Include="source/Core.cs" />
     <Compile Include="source/Engine.cs" />
+    <Compile Include="source/Serialization.cs" />
     <Compile Include="source/Ui.cs" />
   </ItemGroup>
 

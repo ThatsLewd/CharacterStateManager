@@ -8,8 +8,7 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
-    public const string StorableName = "ThatsLewd.CharacterStateManager";
-    public const string SaveFormatVersion = "v1";
+    public const string PLUGIN_NAME = "ThatsLewd.CharacterStateManager";
     public static CharacterStateManager instance { get; private set; }
 
     List<MVRScript> otherInstances = new List<MVRScript>();
@@ -75,6 +74,7 @@ namespace ThatsLewd
         return;
       }
 
+      InitDirectories();
       EngineInit();
       UIInit();
       ActionsInit();
@@ -122,7 +122,7 @@ namespace ThatsLewd
         foreach (Transform transform in pluginManager.gameObject.transform.Find("Plugins"))
         {
           MVRScript plugin = transform.gameObject.GetComponent<MVRScript>();
-          if (!plugin.storeId.EndsWith(StorableName)) continue;
+          if (!plugin.storeId.EndsWith(PLUGIN_NAME)) continue;
           if (atom == containingAtom && plugin.storeId == storeId) continue;
           otherInstances.Add(plugin);
         }
@@ -133,12 +133,8 @@ namespace ThatsLewd
     {
       JSONClass json = base.GetJSON(includePhysical, includeAppearance, forceStore);
       this.needsStore = true;
-      
-      json["SaveFormatVersion"] = SaveFormatVersion;
-      json["Layers"] = Layer.GetJSONTopLevel();
-      json["Groups"] = Group.GetJSONTopLevel();
-      json["Roles"] = Role.GetJSONTopLevel();
-      json["Messages"] = Messages.GetJSONTopLevel();
+
+      InstanceStoreJSON(json);
       
       return json;
     }
@@ -148,18 +144,7 @@ namespace ThatsLewd
       base.LateRestoreFromJSON(json, restorePhysical, restoreAppearance, setMissingToDefault);
       if (loadOnce) return; // LateRestoreFromJSON gets called twice for some reason? And it's fucking my shit with a race condition or something
       if (json["id"]?.Value != this.storeId) return; // make sure this data is our plugin
-      if (json["SaveFormatVersion"]?.Value != SaveFormatVersion)
-      {
-        LogError("Your save data is from an incompatible version of CharacterStateManager. Load Aborted.");
-        return;
-      }
-
-      Layer.RestoreFromJSONTopLevel(json["Layers"].AsObject);
-      Group.RestoreFromJSONTopLevel(json["Groups"].AsObject);
-      Role.RestoreFromJSONTopLevel(json["Roles"].AsObject);
-      Messages.RestoreFromJSONTopLevel(json["Messages"].AsObject);
-
-      RefreshUIAfterJSONLoad();
+      InstanceRestoreFromJSON(json);
       loadOnce = true;
     }
 
@@ -174,3 +159,9 @@ namespace ThatsLewd
     }
   }
 }
+
+// TODO:
+// capture controller states
+// character locomotion
+// layer offset mode vs absolute mode
+// animation noise

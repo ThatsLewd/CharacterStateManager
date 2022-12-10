@@ -24,7 +24,7 @@ namespace ThatsLewd
 
       public Group(string name = null)
       {
-        this.id = VaMUtils.GenerateRandomID();
+        this.id = VaMUtils.GenerateRandomID(32);
         this.name = name ?? "group";
         Helpers.EnsureUniqueName(Group.list, this);
         playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true);
@@ -65,7 +65,7 @@ namespace ThatsLewd
 
       public static void RestoreFromJSONTopLevel(JSONClass json)
       {
-        Group.list.Clear();
+        Helpers.DisposeList(Group.list);
         foreach (JSONNode node in json["list"].AsArray.Childs)
         {
           new Group().RestoreFromJSON(node.AsObject);
@@ -91,7 +91,7 @@ namespace ThatsLewd
       {
         id = json["id"].Value;
         name = json["name"].Value;
-        states.Clear();
+        Helpers.DisposeList(states);
         foreach (JSONNode node in json["states"].AsArray.Childs)
         {
           new State(this).RestoreFromJSON(node.AsObject);

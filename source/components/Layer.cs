@@ -27,7 +27,7 @@ namespace ThatsLewd
 
       public Layer(string name = null)
       {
-        this.id = VaMUtils.GenerateRandomID();
+        this.id = VaMUtils.GenerateRandomID(32);
         this.name = name ?? "layer";
         Helpers.EnsureUniqueName(Layer.list, this);
         defaultTransitionDurationSlider = VaMUI.CreateSlider("Transition Duration", 0.3f, 0f, 1f);
@@ -92,7 +92,7 @@ namespace ThatsLewd
 
       public static void RestoreFromJSONTopLevel(JSONClass json)
       {
-        Layer.list.Clear();
+        Helpers.DisposeList(Layer.list);
         foreach (JSONNode node in json["list"].AsArray.Childs)
         {
           new Layer().RestoreFromJSON(node.AsObject);
@@ -130,7 +130,7 @@ namespace ThatsLewd
         name = json["name"].Value;
         defaultTransitionDurationSlider.storable.RestoreFromJSON(json);
         defaultTransitionEasingChooser.storable.RestoreFromJSON(json);
-        animations.Clear();
+        Helpers.DisposeList(animations);
         foreach (JSONNode node in json["animations"].AsArray)
         {
           new Animation(this).RestoreFromJSON(node.AsObject);

@@ -21,4 +21,5 @@ source/lib/VaMLib.cs
 source/Actions.cs
 source/Core.cs
 source/Engine.cs
+source/Serialization.cs
 source/Ui.cs

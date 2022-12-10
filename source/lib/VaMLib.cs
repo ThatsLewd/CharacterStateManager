@@ -16,7 +16,6 @@ using System;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
-using Request = MeshVR.AssetLoader.AssetBundleFromFileRequest;
 using AssetBundles;
 using SimpleJSON;
 
@@ -51,7 +50,7 @@ namespace VaMLib
   //       VaMUI.Destroy();
   //
   //
-  // Note: Many CreateXXX methods have MANY optional arguments.
+  // Note: Many CreateXXX methods have many optional arguments.
   // You are HIGHLY encouraged to use C# named params for your own sanity.
   //
 
@@ -121,10 +120,13 @@ namespace VaMLib
 
     // ================ CreateButton ================ //
     // Create default VaM Button
-    public static UIDynamicButton CreateButton(Column side, string label, UnityAction callback, Color? color = null)
+    public static UIDynamicButton CreateButton(Column side, string label, UnityAction callback = null, Color? color = null)
     {
       UIDynamicButton button = script.CreateButton(label, side == Column.RIGHT);
-      button.button.onClick.AddListener(callback);
+      if (callback != null)
+      {
+        button.button.onClick.AddListener(callback);
+      }
       if (color != null)
       {
         button.buttonColor = color.Value;
@@ -758,84 +760,77 @@ namespace VaMLib
       }
     }
 
-    // ================ CreateTextureChooser ================ //
-    // Create texture chooser -- note that you are responsible for destroying the texture when you don't need it anymore.
-    public static VaMTextureChooser CreateTextureChooser(string label, string defaultValue, TextureSettings settings, TextureSetCallback callback = null, bool register = false)
+    // ================ CreateFileSelect ================ //
+    // Create a button for choosing a file
+    public static VaMFileSelect CreateFileSelect(string label, string fileExtension = "", string path = "", bool browsePathOnly = false, bool browseFullComputer = false, bool clearStorableAfterSelect = true, UnityAction<string> callback = null, UnityAction callbackNoVal = null, bool register = false)
     {
-      JSONStorableUrl storable = new JSONStorableUrl(label, string.Empty, (string url) => { QueueLoadTexture(url, settings, callback); }, "jpg|png|tif|tiff");
+      JSONStorableUrl storable = new JSONStorableUrl(label, "", fileExtension, path);
       if (register)
       {
         storable.storeType = JSONStorableParam.StoreType.Full;
         script.RegisterUrl(storable);
       }
-      if (!string.IsNullOrEmpty(defaultValue))
+      if (callback != null || callbackNoVal != null)
       {
-        storable.SetFilePath(defaultValue);
+        storable.setCallbackFunction = (string val) =>
+        {
+          callback?.Invoke(val);
+          callbackNoVal?.Invoke();
+          if (clearStorableAfterSelect)
+          {
+            storable.valNoCallback = storable.defaultVal;
+          }
+        };
       }
-      return new VaMTextureChooser() { storable = storable };
+      storable.allowBrowseAboveSuggestedPath = !browsePathOnly;
+      storable.allowFullComputerBrowse = browseFullComputer;
+      return new VaMFileSelect() { storable = storable };
     }
 
-    public class VaMTextureChooser
+    public class VaMFileSelect
     {
       public JSONStorableUrl storable;
       public string val { get { return storable.val; } set { storable.val = value; } }
       public string valNoCallback { set { storable.valNoCallback = value; } }
-      public void Draw(Column side)
+      public UIDynamicButton Draw(Column side)
       {
-        string label = storable.name;
-        UIDynamicButton button = script.CreateButton("Browse " + label, side == Column.RIGHT);
-        UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
-        textfield.UItext.alignment = TextAnchor.MiddleRight;
-        textfield.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
-        textfield.UItext.verticalOverflow = VerticalWrapMode.Truncate;
-        LayoutElement layout = textfield.GetComponent<LayoutElement>();
-        layout.preferredHeight = layout.minHeight = 35;
-        textfield.height = 35;
+        UIDynamicButton button = CreateButton(side, storable.name);
         storable.RegisterFileBrowseButton(button.button);
+        return button;
       }
     }
 
-    // ================ CreateAssetBundleChooser ================ //
-    // Create asset bundle chooser
-    public static VaMAssetBundleChooser CreateAssetBundleChooser(string label, string defaultValue, string fileExtensions, JSONStorableString.SetStringCallback callback = null, bool register = false)
+    // ================ CreateFileSave ================ //
+    // Create a button for saving a file
+    public static UIDynamicButton CreateFileSave(Column side, string label, string defaultFilename = null, string fileExtension = "", string path = "", UnityAction<string> callback = null)
     {
-      JSONStorableUrl storable = new JSONStorableUrl(label, defaultValue, fileExtensions);
-      if (register)
+      UIDynamicButton button = CreateButton(side, label, () =>
       {
-        storable.storeType = JSONStorableParam.StoreType.Full;
-        script.RegisterUrl(storable);
-      }
-      if (!string.IsNullOrEmpty(defaultValue))
-      {
-        storable.SetFilePath(defaultValue);
-      }
-      if (callback != null)
-      {
-        storable.setCallbackFunction = callback;
-      }
-      return new VaMAssetBundleChooser() { storable = storable };
+        SuperController sc = SuperController.singleton;
+        sc.GetMediaPathDialog(
+          (string val) => { callback?.Invoke(val); },
+          filter: fileExtension,
+          suggestedFolder: path,
+          fullComputerBrowse: false,
+          showDirs: true,
+          showKeepOpt: false,
+          fileRemovePrefix: null,
+          hideExtenstion: false,
+          shortCuts: null,
+          browseVarFilesAsDirectories: false,
+          showInstallFolderInDirectoryList: false
+        );
+        sc.mediaFileBrowserUI.SetTextEntry(true);
+        if (sc.mediaFileBrowserUI.fileEntryField != null)
+        {
+          sc.mediaFileBrowserUI.fileEntryField.text = defaultFilename ?? $"{VaMUtils.GetTimestamp()}.{fileExtension}";
+          sc.mediaFileBrowserUI.ActivateFileNameField();
+        }
+      });
+      return button;
     }
 
-    public class VaMAssetBundleChooser
-    {
-      public JSONStorableUrl storable;
-      public string val { get { return storable.val; } set { storable.val = value; } }
-      public string valNoCallback { set { storable.valNoCallback = value; } }
-      public void Draw(Column side)
-      {
-        string label = storable.name;
-        UIDynamicButton button = script.CreateButton("Select " + label, side == Column.RIGHT);
-        UIDynamicTextField textfield = script.CreateTextField(storable, side == Column.RIGHT);
-        textfield.UItext.alignment = TextAnchor.MiddleRight;
-        textfield.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
-        textfield.UItext.verticalOverflow = VerticalWrapMode.Truncate;
-        LayoutElement layout = textfield.GetComponent<LayoutElement>();
-        layout.preferredHeight = layout.minHeight = 35;
-        textfield.height = 35;
-        storable.RegisterFileBrowseButton(button.button);
-      }
-    }
-
+    // ================ RemoveUIElements ================ //
     // Call to remove a list of UI elements before rebuilding your UI.
     public static void RemoveUIElements(ref List<object> menuElements)
     {
@@ -1051,46 +1046,6 @@ namespace VaMLib
       layout.minHeight = height;
       layout.preferredWidth = -1f;
       layout.preferredHeight = height;
-    }
-
-    private static void QueueLoadTexture(string url, TextureSettings settings, TextureSetCallback callback)
-    {
-      if (ImageLoaderThreaded.singleton == null)
-        return;
-      if (string.IsNullOrEmpty(url))
-        return;
-
-      ImageLoaderThreaded.QueuedImage queuedImage = new ImageLoaderThreaded.QueuedImage()
-      {
-        imgPath = url,
-        forceReload = true,
-        skipCache = true,
-        compress = settings.compress,
-        createMipMaps = settings.createMipMaps,
-        isNormalMap = settings.isNormalMap,
-        linear = settings.linearColor,
-        createAlphaFromGrayscale = settings.createAlphaFromGrayscale,
-        createNormalFromBump = settings.createNormalFromBump,
-        bumpStrength = settings.bumpStrength,
-        isThumbnail = false,
-        fillBackground = false,
-        invert = false,
-        callback = (ImageLoaderThreaded.QueuedImage qi) =>
-        {
-          Texture2D tex = qi.tex;
-          if (tex != null)
-          {
-            tex.wrapMode = settings.wrapMode;
-            tex.filterMode = settings.filterMode;
-            tex.anisoLevel = settings.anisoLevel;
-          }
-          if (callback != null)
-          {
-            callback(tex);
-          }
-        }
-      };
-      ImageLoaderThreaded.singleton.QueueImage(queuedImage);
     }
   }
 
@@ -1320,6 +1275,11 @@ namespace VaMLib
       }
 
       return str.ToString();
+    }
+
+    public static string GetTimestamp()
+    {
+      return ((int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds).ToString();
     }
 
     // Set string chooser choices/displayChoices from a key-value list
@@ -1571,8 +1531,6 @@ namespace VaMLib
   // You shouldn't need to mess with these at all
 
   public delegate Transform CreateUIElement(Transform prefab, bool rightSide);
-  public delegate void TextureSetCallback(Texture2D tex);
-  public delegate void TabClickCallback(string tabName);
 
   // dumb custom enum stuff since VaM explodes if you make an enum
   public static partial class VaMUI
@@ -1616,33 +1574,6 @@ namespace VaMLib
       {
         return !a.Equals(b);
       }
-    }
-  }
-
-  public class TextureSettings
-  {
-    public bool compress = false;
-    public bool createMipMaps = true;
-    public bool isNormalMap = false;
-    public bool linearColor = true; // Using linear or sRGB color space.
-    public bool createAlphaFromGrayscale = false;
-    public bool createNormalFromBump = false;
-    public float bumpStrength = 1.0f;
-    public TextureWrapMode wrapMode = TextureWrapMode.Repeat;
-    public FilterMode filterMode = FilterMode.Trilinear;
-    public int anisoLevel = 5; // 0: Forced off, 1: Off, quality setting can override, 2-9: Anisotropic filtering levels.
-  }
-
-  public class AssetBundleAudioClip : NamedAudioClip
-  {
-    public AssetBundleAudioClip(Request aRequest, string aPath, string aName)
-    {
-      manager = null;
-      sourceClip = aRequest.assetBundle?.LoadAsset<AudioClip>(aPath + aName);
-      uid = aName;
-      displayName = aName;
-      category = "AssetBundle";
-      destroyed = false;
     }
   }
 
@@ -1775,6 +1706,35 @@ namespace VaMLib
   {
     public RectTransform rectTransform;
     public LayoutElement layout;
+  }
+
+  public class UIDynamicButtonPair : UIDynamicBase
+  {
+    public UIDynamicButton leftButton;
+    public UIDynamicButton rightButton;
+  }
+
+  public class UIDynamicInfoText : UIDynamicBase
+  {
+    public RectTransform textRect;
+    public Text text;
+    public Image bgImage;
+  }
+
+  public class UIDynamicLabelWithX : UIDynamicBase
+  {
+    public Text label;
+    public UIDynamicButton button;
+  }
+
+  public class UIDynamicTabBar : UIDynamicBase
+  {
+    public List<UIDynamicButton> buttons = new List<UIDynamicButton>();
+  }
+
+  public class UIDynamicHorizontalLine : UIDynamicBase
+  {
+
   }
 
   public class UIDynamicCustomSlider : UIDynamicBase
@@ -1916,38 +1876,9 @@ namespace VaMLib
     public InputField input;
   }
 
-  public class UIDynamicLabelWithX : UIDynamicBase
-  {
-    public Text label;
-    public UIDynamicButton button;
-  }
-
   public class UIDynamicLabelWithToggle : UIDynamicBase
   {
     public Text label;
     public Toggle toggle;
-  }
-
-  public class UIDynamicButtonPair : UIDynamicBase
-  {
-    public UIDynamicButton leftButton;
-    public UIDynamicButton rightButton;
-  }
-
-  public class UIDynamicInfoText : UIDynamicBase
-  {
-    public RectTransform textRect;
-    public Text text;
-    public Image bgImage;
-  }
-
-  public class UIDynamicHorizontalLine : UIDynamicBase
-  {
-
-  }
-
-  public class UIDynamicTabBar : UIDynamicBase
-  {
-    public List<UIDynamicButton> buttons = new List<UIDynamicButton>();
   }
 }
