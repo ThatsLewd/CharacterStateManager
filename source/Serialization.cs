@@ -12,12 +12,35 @@ namespace ThatsLewd
     public const string JSON_FORMAT_VERSION = "v1";
     public const string FILE_EXTENSION = "csm";
     public const string PLUGIN_DATA_DIR = @"Saves\PluginData\CharacterStateManager";
+
     public const string INSTANCE_DIR = PLUGIN_DATA_DIR + @"\Instances";
+    public const string GROUP_DIR = PLUGIN_DATA_DIR + @"\Groups";
+    public const string STATE_DIR = PLUGIN_DATA_DIR + @"\States";
+    public const string LAYER_DIR = PLUGIN_DATA_DIR + @"\Layers";
+    public const string ANIMATION_DIR = PLUGIN_DATA_DIR + @"\Animations";
+    public const string ROLE_DIR = PLUGIN_DATA_DIR + @"\Roles";
+
+    public static class SerializableSection
+    {
+      public const string Instance = "Instance";
+      public const string Group = "Group";
+      public const string State = "State";
+      public const string Layer = "Layer";
+      public const string Animation = "Animation";
+      public const string Roles = "Roles";
+
+      public static readonly string[] list = new string[] { Instance, Group, State, Layer, Animation, Roles };
+    }
 
     void InitDirectories()
     {
       FileManagerSecure.CreateDirectory(PLUGIN_DATA_DIR);
       FileManagerSecure.CreateDirectory(INSTANCE_DIR);
+      FileManagerSecure.CreateDirectory(GROUP_DIR);
+      FileManagerSecure.CreateDirectory(STATE_DIR);
+      FileManagerSecure.CreateDirectory(LAYER_DIR);
+      FileManagerSecure.CreateDirectory(ANIMATION_DIR);
+      FileManagerSecure.CreateDirectory(ROLE_DIR);
     }
 
     void SaveJSONWithExtension(JSONClass json, string path)

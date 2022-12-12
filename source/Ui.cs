@@ -63,14 +63,7 @@ namespace ThatsLewd
     VaMUI.VaMStringChooser addMorphChooser;
     VaMUI.VaMToggle morphChooserUseFavoritesToggle;
 
-    VaMUI.VaMFileSelect loadInstanceOverwriteButton;
-    VaMUI.VaMFileSelect loadInstanceMergeButton;
-    VaMUI.VaMFileSelect loadGroupCreateButton;
-    VaMUI.VaMFileSelect loadGroupMergeButton;
-    VaMUI.VaMFileSelect loadLayerCreateButton;
-    VaMUI.VaMFileSelect loadLayerMergeButton;
-    VaMUI.VaMFileSelect loadAnimationCreateButton;
-    VaMUI.VaMFileSelect loadAnimationMergeButton;
+    VaMUI.VaMStringChooser exportImportChooser;
 
     void UIInit()
     {
@@ -94,14 +87,7 @@ namespace ThatsLewd
       addMorphChooser = VaMUI.CreateStringChooserKeyVal("Select Morph", filterable: true, defaultValue: "");
       morphChooserUseFavoritesToggle = VaMUI.CreateToggle("Favorites Only", true, callbackNoVal: HandleToggleMorphChooserFavorites);
 
-      loadInstanceOverwriteButton = VaMUI.CreateFileSelect("Load Instance And Replace", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
-      loadInstanceMergeButton = VaMUI.CreateFileSelect("Load Instance And Merge", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
-      loadGroupCreateButton = VaMUI.CreateFileSelect("Load Group As New", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
-      loadGroupMergeButton = VaMUI.CreateFileSelect("Load Group And Merge", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
-      loadLayerCreateButton = VaMUI.CreateFileSelect("Load Layer As New", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
-      loadLayerMergeButton = VaMUI.CreateFileSelect("Load Group And Merge", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
-      loadAnimationCreateButton = VaMUI.CreateFileSelect("Load Anim. To New Layer", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
-      loadAnimationMergeButton = VaMUI.CreateFileSelect("Load Anim. To This Layer", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleLoadInstance, buttonColor: VaMUI.YELLOW);
+      exportImportChooser = VaMUI.CreateStringChooser("Category", SerializableSection.list.ToList(), SerializableSection.Instance, callbackNoVal: RequestRedraw);
 
       Role.Init();
       Messages.Init();
@@ -1512,72 +1498,72 @@ namespace ThatsLewd
     void BuildExportImportTabUI()
     {
       CreateMainHeader(VaMUI.LEFT, "Export / Import");
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
 
-      UI(VaMUI.CreateInfoText(
-        VaMUI.LEFT,
-        "CAREFUL: Merge loads should be considered beta/unstable and possibly destructive if something goes wrong. Please back up any work you don't want to lose with <b>Save Instance</b> first.",
-        5
-      ));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 168f));
+      CreateSubHeader(VaMUI.LEFT, "Select Category");
+      UI(exportImportChooser.Draw(VaMUI.LEFT));
 
-      CreateSubHeader(VaMUI.LEFT, "Instance");
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 38f));
-      UI(VaMUI.CreateInfoText(
-        VaMUI.LEFT,
-        "Save the entire plugin instance.",
-        1
-      ));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 40f));
-      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Instance", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
-      UI(loadInstanceOverwriteButton.Draw(VaMUI.LEFT));
-      UI(loadInstanceMergeButton.Draw(VaMUI.RIGHT));
+      switch (exportImportChooser.val)
+      {
+        case SerializableSection.Instance:
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Save the entire plugin instance.", 1));
+          UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Instance", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Restore the plugin instance from file.\n<b>WARNING:</b> All work will be lost.", 2));
+          UI(VaMUI.CreateFileSelect("Load Instance And Replace", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: (string val) => { HandleLoadInstance(val); }, buttonColor: VaMUI.YELLOW).Draw(VaMUI.LEFT));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          // UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Merge current instance with data from file.", 2));
+          // UI(VaMUI.CreateFileSelect("Load Instance And Merge", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: (string val) => { HandleLoadInstance(val, true); }, buttonColor: VaMUI.YELLOW).Draw(VaMUI.LEFT));
+          // UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          break;
 
-      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
-      CreateSubHeader(VaMUI.LEFT, "Group");
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 38f));
-      UI(VaMUI.CreateInfoText(
-        VaMUI.LEFT,
-        "Save the current group and all of its states.",
-        2
-      ));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 72f));
-      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Current Group", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
-      UI(loadGroupCreateButton.Draw(VaMUI.LEFT));
-      UI(loadGroupMergeButton.Draw(VaMUI.RIGHT));
+        case SerializableSection.Group:
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Save the current group and all of its states.", 2));
+          UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Group", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Add a group from file.", 1));
+          UI(VaMUI.CreateFileSelect("Load Group As New", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: (string val) => { HandleLoadInstance(val); }, buttonColor: VaMUI.YELLOW).Draw(VaMUI.LEFT));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          break;
 
-      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
-      CreateSubHeader(VaMUI.LEFT, "Layer");
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 38f));
-      UI(VaMUI.CreateInfoText(
-        VaMUI.LEFT,
-        "Save the current layer and all of its animations.",
-        2
-      ));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 72f));
-      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Current Layer", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
-      UI(loadLayerCreateButton.Draw(VaMUI.LEFT));
-      UI(loadLayerMergeButton.Draw(VaMUI.RIGHT));
+        case SerializableSection.State:
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Save the current state and all of its animations.", 2));
+          UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save State", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Add a state from file to the current group.", 2));
+          UI(VaMUI.CreateFileSelect("Load State As New", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: (string val) => { HandleLoadInstance(val); }, buttonColor: VaMUI.YELLOW).Draw(VaMUI.LEFT));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          break;
 
-      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
-      CreateSubHeader(VaMUI.LEFT, "Animation");
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 38f));
-      UI(VaMUI.CreateInfoText(
-        VaMUI.LEFT,
-        "Save the current animation.",
-        1
-      ));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 40f));
-      UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Current Animation", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
-      UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 50f));
-      UI(loadAnimationCreateButton.Draw(VaMUI.LEFT));
-      UI(loadAnimationMergeButton.Draw(VaMUI.RIGHT));
+        case SerializableSection.Layer:
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Save the current layer and all of its animations.", 2));
+          UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Layer", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Add a layer from file.", 1));
+          UI(VaMUI.CreateFileSelect("Load Layer As New", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: (string val) => { HandleLoadInstance(val); }, buttonColor: VaMUI.YELLOW).Draw(VaMUI.LEFT));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          break;
+
+        case SerializableSection.Animation:
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Save the current animation.", 1));
+          UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Animation", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Add an animation from file. A new layer will be created if necessary.", 2));
+          UI(VaMUI.CreateFileSelect("Load Animation As New", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: (string val) => { HandleLoadInstance(val); }, buttonColor: VaMUI.YELLOW).Draw(VaMUI.LEFT));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          break;
+
+        case SerializableSection.Roles:
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Save a list of all roles.", 1));
+          UI(VaMUI.CreateFileSave(VaMUI.LEFT, "Save Roles", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: HandleSaveInstance, buttonColor: VaMUI.BLUE));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Restore the role list from file.", 1));
+          UI(VaMUI.CreateFileSelect("Load Roles And Replace", fileExtension: FILE_EXTENSION, path: INSTANCE_DIR, callback: (string val) => { HandleLoadInstance(val); }, buttonColor: VaMUI.YELLOW).Draw(VaMUI.LEFT));
+          UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+          break;
+
+        default:
+          break;
+      }
     }
 
     void HandleLoadInstance(string path)
