@@ -28,7 +28,7 @@ namespace ThatsLewd
     bool uiNeedsRebuilt = false;
     List<object> uiItems = new List<object>();
 
-    const float INFO_REFRESH_TIME = 0.1f;
+    const float INFO_REFRESH_TIME = 3f / 60f;
     float infoRefreshTimer = 0f;
 
     GameObject tabBarPrefab;
@@ -56,7 +56,6 @@ namespace ThatsLewd
     // Section UI
     Dictionary<Group, UIDynamicInfoText> infoTexts = new Dictionary<Group, UIDynamicInfoText>();
 
-    AnimationPlaylist activePlaylist;
     Animation.Keyframe activeKeyframe;
     AnimationPlayer previewAnimationPlayer = null;
 
@@ -178,7 +177,7 @@ namespace ThatsLewd
       if (activeTab != Tabs.Keyframes)
       {
         DestroyPreviewPlayer();
-      } 
+      }
       RequestRedraw();
     }
 
@@ -372,10 +371,10 @@ namespace ThatsLewd
         + "- Create a <b>Group</b>, a <b>State</b>, a <b>Layer</b>, and an <b>Animation</b>\n\n"
         + "- In the <b>Layers</b> tab, select the controllers and morphs you want to capture\n\n"
         + "- In the <b>Keyframes</b> tab, add a keyframe, pose your model, and click <b>Capture Current State</b>\n\n"
-        + "- In the <b>States</b> tab, click <b>Add Current Layer</b> and then click <b>Add Current Animation</b>\n\n"
+        + "- In the <b>States</b> tab, click <b>Add Current Animation</b>\n\n"
         + "- In the <b>Groups</b> tab, click <b>Set As Initial State</b>\n\n"
         + "- Congratulations! You now have a basic animation with a single keyframe.",
-        23
+        22
       ));
 
       UI(VaMUI.CreateInfoText(
@@ -423,13 +422,13 @@ namespace ThatsLewd
           int lines = 0;
 
           str += $"State: <b>{statePlayer.currentState?.name ?? "<none>"}</b>";
-          str += $"\nTime: {statePlayer.time:F1}s";
+          str += $"\nState Time: {statePlayer.time:F1}s";
           lines += 2;
 
-          foreach (KeyValuePair<AnimationPlaylist, PlaylistPlayer> ppEntry in statePlayer.playlistPlayers)
+          if (statePlayer.currentState != null && statePlayer.playlistPlayer != null)
           {
-            AnimationPlaylist playlist = ppEntry.Key;
-            PlaylistPlayer playlistPlayer = ppEntry.Value;
+            AnimationPlaylist playlist = statePlayer.currentState.playlist;
+            PlaylistPlayer playlistPlayer = statePlayer.playlistPlayer;
             PlaylistEntryPlayer playlistEntryPlayer = playlistPlayer.playlistEntryPlayer;
             AnimationPlayer animationPlayer = playlistEntryPlayer.animationPlayer;
             KeyframePlayer keyframePlayer = animationPlayer.keyframePlayer;
@@ -440,14 +439,12 @@ namespace ThatsLewd
             string currentKeyframeStr = currentKeyframeIndex == -1 ? "?" : $"{currentKeyframeIndex + 1}";
             string targetKeyframeStr = targetKeyframeIndex == -1 ? "?" : $"{targetKeyframeIndex + 1}";
 
-            str += $"\n\n<b>{playlist.layer.name}</b>";
-            str += $"\n------";
-            str += $"\nAnimation: <b>{animationPlayer.currentAnimation?.name ?? "<none>"}</b>";
             str += $"\nPlaylist Time: {(keyframePlayer.playingInBetweenKeyframe ? "<transitioning>" : playlistTimeStr)}";
-            str += $"\nTime: {(keyframePlayer.playingInBetweenKeyframe ? "<transitioning>" : animationTimeStr)}";
+            str += $"\nAnimation: <b>{animationPlayer.currentAnimation?.name ?? "<none>"}</b>";
+            str += $"\nAnimation Time: {(keyframePlayer.playingInBetweenKeyframe ? "<transitioning>" : animationTimeStr)}";
             str += $"\nKeyframe: <b>{currentKeyframeStr}</b> -> <b>{targetKeyframeStr}</b>";
             str += $"\nKeyframe Time: {keyframePlayer.time:F1}s ({keyframePlayer.progress:F1})";
-            lines += 8;
+            lines += 5;
           }
 
           infoText.text.text = str;
@@ -508,7 +505,7 @@ namespace ThatsLewd
       }
       else if (activeState.transitionModeChooser.val == TransitionMode.PlaylistCompleted)
       {
-        UI(VaMUI.CreateInfoText(VaMUI.LEFT, "The state will advance when any layer's playlist completes.", 2));
+        UI(VaMUI.CreateInfoText(VaMUI.LEFT, "The state will advance when its playlist completes.", 2));
       }
       else if (activeState.transitionModeChooser.val == TransitionMode.FixedDuration)
       {
@@ -625,12 +622,10 @@ namespace ThatsLewd
     // ============================================================================ //
     void BuildStatesTabUI()
     {
-      SetActivePlaylist();
-
       CreateMainHeader(VaMUI.LEFT, "States");
       UI(VaMUI.CreateInfoText(
         VaMUI.LEFT,
-        "A <b>State</b> defines what a character is currently doing (idle, sitting, etc). A state assigns <b>Animations</b> to <b>Layers</b> that can be played either sequentially or randomly.",
+        "A <b>State</b> defines what a character is currently doing (idle, sitting, etc). A state assigns <b>Animations</b> to a playlist that can then be played either sequentially or randomly.",
         185f
       ));
 
@@ -656,62 +651,10 @@ namespace ThatsLewd
 
       if (activeState == null) return;
 
-      CreateSubHeader(VaMUI.LEFT, "Target Layers");
-      UI(VaMUI.CreateInfoText(
-        VaMUI.LEFT,
-        "You can only assign animations to layers in this list.",
-        2
-      ));
-
-      if (activeLayer == null)
-      {
-        UI(VaMUI.CreateInfoText(
-          VaMUI.LEFT,
-          "You have not created any <b>Layers</b>.",
-          1
-        ));
-
-        DrawStateActions();
-        return;
-      }
-
-      // LAYERS
-      UI(VaMUI.CreateButton(VaMUI.LEFT, "Add Current Layer", HandleCreatePlaylist));
-      foreach (AnimationPlaylist playlist in activeState.playlists)
-      {
-        bool isActive = playlist.layer == activeLayer;
-        string label = isActive ? $"[ {playlist.layer.name} ]" : playlist.layer.name;
-        UI(VaMUI.CreateLabelWithX(VaMUI.LEFT, label, () => { HandleDeletePlaylist(playlist); }));
-      }
-
-      CreateSubHeader(VaMUI.RIGHT, "Animation Playlist");
-      if (activePlaylist == null)
-      {
-        UI(VaMUI.CreateInfoText(
-          VaMUI.RIGHT,
-          "Select or add a <b>Layer</b> to the list to edit its animation playlist.",
-          2
-        ));
-        DrawStateActions();
-        return;
-      }
-
-      if (activeAnimation == null)
-      {
-        UI(VaMUI.CreateInfoText(
-          VaMUI.RIGHT,
-          "There are no <b>Animations</b> available for this <b>Layer</b>.",
-          2
-        ));
-        DrawStateActions();
-        return;
-      }
-
       // OPTIONS
-      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
       CreateSubHeader(VaMUI.LEFT, "Playlist Options");
-      UI(activePlaylist.playModeChooser.Draw(VaMUI.LEFT));
-      if (activePlaylist.playModeChooser.val == PlaylistMode.Sequential)
+      UI(activeState.playlist.playModeChooser.Draw(VaMUI.LEFT));
+      if (activeState.playlist.playModeChooser.val == PlaylistMode.Sequential)
       {
         UI(VaMUI.CreateInfoText(
           VaMUI.LEFT,
@@ -719,7 +662,7 @@ namespace ThatsLewd
           1
         ));
       }
-      else if (activePlaylist.playModeChooser.val == PlaylistMode.Random)
+      else if (activeState.playlist.playModeChooser.val == PlaylistMode.Random)
       {
         UI(VaMUI.CreateInfoText(
           VaMUI.LEFT,
@@ -736,40 +679,52 @@ namespace ThatsLewd
         "New animations will use these defaults.",
         1
       ));
-      UI(activePlaylist.defaultTimingModeChooser.Draw(VaMUI.LEFT));
-      UI(activePlaylist.defaultWeightSlider.Draw(VaMUI.LEFT));
-      if (activePlaylist.defaultTimingModeChooser.val == TimingMode.RandomDuration)
+      UI(activeState.playlist.defaultTimingModeChooser.Draw(VaMUI.LEFT));
+      UI(activeState.playlist.defaultWeightSlider.Draw(VaMUI.LEFT));
+      if (activeState.playlist.defaultTimingModeChooser.val == TimingMode.RandomDuration)
       {
-        UI(activePlaylist.defaultDurationMinSlider.Draw(VaMUI.LEFT));
-        UI(activePlaylist.defaultDurationMaxSlider.Draw(VaMUI.LEFT));
+        UI(activeState.playlist.defaultDurationMinSlider.Draw(VaMUI.LEFT));
+        UI(activeState.playlist.defaultDurationMaxSlider.Draw(VaMUI.LEFT));
       }
       else
       {
-        UI(activePlaylist.defaultDurationFixedSlider.Draw(VaMUI.LEFT));
+        UI(activeState.playlist.defaultDurationFixedSlider.Draw(VaMUI.LEFT));
       }
       UI(VaMUI.CreateButton(VaMUI.LEFT, "Apply to All", HandleApplyDefaultsToAll));
 
       // ACTIONS
-      DrawStateActions();
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      CreateSubHeader(VaMUI.LEFT, "Actions");
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "On Enter State", activeState.onEnterTrigger.OpenPanel));
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "On Exit State", activeState.onExitTrigger.OpenPanel));
+      UI(VaMUI.CreateButtonPair(VaMUI.LEFT, "Copy Actions", activeState.CopyActions, "Paste Actions", activeState.PasteActions));
+
 
       // PLAYLIST
-      UI(VaMUI.CreateInfoText(
-        VaMUI.RIGHT,
-        "This is the playlist of animations for this layer.",
-        2
-      ));
+      CreateSubHeader(VaMUI.RIGHT, "Animation Playlist");
 
-      UI(VaMUI.CreateButton(VaMUI.RIGHT, "Add Current Animation", HandleAddPlaylistEntry));
+      if (activeAnimation == null)
+      {
+        UI(VaMUI.CreateInfoText(
+          VaMUI.RIGHT,
+          "There are no <b>Animations</b> available to add.",
+          2
+        ));
+      }
+      else
+      {
+        UI(VaMUI.CreateButton(VaMUI.RIGHT, "Add Current Animation", HandleAddPlaylistEntry));
+      }
       UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
 
-      for (int i = 0; i < activePlaylist.entries.Count; i++)
+      for (int i = 0; i < activeState.playlist.entries.Count; i++)
       {
-        PlaylistEntry entry = activePlaylist.entries[i];
-        string playlistMode = activePlaylist.playModeChooser.val;
+        PlaylistEntry entry = activeState.playlist.entries[i];
+        string playlistMode = activeState.playlist.playModeChooser.val;
         string timingMode = entry.timingModeChooser.val;
         string loopType = entry.animation.loopTypeChooser.val;
 
-        UI(CreatePlaylistEntryContainer(playlistMode, timingMode, loopType, i + 1, VaMUI.RIGHT));
+        UI(CreatePlaylistEntryContainer(playlistMode, timingMode, loopType, i + 1, entry.animation.layer.name, VaMUI.RIGHT));
         UI(VaMUI.CreateSpacer(VaMUI.RIGHT, 10f));
         UI(VaMUI.CreateLabelWithX(VaMUI.RIGHT, $"<b>{entry.animation.name}</b>", () => { HandleDeletePlaylistEntry(entry); }));
         UI(VaMUI.CreateButtonPair(VaMUI.RIGHT, "Move Up", () => HandleMovePlaylistEntry(entry, -1), "Move Down", () => HandleMovePlaylistEntry(entry, 1)));
@@ -797,15 +752,6 @@ namespace ThatsLewd
         }
         UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
       }
-    }
-
-    void DrawStateActions()
-    {
-      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
-      CreateSubHeader(VaMUI.LEFT, "Actions");
-      UI(VaMUI.CreateButton(VaMUI.LEFT, "On Enter State", activeState.onEnterTrigger.OpenPanel));
-      UI(VaMUI.CreateButton(VaMUI.LEFT, "On Exit State", activeState.onExitTrigger.OpenPanel));
-      UI(VaMUI.CreateButtonPair(VaMUI.LEFT, "Copy Actions", activeState.CopyActions, "Paste Actions", activeState.PasteActions));
     }
 
     void HandleNewState()
@@ -840,67 +786,40 @@ namespace ThatsLewd
       VaMUtils.SelectStringChooserFirstValue(activeStateIdChooser.storable);
     }
 
-    void SetActivePlaylist()
-    {
-      if (activeState == null || activeLayer == null)
-      {
-        activePlaylist = null;
-        return;
-      }
-      activePlaylist = activeState.GetPlaylist(activeLayer);
-    }
-
-    void HandleCreatePlaylist()
-    {
-      if (activeState == null) return;
-      activeState.CreatePlaylist(activeLayer);
-
-      RequestRedraw();
-    }
-
-    void HandleDeletePlaylist(AnimationPlaylist playlist)
-    {
-      if (activeState == null) return;
-      activeState.playlists.Remove(playlist);
-      playlist.Dispose();
-
-      RequestRedraw();
-    }
-
     void HandleAddPlaylistEntry()
     {
-      if (activePlaylist == null || activeAnimation == null) return;
-      activePlaylist.AddEntry(activeAnimation);
+      if (activeState == null || activeAnimation == null) return;
+      activeState.playlist.AddEntry(activeAnimation);
 
       RequestRedraw();
     }
 
     void HandleDeletePlaylistEntry(PlaylistEntry entry)
     {
-      if (activePlaylist == null) return;
-      activePlaylist.entries.Remove(entry);
+      if (activeState == null) return;
+      activeState.playlist.entries.Remove(entry);
 
       RequestRedraw();
     }
 
     void HandleMovePlaylistEntry(PlaylistEntry entry, int direction)
     {
-      if (activePlaylist == null) return;
-      int index = activePlaylist.entries.IndexOf(entry);
+      if (activeState == null) return;
+      int index = activeState.playlist.entries.IndexOf(entry);
       if (index < 0) return;
       int oldIndex = index;
       int newIndex = index + direction;
-      if (newIndex < 0 || newIndex >= activePlaylist.entries.Count) return;
-      PlaylistEntry temp = activePlaylist.entries[newIndex];
-      activePlaylist.entries[newIndex] = entry;
-      activePlaylist.entries[oldIndex] = temp;
+      if (newIndex < 0 || newIndex >= activeState.playlist.entries.Count) return;
+      PlaylistEntry temp = activeState.playlist.entries[newIndex];
+      activeState.playlist.entries[newIndex] = entry;
+      activeState.playlist.entries[oldIndex] = temp;
       RequestRedraw();
     }
 
     void HandleApplyDefaultsToAll()
     {
-      if (activePlaylist == null) return;
-      foreach (PlaylistEntry entry in activePlaylist.entries)
+      if (activeState == null) return;
+      foreach (PlaylistEntry entry in activeState.playlist.entries)
       {
         entry.SetFromDefaults();
       }
@@ -931,6 +850,7 @@ namespace ThatsLewd
       if (activeLayer == null) return;
 
       CreateSubHeader(VaMUI.LEFT, "Default Transition");
+      UI(VaMUI.CreateInfoText(VaMUI.LEFT, "The default transition is used when no keyframe is available.", 2));
       UI(activeLayer.defaultTransitionDurationSlider.Draw(VaMUI.LEFT));
       UI(activeLayer.defaultTransitionEasingChooser.Draw(VaMUI.LEFT));
 
@@ -1461,20 +1381,21 @@ namespace ThatsLewd
 
       UI(VaMUI.CreateInfoText(
         VaMUI.LEFT,
-        "A <b>Message</b> is a custom event that allows communication between characters or other triggers in the scene. Messages allow external management of the character's state in a more robust way than traditional triggers. Messages are automatically exchanged between all instances of CharacterStateManager.",
-        9
-      ));
-      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
-      UI(VaMUI.CreateInfoText(
-        VaMUI.LEFT,
-        $"<b>Roles</b> define the identity of a character when sending messages. Characters can react to messages sent by specific roles. The predefined <b>{Role.Self}</b> role allows for communication between internal states.",
-        6
-      ));
-      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
-      UI(VaMUI.CreateInfoText(
-        VaMUI.LEFT,
-        "Default messages are automatically sent on state enter/exit. In addition, custom messages can be manually sent to this character with the <b>SendMessage</b> action, or broadcast from this character with the <b>BroadcastMessage</b> action.",
+        "<b>Messages</b> are custom events that a character can listen for that allow you to trigger <b>States</b> when received. Messages allow you to react to other characters in the scene, sync states across <b>Groups</b>, or manually trigger states through actions.",
         7
+      ));
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      UI(VaMUI.CreateInfoText(
+        VaMUI.LEFT,
+        $"<b>Roles</b> define the identity of a character when sending messages. Other characters can react to a message based on the role of the sender. The predefined <b>{Role.Self}</b> role allows a character to react to their own events, used for triggers and for syncing states across groups.",
+        8
+      ));
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      UI(VaMUI.CreateInfoText(
+        VaMUI.LEFT,
+        "Characters automatically <b>Broadcast</b> a message to all other instances of CharacterStateManager in the scene whenever they enter or exit a state. Other characters can <b>Receive</b> this message by listening for it in the Messages tab."
+        + "\n\nIn addition, you can manually broadcast a custom message from a character with the <b>Broadcast Message</b> action, or send a custom message to a character with the <b>SendMessage</b> action.",
+        14
       ));
 
       UI(Role.addRoleInput.Draw(VaMUI.RIGHT));
@@ -1516,8 +1437,8 @@ namespace ThatsLewd
 
       UI(VaMUI.CreateInfoText(
         VaMUI.LEFT,
-        $"Here you can trigger character <b>States</b> based on <b>Messages</b> sent by <b>Roles</b> in your scene. Messages sent by the <b>SendMessage</b> action will appear under the <b>{Role.Self}</b> role.",
-        5
+        $"Here you can trigger character <b>States</b> based on <b>Messages</b> sent by <b>Roles</b> in your scene. Custom messages sent by the <b>SendMessage</b> action will appear under the <b>{Role.Self}</b> role. See the Roles tab for in-depth info on messages.",
+        6
       ));
 
       CreateSubHeader(VaMUI.RIGHT, "Listeners");
@@ -1873,10 +1794,11 @@ namespace ThatsLewd
     {
       public RectTransform background;
       public Text indexText;
+      public Text layerText;
     }
     
     private GameObject playlistEntryContainerPrefab;
-    public UIDynamicPlaylistEntryContainer CreatePlaylistEntryContainer(string playlistMode, string timingMode, string loopType, int index, VaMUI.Column side)
+    public UIDynamicPlaylistEntryContainer CreatePlaylistEntryContainer(string playlistMode, string timingMode, string loopType, int index, string layerName, VaMUI.Column side)
     {
       if (playlistEntryContainerPrefab == null)
       {
@@ -1887,21 +1809,30 @@ namespace ThatsLewd
         Image bgImage = background.GetComponent<Image>();
         bgImage.color = new Color(0.9f, 0.9f, 0.9f, 0.5f);
 
-        RectTransform textRect = VaMUI.InstantiateLabel(uid.transform);
-        textRect.offsetMin = new Vector2(8f, -50f);
-        textRect.offsetMax = new Vector2(0f, -8f);
-        Text text = textRect.GetComponent<Text>();
-        text.alignment = TextAnchor.UpperLeft;
-        text.fontSize = 24;
+        RectTransform indexTextRect = VaMUI.InstantiateLabel(uid.transform);
+        indexTextRect.offsetMin = new Vector2(8f, -50f);
+        indexTextRect.offsetMax = new Vector2(-8f, -8f);
+        Text indexText = indexTextRect.GetComponent<Text>();
+        indexText.alignment = TextAnchor.UpperLeft;
+        indexText.fontSize = 24;
+
+        RectTransform layerTextRect = VaMUI.InstantiateLabel(uid.transform);
+        layerTextRect.offsetMin = new Vector2(8f, -50f);
+        layerTextRect.offsetMax = new Vector2(-8f, -8f);
+        Text layerText = layerTextRect.GetComponent<Text>();
+        layerText.alignment = TextAnchor.UpperRight;
+        layerText.fontSize = 24;
 
         uid.background = background;
-        uid.indexText = text;
+        uid.indexText = indexText;
+        uid.layerText = layerText;
       }
       {
         const float sliderHeight = 136f;
         Transform t = CreateUIElement(playlistEntryContainerPrefab.transform, side == VaMUI.RIGHT);
         UIDynamicPlaylistEntryContainer uid = t.GetComponent<UIDynamicPlaylistEntryContainer>();
         uid.indexText.text = index.ToString();
+        uid.layerText.text = $"Layer: <b>{layerName}</b>";
         float height = 280f;
         if (timingMode == TimingMode.DurationFromAnimation && loopType != LoopType.PlayOnce) height += 88f;
         if (playlistMode == PlaylistMode.Random) height += sliderHeight;

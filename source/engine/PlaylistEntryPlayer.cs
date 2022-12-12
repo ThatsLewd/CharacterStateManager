@@ -99,7 +99,11 @@ namespace ThatsLewd
 
       void NewRandomTargetTime()
       {
-        if (currentEntry == null) randomTargetTime = 0f;
+        if (currentEntry == null)
+        {
+          randomTargetTime = 0f;
+          return;
+        }
         randomTargetTime = UnityEngine.Random.Range(currentEntry.durationMinSlider.val, currentEntry.durationMaxSlider.val);
       }
 

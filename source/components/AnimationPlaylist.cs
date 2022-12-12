@@ -31,7 +31,6 @@ namespace ThatsLewd
       public delegate void OnDeleteCallback(AnimationPlaylist playlist);
       public static event OnDeleteCallback OnDelete;
 
-      public Layer layer { get; private set; }
       public List<PlaylistEntry> entries { get; private set; } = new List<PlaylistEntry>();
 
       public VaMUI.VaMStringChooser playModeChooser { get; private set; }
@@ -42,20 +41,20 @@ namespace ThatsLewd
       public VaMUI.VaMSlider defaultDurationMinSlider { get; private set; }
       public VaMUI.VaMSlider defaultDurationMaxSlider { get; private set; }
 
-      public AnimationPlaylist(Layer layer)
+      public AnimationPlaylist()
       {
-        this.layer = layer;
         playModeChooser = VaMUI.CreateStringChooser("Play Mode", PlaylistMode.list.ToList(), PlaylistMode.Sequential, callbackNoVal: instance.RequestRedraw);
         defaultTimingModeChooser = VaMUI.CreateStringChooser("Timing Mode", TimingMode.list.ToList(), TimingMode.DurationFromAnimation, callbackNoVal: instance.RequestRedraw);
         defaultWeightSlider = VaMUI.CreateSlider("Default Weight", 0.5f, 0f, 1f);
         defaultDurationFixedSlider = VaMUI.CreateSlider("Default Duration", 10f, 0f, 30f, callbackNoVal: HandleDurationFixedChange);
         defaultDurationMinSlider = VaMUI.CreateSlider("Default Duration Min", 10f, 0f, 30f);
         defaultDurationMaxSlider = VaMUI.CreateSlider("Default Duration Max", 10f, 0f, 30f);
+        Animation.OnDelete += HandleAnimationDeleted;
       }
 
       public AnimationPlaylist Clone()
       {
-        AnimationPlaylist newPlaylist = new AnimationPlaylist(layer);
+        AnimationPlaylist newPlaylist = new AnimationPlaylist();
         newPlaylist.playModeChooser.valNoCallback = playModeChooser.val;
         newPlaylist.defaultTimingModeChooser.valNoCallback = defaultTimingModeChooser.val;
         Helpers.SetSliderValues(newPlaylist.defaultWeightSlider, defaultWeightSlider.val, defaultWeightSlider.min, defaultWeightSlider.max);
@@ -71,9 +70,15 @@ namespace ThatsLewd
         return newPlaylist;
       }
 
+      private void HandleAnimationDeleted(Animation animation)
+      {
+        entries.RemoveAll((e) => e.animation == animation);
+      }
+
       public void Dispose()
       {
         AnimationPlaylist.OnDelete?.Invoke(this);
+        Animation.OnDelete -= HandleAnimationDeleted;
       }
 
       public void AddEntry(Animation animation)
@@ -90,7 +95,6 @@ namespace ThatsLewd
       public JSONClass GetJSON()
       {
         JSONClass json = new JSONClass();
-        json["layer"] = layer.id;
         json["entries"] = new JSONArray();
         foreach (PlaylistEntry entry in entries)
         {
@@ -103,20 +107,6 @@ namespace ThatsLewd
         defaultDurationMinSlider.storable.StoreJSON(json);
         defaultDurationMaxSlider.storable.StoreJSON(json);
         return json;
-      }
-
-      public static AnimationPlaylist FromJSON(JSONClass json)
-      {
-        string layerId = json["layer"].Value;
-        Layer layer = Layer.list.Find((l) => l.id == layerId);
-        if (layer == null)
-        {
-          LogError($"Could not find layer: {layerId}");
-          return null;
-        }
-        AnimationPlaylist playlist = new AnimationPlaylist(layer);
-        playlist.RestoreFromJSON(json);
-        return playlist;
       }
 
       public void RestoreFromJSON(JSONClass json)

@@ -20,7 +20,7 @@ namespace ThatsLewd
       public VaMUI.EventTrigger onEnterTrigger = VaMUI.CreateEventTrigger("On Enter State");
       public VaMUI.EventTrigger onExitTrigger = VaMUI.CreateEventTrigger("On Exit State");
 
-      public List<AnimationPlaylist> playlists { get; private set; } = new List<AnimationPlaylist>(); 
+      public AnimationPlaylist playlist { get; private set; } = new AnimationPlaylist();
 
       public State(Group group, string name = null)
       {
@@ -34,8 +34,6 @@ namespace ThatsLewd
         this.minDurationSlider = VaMUI.CreateSlider("Min Duration", 10f, 0f, 30f);
         this.maxDurationSlider = VaMUI.CreateSlider("Max Duration", 30f, 0f, 30f);
         Group.OnDelete += HandleGroupDeleted;
-        Layer.OnDelete += HandleLayerDeleted;
-        Animation.OnDelete += HandleAnimationDeleted;
       }
 
       public State Clone(Group group = null)
@@ -45,10 +43,7 @@ namespace ThatsLewd
         State newState = new State(group, name);
         newState.onEnterTrigger = onEnterTrigger.Clone();
         newState.onExitTrigger = onExitTrigger.Clone();
-        foreach (AnimationPlaylist playlist in playlists)
-        {
-          newState.playlists.Add(playlist.Clone());
-        }
+        newState.playlist = playlist.Clone();
         newState.transitionModeChooser.valNoCallback = transitionModeChooser.val;
         Helpers.SetSliderValues(newState.fixedDurationSlider, fixedDurationSlider.val, fixedDurationSlider.min, fixedDurationSlider.max);
         Helpers.SetSliderValues(newState.minDurationSlider, minDurationSlider.val, minDurationSlider.min, minDurationSlider.max);
@@ -65,26 +60,11 @@ namespace ThatsLewd
         if (group == this.group) Dispose();
       }
 
-      private void HandleLayerDeleted(Layer layer)
-      {
-        playlists.RemoveAll((p) => p.layer == layer);
-      }
-
-      private void HandleAnimationDeleted(Animation animation)
-      {
-        foreach (AnimationPlaylist playlist in playlists)
-        {
-          playlist.entries.RemoveAll((e) => e.animation == animation);
-        }
-      }
-
       public void Dispose()
       {
         group.states.Remove(this);
         State.OnDelete?.Invoke(this);
         Group.OnDelete -= HandleGroupDeleted;
-        Layer.OnDelete -= HandleLayerDeleted;
-        Animation.OnDelete -= HandleAnimationDeleted;
       }
 
       public void CopyActions()
@@ -104,23 +84,6 @@ namespace ThatsLewd
         CharacterStateManager.instance.RequestRedraw();
       }
 
-      public AnimationPlaylist GetPlaylist(Layer layer)
-      {
-        return playlists.Find((p) => p.layer == layer);
-      }
-
-      public bool PlaylistExists(Layer layer)
-      {
-        return playlists.Exists((p) => p.layer == layer);
-      }
-
-      public void CreatePlaylist(Layer layer)
-      {
-        if (PlaylistExists(layer)) return;
-        playlists.Add(new AnimationPlaylist(layer));
-        playlists.Sort((a, b) => String.Compare(a.layer.name, b.layer.name));
-      }
-
       public JSONClass GetJSON()
       {
         JSONClass json = new JSONClass();
@@ -128,11 +91,7 @@ namespace ThatsLewd
         json["name"] = name;
         onEnterTrigger.StoreJSON(json);
         onExitTrigger.StoreJSON(json);
-        json["playlists"] = new JSONArray();
-        foreach (AnimationPlaylist playlist in playlists)
-        {
-          json["playlists"].AsArray.Add(playlist.GetJSON());
-        }
+        json["playlist"] = playlist.GetJSON();
         transitionModeChooser.storable.StoreJSON(json);
         fixedDurationSlider.storable.StoreJSON(json);
         minDurationSlider.storable.StoreJSON(json);
@@ -151,6 +110,7 @@ namespace ThatsLewd
         name = json["name"].Value;
         onEnterTrigger.RestoreFromJSON(json);
         onExitTrigger.RestoreFromJSON(json);
+        playlist.RestoreFromJSON(json["playlist"].AsObject);
         transitionModeChooser.storable.RestoreFromJSON(json);
         fixedDurationSlider.storable.RestoreFromJSON(json);
         minDurationSlider.storable.RestoreFromJSON(json);
@@ -159,15 +119,6 @@ namespace ThatsLewd
 
       public void LateRestoreFromJSON(JSONClass json)
       {
-        Helpers.DisposeList(playlists);
-        foreach (JSONNode node in json["playlists"].AsArray.Childs)
-        {
-          AnimationPlaylist playlist = AnimationPlaylist.FromJSON(node.AsObject);
-          if (playlist != null)
-          {
-            playlists.Add(playlist);
-          }
-        }
         transitions.Clear();
         foreach (JSONNode node in json["transitions"].AsArray.Childs)
         {

@@ -11,7 +11,7 @@ namespace ThatsLewd
     public class StatePlayer : IDisposable
     {
       public GroupPlayer groupPlayer { get; private set; }
-      public Dictionary<AnimationPlaylist, PlaylistPlayer> playlistPlayers { get; private set; } = new Dictionary<AnimationPlaylist, PlaylistPlayer>();
+      public PlaylistPlayer playlistPlayer { get; private set; } = null;
       bool disposed = false;
 
       public State currentState { get; private set; } = null;
@@ -24,7 +24,6 @@ namespace ThatsLewd
       public StatePlayer(GroupPlayer groupPlayer)
       {
         this.groupPlayer = groupPlayer;
-        AnimationPlaylist.OnDelete += HandlePlaylistDeleted;
       }
 
       void RegisterHandlers(State newState)
@@ -47,20 +46,9 @@ namespace ThatsLewd
       {
         disposed = true;
         UnregisterHandlers(currentState);
-        AnimationPlaylist.OnDelete -= HandlePlaylistDeleted;
-        foreach (KeyValuePair<AnimationPlaylist, PlaylistPlayer> entry in playlistPlayers)
+        if (playlistPlayer != null)
         {
-          entry.Value.Dispose();
-        }
-        playlistPlayers.Clear();
-      }
-
-      void HandlePlaylistDeleted(AnimationPlaylist playlist)
-      {
-        if (playlistPlayers.ContainsKey(playlist))
-        {
-          playlistPlayers[playlist].Dispose();
-          playlistPlayers.Remove(playlist);
+          playlistPlayer.Dispose();
         }
       }
 
@@ -72,7 +60,7 @@ namespace ThatsLewd
         }
         if (val == TransitionMode.PlaylistCompleted)
         {
-          RefreshPlaylists();
+          RefreshPlaylist();
         }
       }
 
@@ -87,7 +75,7 @@ namespace ThatsLewd
         switch (currentState.transitionModeChooser.val)
         {
           case TransitionMode.PlaylistCompleted:
-            return playlistPlayers.ToList().Exists((entry) => entry.Value.playlistCompleted);
+            return playlistPlayer?.playlistCompleted ?? false;
           case TransitionMode.FixedDuration:
             return time >= currentState.fixedDurationSlider.val;
           case TransitionMode.RandomDuration:
@@ -117,11 +105,11 @@ namespace ThatsLewd
         randomTargetTime = UnityEngine.Random.Range(currentState.minDurationSlider.val, currentState.maxDurationSlider.val);
       }
 
-      void RefreshPlaylists()
+      void RefreshPlaylist()
       {
-        foreach (var entry in playlistPlayers)
+        if (playlistPlayer != null)
         {
-          entry.Value.playlistCompleted = false;
+          playlistPlayer.playlistCompleted = false;
         }
       }
 
@@ -131,10 +119,9 @@ namespace ThatsLewd
         if (currentState == null) return;
         time += Time.deltaTime;
 
-        foreach (AnimationPlaylist playlist in currentState.playlists)
+        if (playlistPlayer != null)
         {
-          PlaylistPlayer player = GetOrCreatePlaylistPlayer(playlist);
-          player.Update();
+          playlistPlayer.Update();
         }
       }
 
@@ -152,19 +139,18 @@ namespace ThatsLewd
         }
         UnregisterHandlers(currentState);
         RegisterHandlers(newState);
+        if (playlistPlayer != null)
+        {
+          playlistPlayer.Dispose();
+        }
+        playlistPlayer = null;
+        if (newState != null)
+        {
+          playlistPlayer = new PlaylistPlayer(this, newState.playlist);
+        }
         currentState = newState;
-        playlistPlayers.Clear();
         NewRandomTargetTime();
         time = 0f;
-      }
-
-      PlaylistPlayer GetOrCreatePlaylistPlayer(AnimationPlaylist playlist)
-      {
-        if (!playlistPlayers.ContainsKey(playlist))
-        {
-          playlistPlayers[playlist] = new PlaylistPlayer(this, playlist);
-        }
-        return playlistPlayers[playlist];
       }
     }
   }
