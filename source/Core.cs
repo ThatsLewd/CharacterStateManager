@@ -161,7 +161,6 @@ namespace ThatsLewd
 }
 
 // TODO:
-// capture controller states
 // character locomotion
 // layer offset mode vs absolute mode
 // animation noise

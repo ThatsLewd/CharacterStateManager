@@ -178,11 +178,23 @@ namespace ThatsLewd
       }
     }
 
+    public struct CapturedPosition
+    {
+      public Vector3 value;
+      public int state;
+    }
+
+    public struct CapturedRotation
+    {
+      public Quaternion value;
+      public int state;
+    }
+
     public class CapturedController
     {
       public string name = "";
-      public Vector3? position = null;
-      public Quaternion? rotation = null;
+      public CapturedPosition? position = null;
+      public CapturedRotation? rotation = null;
 
       public static List<CapturedController> CaptureCurrentState(List<TrackedController> trackedControllers)
       {
@@ -196,11 +208,19 @@ namespace ThatsLewd
           capture.name = tc.controller.name;
           if (tc.trackPositionToggle.val)
           {
-            capture.position = mainTransform.InverseTransformPoint(controllerTransform.position);
+            capture.position = new CapturedPosition()
+            {
+              value = mainTransform.InverseTransformPoint(controllerTransform.position),
+              state = (int)tc.controller.currentPositionState,
+            };
           }
           if (tc.trackRotationToggle.val)
           {
-            capture.rotation = Quaternion.Inverse(mainTransform.rotation) * controllerTransform.rotation;
+            capture.rotation = new CapturedRotation()
+            {
+              value = Quaternion.Inverse(mainTransform.rotation) * controllerTransform.rotation,
+              state = (int)tc.controller.currentRotationState,
+            };
           }
           captures.Add(capture);
         }
@@ -224,17 +244,19 @@ namespace ThatsLewd
         if (position != null)
         {
           json["position"] = new JSONClass();
-          json["position"]["x"].AsFloat = position.Value.x;
-          json["position"]["y"].AsFloat = position.Value.y;
-          json["position"]["z"].AsFloat = position.Value.z;
+          json["position"]["x"].AsFloat = position.Value.value.x;
+          json["position"]["y"].AsFloat = position.Value.value.y;
+          json["position"]["z"].AsFloat = position.Value.value.z;
+          json["position"]["state"].AsInt = position.Value.state;
         }
         if (rotation != null)
         {
           json["rotation"] = new JSONClass();
-          json["rotation"]["x"].AsFloat = rotation.Value.x;
-          json["rotation"]["y"].AsFloat = rotation.Value.y;
-          json["rotation"]["z"].AsFloat = rotation.Value.z;
-          json["rotation"]["w"].AsFloat = rotation.Value.w;
+          json["rotation"]["x"].AsFloat = rotation.Value.value.x;
+          json["rotation"]["y"].AsFloat = rotation.Value.value.y;
+          json["rotation"]["z"].AsFloat = rotation.Value.value.z;
+          json["rotation"]["w"].AsFloat = rotation.Value.value.w;
+          json["rotation"]["state"].AsInt = rotation.Value.state;
         }
         return json;
       }
@@ -244,20 +266,28 @@ namespace ThatsLewd
         name = json["name"].Value;
         if (json.HasKey("position"))
         {
-          position = new Vector3(
-            json["position"]["x"].AsFloat,
-            json["position"]["y"].AsFloat,
-            json["position"]["z"].AsFloat
-          );
+          position = new CapturedPosition()
+          {
+            value = new Vector3(
+              json["position"]["x"].AsFloat,
+              json["position"]["y"].AsFloat,
+              json["position"]["z"].AsFloat
+            ),
+            state = json["position"]["state"].AsInt
+          };
         }
         if (json.HasKey("rotation"))
         {
-          rotation = new Quaternion(
-            json["rotation"]["x"].AsFloat,
-            json["rotation"]["y"].AsFloat,
-            json["rotation"]["z"].AsFloat,
-            json["rotation"]["w"].AsFloat
-          );
+          rotation = new CapturedRotation()
+          {
+            value = new Quaternion(
+              json["rotation"]["x"].AsFloat,
+              json["rotation"]["y"].AsFloat,
+              json["rotation"]["z"].AsFloat,
+              json["rotation"]["w"].AsFloat
+            ),
+            state = json["rotation"]["state"].AsInt
+          };
         }
       }
     }

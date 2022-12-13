@@ -1173,11 +1173,11 @@ namespace ThatsLewd
         string joinStr = "";
         if (tc.trackPositionToggle.val)
         {
-          posStr = capture?.position == null ? "<b>P</b>: <NO DATA>" : $"<b>P</b>: {capture.position.Value}";
+          posStr = capture?.position == null ? "<b>P</b>: <NO DATA>" : $"<b>P</b>: {capture.position.Value.value}";
         }
         if (tc.trackRotationToggle.val)
         {
-          rotStr = capture?.rotation == null ? "<b>R</b>: <NO DATA>" : $"<b>R</b>: {capture.rotation.Value.eulerAngles}";
+          rotStr = capture?.rotation == null ? "<b>R</b>: <NO DATA>" : $"<b>R</b>: {capture.rotation.Value.value.eulerAngles}";
         }
         if (posStr.Length > 0 && rotStr.Length > 0)
         {
@@ -1313,11 +1313,13 @@ namespace ThatsLewd
         CapturedController capture = activeKeyframe.GetCapturedController(tc.controller.name);
         if (tc.trackPositionToggle.val && capture?.position != null)
         {
-          controllerTransform.position = mainTransform.TransformPoint(capture.position.Value);
+          controllerTransform.position = mainTransform.TransformPoint(capture.position.Value.value);
+          tc.controller.currentPositionState = (FreeControllerV3.PositionState)capture.position.Value.state;
         }
         if (tc.trackRotationToggle.val && capture?.rotation != null)
         {
-          controllerTransform.rotation = mainTransform.rotation * capture.rotation.Value;
+          controllerTransform.rotation = mainTransform.rotation * capture.rotation.Value.value;
+          tc.controller.currentRotationState = (FreeControllerV3.RotationState)capture.rotation.Value.state;
         }
       }
 

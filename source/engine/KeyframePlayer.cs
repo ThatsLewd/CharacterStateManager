@@ -103,17 +103,33 @@ namespace ThatsLewd
 
           if (tc.trackPositionToggle.val && currentCapture?.position != null && targetCapture?.position != null)
           {
-            Vector3 currentPosition = mainTransform.TransformPoint(currentCapture.position.Value);
-            Vector3 targetPosition = mainTransform.TransformPoint(targetCapture.position.Value);
-
+            Vector3 currentPosition = mainTransform.TransformPoint(currentCapture.position.Value.value);
+            Vector3 targetPosition = mainTransform.TransformPoint(targetCapture.position.Value.value);
             controllerTransform.position = Vector3.Lerp(currentPosition, targetPosition, t);
+
+            if (animationPlayer.reverse)
+            {
+              tc.controller.currentPositionState = (FreeControllerV3.PositionState)currentCapture.position.Value.state;
+            }
+            else
+            {
+              tc.controller.currentPositionState = (FreeControllerV3.PositionState)targetCapture.position.Value.state;
+            }
           }
           if (tc.trackRotationToggle.val && currentCapture?.rotation != null && targetCapture?.rotation != null)
           {
-            Quaternion currentRotation = mainTransform.rotation * currentCapture.rotation.Value;
-            Quaternion targetRotation = mainTransform.rotation * targetCapture.rotation.Value;
-
+            Quaternion currentRotation = mainTransform.rotation * currentCapture.rotation.Value.value;
+            Quaternion targetRotation = mainTransform.rotation * targetCapture.rotation.Value.value;
             controllerTransform.rotation = Quaternion.Lerp(currentRotation, targetRotation, t);
+
+            if (animationPlayer.reverse)
+            {
+              tc.controller.currentRotationState = (FreeControllerV3.RotationState)currentCapture.rotation.Value.state;
+            }
+            else
+            {
+              tc.controller.currentRotationState = (FreeControllerV3.RotationState)targetCapture.rotation.Value.state;
+            }
           }
         }
       }
