@@ -70,6 +70,16 @@ namespace ThatsLewd
         trackedMorphs.Sort((a, b) => String.Compare(a.standardName, b.standardName));
       }
 
+      public void TrackMorphList(List<DAZMorph> morphList)
+      {
+        foreach (DAZMorph morph in morphList)
+        {
+          if (trackedMorphs.Exists((tm) => tm.morph == morph)) return;
+          trackedMorphs.Add(new TrackedMorph(morph));
+        }
+        trackedMorphs.Sort((a, b) => String.Compare(a.standardName, b.standardName));
+      }
+
       private void InitializeControllers()
       {
         trackedControllers.Clear();

@@ -57,6 +57,7 @@ namespace ThatsLewd
     Dictionary<Group, UIDynamicInfoText> infoTexts = new Dictionary<Group, UIDynamicInfoText>();
 
     Animation.Keyframe activeKeyframe;
+    VaMUI.VaMToggle previewAnimationToggle;
     AnimationPlayer previewAnimationPlayer = null;
 
     VaMUI.VaMStringChooser transitionStateChooser;
@@ -70,7 +71,7 @@ namespace ThatsLewd
       VaMUI.Init(this, CreateUIElement);
       VaMUI.InitTriggerUtils(this);
 
-      playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true, register: true, callbackNoVal: DestroyPreviewPlayer);
+      playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true, register: true, callbackNoVal: CancelAnimationPreview);
       hideTopUIToggle = VaMUI.CreateToggle("Hide Top UI", false, callbackNoVal: RequestRedraw);
 
       activeGroupIdChooser = VaMUI.CreateStringChooserKeyVal("Group", callbackNoVal: HandleSelectGroup);
@@ -82,6 +83,8 @@ namespace ThatsLewd
       editStateNameInput = VaMUI.CreateTextInput("Name", callback: HandleRenameState);
       editLayerNameInput = VaMUI.CreateTextInput("Name", callback: HandleRenameLayer);
       editAnimationNameInput = VaMUI.CreateTextInput("Name", callback: HandleRenameAnimation);
+
+      previewAnimationToggle = VaMUI.CreateToggle("Preview Animation", false, callback: HandlePreviewAnimationToggle);
 
       transitionStateChooser = VaMUI.CreateStringChooserKeyVal("Select State", null, "");
       addMorphChooser = VaMUI.CreateStringChooserKeyVal("Select Morph", filterable: true, defaultValue: "");
@@ -162,7 +165,7 @@ namespace ThatsLewd
       activeTab = tabName;
       if (activeTab != Tabs.Keyframes)
       {
-        DestroyPreviewPlayer();
+        CancelAnimationPreview();
       }
       RequestRedraw();
     }
@@ -246,7 +249,7 @@ namespace ThatsLewd
 
       editAnimationNameInput.valNoCallback = activeAnimation?.name ?? "";
 
-      DestroyPreviewPlayer();
+      CancelAnimationPreview();
 
       RequestRedraw();
     }
@@ -676,7 +679,7 @@ namespace ThatsLewd
       {
         UI(activeState.playlist.defaultDurationFixedSlider.Draw(VaMUI.LEFT));
       }
-      UI(VaMUI.CreateButton(VaMUI.LEFT, "Apply to All", HandleApplyDefaultsToAll));
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "Apply To All", HandleApplyPlaylistDefaultsToAll));
 
       // ACTIONS
       UI(VaMUI.CreateSpacer(VaMUI.LEFT));
@@ -802,7 +805,7 @@ namespace ThatsLewd
       RequestRedraw();
     }
 
-    void HandleApplyDefaultsToAll()
+    void HandleApplyPlaylistDefaultsToAll()
     {
       if (activeState == null) return;
       foreach (PlaylistEntry entry in activeState.playlist.entries)
@@ -850,6 +853,7 @@ namespace ThatsLewd
 
       CreateSubHeader(VaMUI.RIGHT, "Morphs");
       UI(morphChooserUseFavoritesToggle.Draw(VaMUI.RIGHT));
+      UI(VaMUI.CreateButton(VaMUI.RIGHT, "Add All Favorites", HandleAddAllFavoriteMorphs));
       UI(VaMUI.CreateButton(VaMUI.RIGHT, "Force Refresh Morph List", () => { SetMorphChooserChoices(true); }, color: VaMUI.YELLOW));
       UI(addMorphChooser.Draw(VaMUI.RIGHT));
       SetMorphChooserChoices();
@@ -930,6 +934,20 @@ namespace ThatsLewd
     {
       if (activeLayer == null) return;
       activeLayer.trackedMorphs.Remove(tm);
+      RequestRedraw();
+    }
+
+    void HandleAddAllFavoriteMorphs()
+    {
+      if (activeLayer == null || cachedFavoriteMorphChoices == null) return;
+      List<DAZMorph> morphList = new List<DAZMorph>();
+      foreach (string uid in cachedFavoriteMorphChoices)
+      {
+        DAZMorph morph = morphsControl.GetMorphByUid(uid);
+        if (morph == null) continue;
+        morphList.Add(morph);
+      }
+      activeLayer.TrackMorphList(morphList);
       RequestRedraw();
     }
 
@@ -1031,11 +1049,6 @@ namespace ThatsLewd
       UI(activeAnimation.loopTypeChooser.Draw(VaMUI.RIGHT));
       UI(activeAnimation.playbackSpeedSlider.Draw(VaMUI.RIGHT));
 
-      CreateSubHeader(VaMUI.LEFT, "Keyframe Defaults");
-      UI(activeAnimation.defaultDurationSlider.Draw(VaMUI.LEFT));
-      UI(activeAnimation.defaultEasingChooser.Draw(VaMUI.LEFT));
-
-      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
       CreateSubHeader(VaMUI.LEFT, "Actions");
       UI(VaMUI.CreateButton(VaMUI.LEFT, "On Enter Animation", activeAnimation.onEnterTrigger.OpenPanel));
       UI(VaMUI.CreateButton(VaMUI.LEFT, "On Animation Playing", activeAnimation.onPlayingTrigger.OpenPanel));
@@ -1099,7 +1112,7 @@ namespace ThatsLewd
         return;
       }
 
-      UI(VaMUI.CreateButtonPair(VaMUI.LEFT, "Preview Animation", CreatePreviewPlayer, "Stop Preview", DestroyPreviewPlayer));
+      UI(previewAnimationToggle.Draw(VaMUI.LEFT));
 
       EnsureSelectedKeyframe();
 
@@ -1122,6 +1135,13 @@ namespace ThatsLewd
 
       UI(activeKeyframe.colorPicker.Draw(VaMUI.LEFT));
       UI(VaMUI.CreateButton(VaMUI.LEFT, "Apply Color", () => { RequestRedraw(); }));
+
+      // DEFAULTS
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
+      CreateSubHeader(VaMUI.LEFT, "Keyframe Defaults");
+      UI(activeAnimation.defaultDurationSlider.Draw(VaMUI.LEFT));
+      UI(activeAnimation.defaultEasingChooser.Draw(VaMUI.LEFT));
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "Apply To All", HandleApplyKeyframeDefaultsToAll));
 
       // ACTIONS
       UI(VaMUI.CreateSpacer(VaMUI.LEFT));
@@ -1294,6 +1314,15 @@ namespace ThatsLewd
       RequestRedraw();
     }
 
+    void HandleApplyKeyframeDefaultsToAll()
+    {
+      if (activeAnimation == null) return;
+      foreach (Animation.Keyframe keyframe in activeAnimation.keyframes)
+      {
+        keyframe.SetFromDefaults();
+      }
+    }
+
     void HandleCaptureKeyframe()
     {
       if (activeKeyframe == null) return;
@@ -1334,6 +1363,18 @@ namespace ThatsLewd
       }
     }
 
+    void HandlePreviewAnimationToggle(bool val)
+    {
+      if (val)
+      {
+        CreatePreviewPlayer();
+      }
+      else
+      {
+        DestroyPreviewPlayer();
+      }
+    }
+
     void CreatePreviewPlayer()
     {
       DestroyPreviewPlayer();
@@ -1356,6 +1397,12 @@ namespace ThatsLewd
       {
         previewAnimationPlayer.Update();
       }
+    }
+
+    void CancelAnimationPreview()
+    {
+      if (previewAnimationToggle == null) return;
+      previewAnimationToggle.val = false;
     }
 
 

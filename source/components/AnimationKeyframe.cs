@@ -79,6 +79,12 @@ namespace ThatsLewd
           Keyframe.OnDelete?.Invoke(this);
         }
 
+        public void SetFromDefaults()
+        {
+          Helpers.SetSliderValues(durationSlider, animation.defaultDurationSlider.val, animation.defaultDurationSlider.min, animation.defaultDurationSlider.max, noCallback: false);
+          easingChooser.val = animation.defaultEasingChooser.val;
+        }
+
         public void CopyActions()
         {
           ActionClipboard.onEnterTrigger = onEnterTrigger;
