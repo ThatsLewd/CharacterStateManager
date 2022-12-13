@@ -34,6 +34,9 @@ namespace ThatsLewd
         public float duration { get { return durationSlider.val; }}
         public string easing { get { return easingChooser.val; }}
 
+        public bool isFirst { get { return animation.keyframes.FindIndex((k) => k == this) == 0; }}
+        public bool isLast { get { return animation.keyframes.FindIndex((k) => k == this) == animation.keyframes.Count - 1; }}
+
         public Keyframe(Animation animation, int index = -1)
         {
           this.id = VaMUtils.GenerateRandomID(32);

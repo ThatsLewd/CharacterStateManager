@@ -40,7 +40,7 @@ namespace ThatsLewd
       {
         Layer newLayer = new Layer(Helpers.GetCopyName(name));
         Helpers.SetSliderValues(newLayer.defaultTransitionDurationSlider, defaultTransitionDurationSlider.val, defaultTransitionDurationSlider.min, defaultTransitionDurationSlider.max);
-        defaultTransitionEasingChooser.valNoCallback = defaultTransitionEasingChooser.val;
+        newLayer.defaultTransitionEasingChooser.valNoCallback = defaultTransitionEasingChooser.val;
         foreach (TrackedController source in trackedControllers)
         {
           TrackedController target = newLayer.trackedControllers.Find((tc) => tc.controller.name == source.controller.name);

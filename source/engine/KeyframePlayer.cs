@@ -13,8 +13,10 @@ namespace ThatsLewd
       public AnimationPlayer animationPlayer { get; private set; } = null;
       bool disposed = false;
 
-      public IKeyframe currentKeyframe { get; private set; } = null;
-      public IKeyframe targetKeyframe { get; private set; } = null;
+      public KeyframeNoiseHandler currentKeyframeHandler { get; private set; }
+      public KeyframeNoiseHandler targetKeyframeHandler { get; private set; }
+      public IKeyframe currentKeyframe { get { return currentKeyframeHandler.keyframe; }}
+      public IKeyframe targetKeyframe { get { return targetKeyframeHandler.keyframe; }}
 
       public float time { get; private set; } = 0f;
       public float progress { get; private set; } = 0f;
@@ -27,6 +29,8 @@ namespace ThatsLewd
       public KeyframePlayer(AnimationPlayer animationPlayer)
       {
         this.animationPlayer = animationPlayer;
+        this.currentKeyframeHandler = new KeyframeNoiseHandler(animationPlayer);
+        this.targetKeyframeHandler = new KeyframeNoiseHandler(animationPlayer);
       }
 
       public void Dispose()
@@ -41,7 +45,7 @@ namespace ThatsLewd
         if (targetKeyframe == null) return;
         if (currentKeyframe == null)
         {
-          currentKeyframe = TemporaryKeyframe.CaptureTemporaryKeyframe(targetKeyframe.layer);
+          currentKeyframeHandler.SetNewKeyframe(TemporaryKeyframe.CaptureTemporaryKeyframe(targetKeyframe.layer));
           Reset();
         }
         if (currentKeyframe is TemporaryKeyframe)
@@ -103,8 +107,8 @@ namespace ThatsLewd
 
           if (tc.trackPositionToggle.val && currentCapture?.position != null && targetCapture?.position != null)
           {
-            Vector3 currentPosition = mainTransform.TransformPoint(currentCapture.position.Value.value);
-            Vector3 targetPosition = mainTransform.TransformPoint(targetCapture.position.Value.value);
+            Vector3 currentPosition = mainTransform.TransformPoint(currentCapture.position.Value.value) + currentKeyframeHandler.positionNoise;
+            Vector3 targetPosition = mainTransform.TransformPoint(targetCapture.position.Value.value) + targetKeyframeHandler.positionNoise;
             controllerTransform.position = Vector3.Lerp(currentPosition, targetPosition, t);
 
             if (animationPlayer.reverse)
@@ -118,8 +122,8 @@ namespace ThatsLewd
           }
           if (tc.trackRotationToggle.val && currentCapture?.rotation != null && targetCapture?.rotation != null)
           {
-            Quaternion currentRotation = mainTransform.rotation * currentCapture.rotation.Value.value;
-            Quaternion targetRotation = mainTransform.rotation * targetCapture.rotation.Value.value;
+            Quaternion currentRotation = mainTransform.rotation * currentCapture.rotation.Value.value * currentKeyframeHandler.rotationNoise;
+            Quaternion targetRotation = mainTransform.rotation * targetCapture.rotation.Value.value * targetKeyframeHandler.rotationNoise;
             controllerTransform.rotation = Quaternion.Lerp(currentRotation, targetRotation, t);
 
             if (animationPlayer.reverse)
@@ -137,7 +141,15 @@ namespace ThatsLewd
       void UpdateMorphs()
       {
         if (currentKeyframe == null || targetKeyframe == null) return;
-        float t = Easing.ApplyEasingFromSelection(progress, currentKeyframe.easing);
+        float t;
+        if (animationPlayer.reverse)
+        {
+          t = 1f - Easing.ApplyEasingFromSelection(progress, targetKeyframe.easing);
+        }
+        else
+        {
+          t = Easing.ApplyEasingFromSelection(progress, currentKeyframe.easing);
+        }
 
         foreach (TrackedMorph tm in targetKeyframe.layer.trackedMorphs)
         {
@@ -146,7 +158,9 @@ namespace ThatsLewd
 
           if (currentCapture != null && targetCapture != null)
           {
-            tm.morph.morphValue = Mathf.Lerp(currentCapture.value, targetCapture.value, t);
+            float currentValue = currentCapture.value + currentKeyframeHandler.morphNoise;
+            float targetValue = targetCapture.value + targetKeyframeHandler.morphNoise;
+            tm.morph.morphValue = Mathf.Lerp(currentValue, targetValue, t);
           }
         }
       }
@@ -175,12 +189,12 @@ namespace ThatsLewd
             (newKeyframe as Animation.Keyframe)?.onEnterTrigger.Trigger();
           }
         }
-        currentKeyframe = targetKeyframe;
-        targetKeyframe = newKeyframe;
+        currentKeyframeHandler.Transfer(targetKeyframeHandler);
+        targetKeyframeHandler.SetNewKeyframe(newKeyframe);
         keyframeIsNewAnimation = isNewAnimation;
         if (isNewAnimation)
         {
-          currentKeyframe = null;
+          currentKeyframeHandler.SetNewKeyframe(null);
         }
         if (!animationPlayer.playOnceDone)
         {

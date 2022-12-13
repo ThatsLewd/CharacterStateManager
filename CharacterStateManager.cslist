@@ -11,10 +11,10 @@ source/components/StateGroupTab.cs
 source/engine/AnimationPlayer.cs
 source/engine/GroupPlayer.cs
 source/engine/KeyframePlayer.cs
+source/engine/KeyframeUtils.cs
 source/engine/PlaylistEntryPlayer.cs
 source/engine/PlaylistPlayer.cs
 source/engine/StatePlayer.cs
-source/engine/TemporaryKeyframe.cs
 source/lib/Easing.cs
 source/lib/Helpers.cs
 source/lib/VaMLib.cs

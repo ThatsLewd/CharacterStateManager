@@ -163,7 +163,7 @@ namespace ThatsLewd
     void HandleTabSelect(string tabName)
     {
       activeTab = tabName;
-      if (activeTab != Tabs.Keyframes)
+      if (!(activeTab == Tabs.Animations || activeTab == Tabs.Keyframes))
       {
         CancelAnimationPreview();
       }
@@ -1045,10 +1045,19 @@ namespace ThatsLewd
 
       if (activeAnimation == null) return;
 
+      UI(previewAnimationToggle.Draw(VaMUI.LEFT));
+
       CreateSubHeader(VaMUI.RIGHT, "Animation Details");
       UI(activeAnimation.loopTypeChooser.Draw(VaMUI.RIGHT));
       UI(activeAnimation.playbackSpeedSlider.Draw(VaMUI.RIGHT));
 
+
+      CreateSubHeader(VaMUI.LEFT, "Noise Options");
+      UI(activeAnimation.positionNoiseSlider.Draw(VaMUI.LEFT));
+      UI(activeAnimation.rotationNoiseSlider.Draw(VaMUI.LEFT));
+      UI(activeAnimation.morphNoiseSlider.Draw(VaMUI.LEFT));
+
+      UI(VaMUI.CreateSpacer(VaMUI.LEFT));
       CreateSubHeader(VaMUI.LEFT, "Actions");
       UI(VaMUI.CreateButton(VaMUI.LEFT, "On Enter Animation", activeAnimation.onEnterTrigger.OpenPanel));
       UI(VaMUI.CreateButton(VaMUI.LEFT, "On Animation Playing", activeAnimation.onPlayingTrigger.OpenPanel));
@@ -1139,8 +1148,8 @@ namespace ThatsLewd
       // DEFAULTS
       UI(VaMUI.CreateSpacer(VaMUI.LEFT));
       CreateSubHeader(VaMUI.LEFT, "Keyframe Defaults");
-      UI(activeAnimation.defaultDurationSlider.Draw(VaMUI.LEFT));
-      UI(activeAnimation.defaultEasingChooser.Draw(VaMUI.LEFT));
+      UI(activeKeyframe.animation.defaultDurationSlider.Draw(VaMUI.LEFT));
+      UI(activeKeyframe.animation.defaultEasingChooser.Draw(VaMUI.LEFT));
       UI(VaMUI.CreateButton(VaMUI.LEFT, "Apply To All", HandleApplyKeyframeDefaultsToAll));
 
       // ACTIONS
@@ -1159,8 +1168,15 @@ namespace ThatsLewd
       UI(VaMUI.CreateButton(VaMUI.RIGHT, "Delete Keyframe", HandleDeleteKeyframe, color: VaMUI.RED));
       UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
 
-      UI(activeKeyframe.durationSlider.Draw(VaMUI.RIGHT));
-      UI(activeKeyframe.easingChooser.Draw(VaMUI.RIGHT));
+      if (activeKeyframe.isLast && activeKeyframe.animation.loopTypeChooser.val != LoopType.Loop)
+      {
+        UI(VaMUI.CreateInfoText(VaMUI.RIGHT, "The last keyframe has no duration unless the loop mode is set to <b>Loop</b>.", 2));
+      }
+      else
+      {
+        UI(activeKeyframe.durationSlider.Draw(VaMUI.RIGHT));
+        UI(activeKeyframe.easingChooser.Draw(VaMUI.RIGHT));
+      }
       UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
 
       // MORPHS
@@ -1393,7 +1409,7 @@ namespace ThatsLewd
 
     void UpdatePreviewAnimationPlayer()
     {
-      if (previewAnimationPlayer != null && activeTab == Tabs.Keyframes && !playbackEnabledToggle.val)
+      if (previewAnimationPlayer != null && (activeTab == Tabs.Animations || activeTab == Tabs.Keyframes) && !playbackEnabledToggle.val)
       {
         previewAnimationPlayer.Update();
       }

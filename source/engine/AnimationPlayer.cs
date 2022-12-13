@@ -64,7 +64,7 @@ namespace ThatsLewd
           time += Time.deltaTime * playbackSpeed;
         }
 
-        float totalAnimationTime = currentAnimation.GetTotalDuration(loopType != LoopType.Loop);
+        float totalAnimationTime = currentAnimation.GetTotalDuration();
         if (totalAnimationTime == 0f) progress = 0f;
         else if (reverse) progress = 1f - Mathf.Clamp01((time - totalAnimationTime) / totalAnimationTime);
         else progress = Mathf.Clamp01(time / totalAnimationTime);

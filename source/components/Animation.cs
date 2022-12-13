@@ -8,6 +8,15 @@ namespace ThatsLewd
 {
   public partial class CharacterStateManager : MVRScript
   {
+    public static class LoopType
+    {
+      public const string PlayOnce = "Play Once";
+      public const string Loop = "Loop";
+      public const string PingPong = "Ping Pong";
+
+      public static readonly string[] list = new string[] { PlayOnce, Loop, PingPong };
+    }
+
     public partial class Animation : BaseComponent, IDisposable, INamedItem
     {
       public delegate void OnDeleteCallback(Animation animation);
@@ -20,6 +29,9 @@ namespace ThatsLewd
 
       public VaMUI.VaMStringChooser loopTypeChooser;
       public VaMUI.VaMSlider playbackSpeedSlider;
+      public VaMUI.VaMSlider positionNoiseSlider;
+      public VaMUI.VaMSlider rotationNoiseSlider;
+      public VaMUI.VaMSlider morphNoiseSlider;
 
       public VaMUI.VaMStringChooser defaultEasingChooser;
       public VaMUI.VaMSlider defaultDurationSlider;
@@ -36,6 +48,9 @@ namespace ThatsLewd
         this.layer = layer;
         this.loopTypeChooser = VaMUI.CreateStringChooser("Loop Type", LoopType.list.ToList(), LoopType.Loop);
         this.playbackSpeedSlider = VaMUI.CreateSlider("Playback Speed", 1f, 0f, 2f);
+        this.positionNoiseSlider = VaMUI.CreateSlider("Position Noise", 0f, 0f, 1f);
+        this.rotationNoiseSlider = VaMUI.CreateSlider("Rotation Noise", 0f, 0f, 1f);
+        this.morphNoiseSlider = VaMUI.CreateSlider("Morph Noise", 0f, 0f, 1f);
         this.defaultEasingChooser = VaMUI.CreateStringChooser("Default Easing", Easing.list.ToList(), Easing.EasingType.Linear);
         this.defaultDurationSlider = VaMUI.CreateSlider("Default Duration", 0.5f, 0f, 1f);
         layer.animations.Add(this);
@@ -49,6 +64,9 @@ namespace ThatsLewd
         Animation newAnimation = new Animation(layer, name);
         newAnimation.loopTypeChooser.valNoCallback = loopTypeChooser.val;
         Helpers.SetSliderValues(newAnimation.playbackSpeedSlider, playbackSpeedSlider.val, playbackSpeedSlider.min, playbackSpeedSlider.max);
+        Helpers.SetSliderValues(newAnimation.positionNoiseSlider, positionNoiseSlider.val, positionNoiseSlider.min, positionNoiseSlider.max);
+        Helpers.SetSliderValues(newAnimation.rotationNoiseSlider, rotationNoiseSlider.val, rotationNoiseSlider.min, rotationNoiseSlider.max);
+        Helpers.SetSliderValues(newAnimation.morphNoiseSlider, morphNoiseSlider.val, morphNoiseSlider.min, morphNoiseSlider.max);
         newAnimation.defaultEasingChooser.valNoCallback = defaultEasingChooser.val;
         Helpers.SetSliderValues(newAnimation.defaultDurationSlider, defaultDurationSlider.val, defaultDurationSlider.min, defaultDurationSlider.max);
         newAnimation.onEnterTrigger = onEnterTrigger.Clone();
@@ -92,8 +110,9 @@ namespace ThatsLewd
         CharacterStateManager.instance.RequestRedraw();
       }
 
-      public float GetTotalDuration(bool omitLast = false)
+      public float GetTotalDuration()
       {
+        bool omitLast = loopTypeChooser.val != LoopType.Loop;
         float t = 0f;
         for (int i = 0; i < keyframes.Count; i++)
         {
@@ -116,6 +135,9 @@ namespace ThatsLewd
         }
         loopTypeChooser.storable.StoreJSON(json);
         playbackSpeedSlider.storable.StoreJSON(json);
+        positionNoiseSlider.storable.StoreJSON(json);
+        rotationNoiseSlider.storable.StoreJSON(json);
+        morphNoiseSlider.storable.StoreJSON(json);
         defaultEasingChooser.storable.StoreJSON(json);
         defaultDurationSlider.storable.StoreJSON(json);
         onEnterTrigger.StoreJSON(json);
@@ -135,21 +157,15 @@ namespace ThatsLewd
         }
         loopTypeChooser.storable.RestoreFromJSON(json);
         playbackSpeedSlider.storable.RestoreFromJSON(json);
+        positionNoiseSlider.storable.RestoreFromJSON(json);
+        rotationNoiseSlider.storable.RestoreFromJSON(json);
+        morphNoiseSlider.storable.RestoreFromJSON(json);
         defaultEasingChooser.storable.RestoreFromJSON(json);
         defaultDurationSlider.storable.RestoreFromJSON(json);
         onEnterTrigger.RestoreFromJSON(json);
         onPlayingTrigger.RestoreFromJSON(json);
         onExitTrigger.RestoreFromJSON(json);
       }
-    }
-
-    public static class LoopType
-    {
-      public const string PlayOnce = "Play Once";
-      public const string Loop = "Loop";
-      public const string PingPong = "Ping Pong";
-
-      public static readonly string[] list = new string[] { PlayOnce, Loop, PingPong };
     }
   }
 }
