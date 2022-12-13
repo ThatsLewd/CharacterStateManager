@@ -53,44 +53,119 @@ namespace ThatsLewd
       SaveJSON(json, path);
     }
 
-    void HeaderStoreJSON(JSONClass json)
+    void HeaderStoreJSON(JSONClass json, string type)
     {
       json["_format"] = JSON_FORMAT_VERSION;
+      json["_type"] = type;
     }
 
-    bool VerifyFormat(JSONClass json)
+    bool VerifyHeader(JSONClass json, string type)
     {
       if (json["_format"]?.Value != JSON_FORMAT_VERSION)
       {
-        LogError("Your save data is from an incompatible version of CharacterStateManager. Load Aborted.");
+        LogError("Your save data is from an incompatible version of CharacterStateManager. Load aborted.");
+        return false;
+      }
+      if (json["_type"]?.Value != type)
+      {
+        LogError($"This file is not a CharacterStateManager {type} file. Load aborted.");
         return false;
       }
       return true;
     }
 
+    // Instance
     void InstanceStoreJSON(JSONClass json)
     {
-      SuperController.LogMessage("SAVE");
-      HeaderStoreJSON(json);
+      HeaderStoreJSON(json, SerializableSection.Instance);
       json["Layers"] = Layer.GetJSONTopLevel();
       json["Groups"] = Group.GetJSONTopLevel();
       json["Roles"] = Role.GetJSONTopLevel();
       json["Messages"] = Messages.GetJSONTopLevel();
-      SuperController.LogMessage("SAVE DONE");
     }
 
     void InstanceRestoreFromJSON(JSONClass json)
     {
-      if (!VerifyFormat(json)) return;
-      SuperController.LogMessage("LOAD");
+      if (!VerifyHeader(json, SerializableSection.Instance)) return;
       Layer.RestoreFromJSONTopLevel(json["Layers"].AsObject);
       Group.RestoreFromJSONTopLevel(json["Groups"].AsObject);
       Role.RestoreFromJSONTopLevel(json["Roles"].AsObject);
       Messages.RestoreFromJSONTopLevel(json["Messages"].AsObject);
-
-      SuperController.LogMessage("LOAD DONE");
       RefreshUIAfterJSONLoad();
-      SuperController.LogMessage("LOAD REFRESH");
+    }
+
+    // Group
+    void GroupStoreJSON(JSONClass json, Group group)
+    {
+      HeaderStoreJSON(json, SerializableSection.Group);
+      json["Group"] = group.GetJSON();
+    }
+
+    void GroupRestoreFromJSON(JSONClass json)
+    {
+      if (!VerifyHeader(json, SerializableSection.Group)) return;
+      Group group = new Group();
+      group.RestoreFromJSON(json["Group"].AsObject);
+      RefreshUIAfterJSONLoad();
+    }
+
+    // State
+    void StateStoreJSON(JSONClass json, State state)
+    {
+      HeaderStoreJSON(json, SerializableSection.State);
+      json["State"] = state.GetJSON();
+    }
+
+    void StateRestoreFromJSON(JSONClass json, Group group)
+    {
+      if (!VerifyHeader(json, SerializableSection.State)) return;
+      State state = new State(group);
+      state.RestoreFromJSON(json["State"].AsObject);
+      RefreshUIAfterJSONLoad();
+    }
+
+    // Layer
+    void LayerStoreJSON(JSONClass json, Layer layer)
+    {
+      HeaderStoreJSON(json, SerializableSection.Layer);
+      json["Layer"] = layer.GetJSON();
+    }
+
+    void LayerRestoreFromJSON(JSONClass json)
+    {
+      if (!VerifyHeader(json, SerializableSection.Layer)) return;
+      Layer layer = new Layer();
+      layer.RestoreFromJSON(json["Layer"].AsObject);
+      RefreshUIAfterJSONLoad();
+    }
+
+    // Animation
+    void AnimationStoreJSON(JSONClass json, Animation animation)
+    {
+      HeaderStoreJSON(json, SerializableSection.Animation);
+      json["Animation"] = animation.GetJSON();
+    }
+
+    void AnimationRestoreFromJSON(JSONClass json, Layer layer)
+    {
+      if (!VerifyHeader(json, SerializableSection.Animation)) return;
+      Animation animation = new Animation(layer);
+      animation.RestoreFromJSON(json["Animation"].AsObject);
+      RefreshUIAfterJSONLoad();
+    }
+
+    // Roles
+    void RolesStoreJSON(JSONClass json)
+    {
+      HeaderStoreJSON(json, SerializableSection.Roles);
+      json["Roles"] = Role.GetJSONTopLevel();
+    }
+
+    void RolesRestoreFromJSON(JSONClass json)
+    {
+      if (!VerifyHeader(json, SerializableSection.Roles)) return;
+      Role.RestoreFromJSONTopLevel(json["Roles"].AsObject);
+      RefreshUIAfterJSONLoad();
     }
   }
 }

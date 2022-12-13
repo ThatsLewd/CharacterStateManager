@@ -165,3 +165,4 @@ namespace ThatsLewd
 // character locomotion
 // layer offset mode vs absolute mode
 // animation noise
+// merge
