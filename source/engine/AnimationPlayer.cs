@@ -121,6 +121,7 @@ namespace ThatsLewd
 
       public int GetKeyframeIndex(IKeyframe keyframe)
       {
+        if (keyframe == null || currentAnimation == null) return -1;
         if (currentAnimation.keyframes.Count == 0) return -1;
         Animation.Keyframe animationKeyframe = keyframe as Animation.Keyframe;
         int index;

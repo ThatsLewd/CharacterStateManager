@@ -71,7 +71,7 @@ namespace ThatsLewd
       VaMUI.Init(this, CreateUIElement);
       VaMUI.InitTriggerUtils(this);
 
-      playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true, register: true, callbackNoVal: CancelAnimationPreview);
+      playbackEnabledToggle = VaMUI.CreateToggle("Playback Enabled", true, register: true, callbackNoVal: HandlePlaybackEnabledToggle);
       hideTopUIToggle = VaMUI.CreateToggle("Hide Top UI", false, callbackNoVal: RequestRedraw);
 
       activeGroupIdChooser = VaMUI.CreateStringChooserKeyVal("Group", callbackNoVal: HandleSelectGroup);
@@ -167,6 +167,12 @@ namespace ThatsLewd
       {
         CancelAnimationPreview();
       }
+      RequestRedraw();
+    }
+
+    void HandlePlaybackEnabledToggle()
+    {
+      CancelAnimationPreview();
       RequestRedraw();
     }
 
@@ -387,6 +393,7 @@ namespace ThatsLewd
           CreateSubHeader(VaMUI.RIGHT, entry.Key.name);
           infoTexts[entry.Key] = VaMUI.CreateInfoText(VaMUI.RIGHT, "", 0f);
           UI(infoTexts[entry.Key]);
+          UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
         }
       }
     }
@@ -407,20 +414,22 @@ namespace ThatsLewd
           GroupPlayer groupPlayer = entry.Value;
           StatePlayer statePlayer = groupPlayer.statePlayer;
 
+          bool paused = !groupPlayer.group.playbackEnabledToggle.val || !playbackEnabledToggle.val;
+
           string str = "";
           int lines = 0;
 
           str += $"State: <b>{statePlayer.currentState?.name ?? "<none>"}</b>";
-          str += $"\nState Time: {statePlayer.time:F1}s";
+          str += $"\nState Time: {statePlayer.time:F1}s{(paused ? " <b><paused></b>" : "")}";
           lines += 2;
 
-          if (statePlayer.currentState != null && statePlayer.playlistPlayer != null)
+          AnimationPlaylist playlist = statePlayer?.currentState?.playlist;
+          PlaylistPlayer playlistPlayer = statePlayer?.playlistPlayer;
+          PlaylistEntryPlayer playlistEntryPlayer = playlistPlayer?.playlistEntryPlayer;
+          AnimationPlayer animationPlayer = playlistEntryPlayer?.animationPlayer;
+          KeyframePlayer keyframePlayer = animationPlayer?.keyframePlayer;
+          if (playlist != null && playlistPlayer != null && playlistEntryPlayer != null && animationPlayer != null && keyframePlayer != null)
           {
-            AnimationPlaylist playlist = statePlayer.currentState.playlist;
-            PlaylistPlayer playlistPlayer = statePlayer.playlistPlayer;
-            PlaylistEntryPlayer playlistEntryPlayer = playlistPlayer.playlistEntryPlayer;
-            AnimationPlayer animationPlayer = playlistEntryPlayer.animationPlayer;
-            KeyframePlayer keyframePlayer = animationPlayer.keyframePlayer;
             int currentKeyframeIndex = animationPlayer.GetKeyframeIndex(keyframePlayer.currentKeyframe);
             int targetKeyframeIndex = animationPlayer.GetKeyframeIndex(keyframePlayer.targetKeyframe);
             string playlistTimeStr = $"{playlistEntryPlayer.time:F1}s / {playlistEntryPlayer.targetTime:F1}s";
@@ -430,10 +439,15 @@ namespace ThatsLewd
 
             str += $"\nPlaylist Time: {(keyframePlayer.playingInBetweenKeyframe ? "<transitioning>" : playlistTimeStr)}";
             str += $"\nAnimation: <b>{animationPlayer.currentAnimation?.name ?? "<none>"}</b>";
-            str += $"\nAnimation Time: {(keyframePlayer.playingInBetweenKeyframe ? "<transitioning>" : animationTimeStr)}";
-            str += $"\nKeyframe: <b>{currentKeyframeStr}</b> -> <b>{targetKeyframeStr}</b>";
-            str += $"\nKeyframe Time: {keyframePlayer.time:F1}s ({keyframePlayer.progress:F1})";
-            lines += 5;
+            lines += 2;
+
+            if (animationPlayer.currentAnimation != null)
+            {
+              str += $"\nAnimation Time: {(keyframePlayer.playingInBetweenKeyframe ? "<transitioning>" : animationTimeStr)}";
+              str += $"\nKeyframe: <b>{currentKeyframeStr}</b> -> <b>{targetKeyframeStr}</b>";
+              str += $"\nKeyframe Time: {keyframePlayer.time:F1}s ({keyframePlayer.progress:F1})";
+              lines += 3;
+            }
           }
 
           infoText.text.text = str;
