@@ -52,13 +52,19 @@ namespace ThatsLewd
         Group.OnDelete?.Invoke(this);
       }
 
-      public static JSONClass GetJSONTopLevel()
+      public static Group FindById(string id)
+      {
+        return Group.list.Find((g) => g.id == id);
+      }
+
+      public static JSONClass GetJSONTopLevel(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
         json["list"] = new JSONArray();
         foreach (Group group in Group.list)
         {
-          json["list"].AsArray.Add(group.GetJSON());
+          rc.groups[group.id] = group;
+          json["list"].AsArray.Add(group.GetJSON(rc));
         }
         return json;
       }
@@ -72,7 +78,7 @@ namespace ThatsLewd
         }
       }
 
-      public JSONClass GetJSON()
+      public JSONClass GetJSON(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
         json["id"] = id;
@@ -80,7 +86,8 @@ namespace ThatsLewd
         json["states"] = new JSONArray();
         foreach (State state in states)
         {
-          json["states"].AsArray.Add(state.GetJSON());
+          rc.states[state.id] = state;
+          json["states"].AsArray.Add(state.GetJSON(rc));
         }
         json["initialState"] = initialState?.id;
         playbackEnabledToggle.storable.StoreJSON(json);

@@ -92,13 +92,13 @@ namespace ThatsLewd
         Helpers.SetSliderValues(defaultDurationMaxSlider, defaultDurationFixedSlider.val, defaultDurationFixedSlider.min, defaultDurationFixedSlider.max);
       }
 
-      public JSONClass GetJSON()
+      public JSONClass GetJSON(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
         json["entries"] = new JSONArray();
         foreach (PlaylistEntry entry in entries)
         {
-          json["entries"].AsArray.Add(entry.GetJSON());
+          json["entries"].AsArray.Add(entry.GetJSON(rc));
         }
         playModeChooser.storable.StoreJSON(json);
         defaultTimingModeChooser.storable.StoreJSON(json);
@@ -185,10 +185,12 @@ namespace ThatsLewd
         Helpers.SetSliderValues(durationMaxSlider, durationFixedSlider.val, durationFixedSlider.min, durationFixedSlider.max);
       }
 
-      public JSONClass GetJSON()
+      public JSONClass GetJSON(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
+        rc.animations[animation.id] = animation;
         json["animation"] = animation.id;
+        rc.layers[animation.layer.id] = animation.layer;
         json["animationLayer"] = animation.layer.id;
         timingModeChooser.storable.StoreJSON(json);
         weightSlider.storable.StoreJSON(json);

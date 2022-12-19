@@ -121,9 +121,13 @@ namespace ThatsLewd
     void RefreshUIAfterJSONLoad()
     {
       RefreshGroupList();
+      RefreshStateList();
       RefreshLayerList();
+      RefreshAnimationList();
       VaMUtils.SelectStringChooserFirstValue(activeGroupIdChooser.storable);
+      VaMUtils.SelectStringChooserFirstValue(activeStateIdChooser.storable);
       VaMUtils.SelectStringChooserFirstValue(activeLayerIdChooser.storable);
+      VaMUtils.SelectStringChooserFirstValue(activeAnimationIdChooser.storable);
     }
 
     public void RequestRedraw()
@@ -1712,9 +1716,9 @@ namespace ThatsLewd
 
     void HandleLoadAnimation(string path)
     {
-      if (path.Length == 0 || activeLayer == null) return;
+      if (path.Length == 0) return;
       JSONClass json = LoadJSON(path).AsObject;
-      AnimationRestoreFromJSON(json, activeLayer);
+      AnimationRestoreFromJSON(json);
     }
 
     void HandleSaveRoles(string path)

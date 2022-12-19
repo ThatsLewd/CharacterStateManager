@@ -91,6 +91,19 @@ namespace ThatsLewd
         Layer.OnDelete -= HandleLayerDeleted;
       }
 
+      public static Animation FindById(string id)
+      {
+        foreach (Layer layer in Layer.list)
+        {
+          Animation animation = layer.animations.Find((a) => a.id == id);
+          if (animation != null)
+          {
+            return animation;
+          }
+        }
+        return null;
+      }
+
       public void CopyActions()
       {
         ActionClipboard.onEnterTrigger = onEnterTrigger;
@@ -123,10 +136,11 @@ namespace ThatsLewd
         return t;
       }
 
-      public JSONClass GetJSON()
+      public JSONClass GetJSON(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
         json["id"] = id;
+        json["layerId"] = layer.id;
         json["name"] = name;
         json["keyframes"] = new JSONArray();
         foreach (Keyframe keyframe in keyframes)

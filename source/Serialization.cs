@@ -78,10 +78,11 @@ namespace ThatsLewd
     void InstanceStoreJSON(JSONClass json)
     {
       HeaderStoreJSON(json, SerializableSection.Instance);
-      json["Layers"] = Layer.GetJSONTopLevel();
-      json["Groups"] = Group.GetJSONTopLevel();
-      json["Roles"] = Role.GetJSONTopLevel();
-      json["Messages"] = Messages.GetJSONTopLevel();
+      ReferenceCollector rc = new ReferenceCollector();
+      json["Layers"] = Layer.GetJSONTopLevel(rc);
+      json["Groups"] = Group.GetJSONTopLevel(rc);
+      json["Roles"] = Role.GetJSONTopLevel(rc);
+      json["Messages"] = Messages.GetJSONTopLevel(rc);
     }
 
     void InstanceRestoreFromJSON(JSONClass json)
@@ -98,13 +99,40 @@ namespace ThatsLewd
     void GroupStoreJSON(JSONClass json, Group group)
     {
       HeaderStoreJSON(json, SerializableSection.Group);
-      json["Group"] = group.GetJSON();
+      ReferenceCollector rc = new ReferenceCollector();
+      json["Group"] = group.GetJSON(rc);
+      json["Animations"] = new JSONArray();
+      foreach (KeyValuePair<string, Animation> entry in rc.animations)
+      {
+        json["Animations"].AsArray.Add(entry.Value.GetJSON(rc));
+      }
+      json["Layers"] = new JSONArray();
+      foreach (KeyValuePair<string, Layer> entry in rc.layers)
+      {
+        json["Layers"].AsArray.Add(entry.Value.GetJSON(rc, false));
+      }
     }
 
     void GroupRestoreFromJSON(JSONClass json)
     {
       if (!VerifyHeader(json, SerializableSection.Group)) return;
-      Group group = new Group();
+      foreach (JSONNode node in json["Layers"].AsArray)
+      {
+        Layer layer = Layer.FindById(node["id"].Value) ?? new Layer();
+        layer.RestoreFromJSON(node.AsObject, true);
+      }
+      foreach (JSONNode node in json["Animations"].AsArray)
+      {
+        Layer layer = Layer.FindById(node["layerId"].Value);
+        if (layer == null)
+        {
+          LogError($"Could not find layer: {node["layerId"].Value}");
+          continue;
+        }
+        Animation animation = Animation.FindById(node["id"].Value) ?? new Animation(layer);
+        animation.RestoreFromJSON(node.AsObject);
+      }
+      Group group = Group.FindById(json["Group"]["id"].Value) ?? new Group();
       group.RestoreFromJSON(json["Group"].AsObject);
       RefreshUIAfterJSONLoad();
     }
@@ -113,13 +141,40 @@ namespace ThatsLewd
     void StateStoreJSON(JSONClass json, State state)
     {
       HeaderStoreJSON(json, SerializableSection.State);
-      json["State"] = state.GetJSON();
+      ReferenceCollector rc = new ReferenceCollector();
+      json["State"] = state.GetJSON(rc, false);
+      json["Animations"] = new JSONArray();
+      foreach (KeyValuePair<string, Animation> entry in rc.animations)
+      {
+        json["Animations"].AsArray.Add(entry.Value.GetJSON(rc));
+      }
+      json["Layers"] = new JSONArray();
+      foreach (KeyValuePair<string, Layer> entry in rc.layers)
+      {
+        json["Layers"].AsArray.Add(entry.Value.GetJSON(rc, false));
+      }
     }
 
     void StateRestoreFromJSON(JSONClass json, Group group)
     {
       if (!VerifyHeader(json, SerializableSection.State)) return;
-      State state = new State(group);
+      foreach (JSONNode node in json["Layers"].AsArray)
+      {
+        Layer layer = Layer.FindById(node["id"].Value) ?? new Layer();
+        layer.RestoreFromJSON(node.AsObject, true);
+      }
+      foreach (JSONNode node in json["Animations"].AsArray)
+      {
+        Layer layer = Layer.FindById(node["layerId"].Value);
+        if (layer == null)
+        {
+          LogError($"Could not find layer: {node["layerId"].Value}");
+          continue;
+        }
+        Animation animation = Animation.FindById(node["id"].Value) ?? new Animation(layer);
+        animation.RestoreFromJSON(node.AsObject);
+      }
+      State state = State.FindById(json["State"]["id"].Value) ?? new State(group);
       state.RestoreFromJSON(json["State"].AsObject);
       RefreshUIAfterJSONLoad();
     }
@@ -128,14 +183,15 @@ namespace ThatsLewd
     void LayerStoreJSON(JSONClass json, Layer layer)
     {
       HeaderStoreJSON(json, SerializableSection.Layer);
-      json["Layer"] = layer.GetJSON();
+      ReferenceCollector rc = new ReferenceCollector();
+      json["Layer"] = layer.GetJSON(rc);
     }
 
     void LayerRestoreFromJSON(JSONClass json)
     {
       if (!VerifyHeader(json, SerializableSection.Layer)) return;
-      Layer layer = new Layer();
-      layer.RestoreFromJSON(json["Layer"].AsObject);
+      Layer layer = Layer.FindById(json["Layer"]["id"].Value) ?? new Layer();
+      layer.RestoreFromJSON(json["Layer"].AsObject, true);
       RefreshUIAfterJSONLoad();
     }
 
@@ -143,13 +199,18 @@ namespace ThatsLewd
     void AnimationStoreJSON(JSONClass json, Animation animation)
     {
       HeaderStoreJSON(json, SerializableSection.Animation);
-      json["Animation"] = animation.GetJSON();
+      ReferenceCollector rc = new ReferenceCollector();
+      json["Animation"] = animation.GetJSON(rc);
+      json["Layer"] = animation.layer.GetJSON(rc, false);
     }
 
-    void AnimationRestoreFromJSON(JSONClass json, Layer layer)
+    void AnimationRestoreFromJSON(JSONClass json)
     {
       if (!VerifyHeader(json, SerializableSection.Animation)) return;
-      Animation animation = new Animation(layer);
+      Layer layer = Layer.FindById(json["Layer"]["id"].Value) ?? new Layer();
+      layer.RestoreFromJSON(json["Layer"].AsObject, true);
+
+      Animation animation = Animation.FindById(json["Animation"]["id"].Value) ?? new Animation(layer);
       animation.RestoreFromJSON(json["Animation"].AsObject);
       RefreshUIAfterJSONLoad();
     }
@@ -158,7 +219,8 @@ namespace ThatsLewd
     void RolesStoreJSON(JSONClass json)
     {
       HeaderStoreJSON(json, SerializableSection.Roles);
-      json["Roles"] = Role.GetJSONTopLevel();
+      ReferenceCollector rc = new ReferenceCollector();
+      json["Roles"] = Role.GetJSONTopLevel(rc);
     }
 
     void RolesRestoreFromJSON(JSONClass json)
@@ -166,6 +228,14 @@ namespace ThatsLewd
       if (!VerifyHeader(json, SerializableSection.Roles)) return;
       Role.RestoreFromJSONTopLevel(json["Roles"].AsObject);
       RefreshUIAfterJSONLoad();
+    }
+
+    public class ReferenceCollector
+    {
+      public Dictionary<string, Group> groups { get; private set; } = new Dictionary<string, Group>();
+      public Dictionary<string, State> states { get; private set; } = new Dictionary<string, State>();
+      public Dictionary<string, Layer> layers { get; private set; } = new Dictionary<string, Layer>();
+      public Dictionary<string, Animation> animations { get; private set; } = new Dictionary<string, Animation>();
     }
   }
 }

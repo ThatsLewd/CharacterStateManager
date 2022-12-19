@@ -57,13 +57,13 @@ namespace ThatsLewd
         if (isSelf) useRoleToggle.valNoCallback = true;
       }
 
-      public static JSONClass GetJSONTopLevel()
+      public static JSONClass GetJSONTopLevel(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
         json["list"] = new JSONArray();
         foreach (Role role in Role.list)
         {
-          json["list"].AsArray.Add(role.GetJSON());
+          json["list"].AsArray.Add(role.GetJSON(rc));
         }
         return json;
       }
@@ -77,7 +77,7 @@ namespace ThatsLewd
         }
       }
 
-      public JSONClass GetJSON()
+      public JSONClass GetJSON(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
         json["name"] = name;

@@ -114,13 +114,13 @@ namespace ThatsLewd
         VaMUtils.SetStringChooserChoices(stateChooser.storable, stateChoices);
       }
 
-      public static JSONClass GetJSONTopLevel()
+      public static JSONClass GetJSONTopLevel(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
         json["listeners"] = new JSONArray();
         foreach (MessageListener listener in Messages.listeners)
         {
-          json["listeners"].AsArray.Add(listener.GetJSON());
+          json["listeners"].AsArray.Add(listener.GetJSON(rc));
         }
         return json;
       }
@@ -163,10 +163,12 @@ namespace ThatsLewd
         this.text = text;
       }
 
-      public JSONClass GetJSON()
+      public JSONClass GetJSON(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
+        rc.states[target.id] = target;
         json["state"] = target.id;
+        rc.groups[target.group.id] = target.group;
         json["stateGroup"] = target.group.id;
         json["text"] = text;
         return json;

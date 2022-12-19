@@ -63,6 +63,11 @@ namespace ThatsLewd
         Layer.OnDelete?.Invoke(this);
       }
 
+      public static Layer FindById(string id)
+      {
+        return Layer.list.Find((l) => l.id == id);
+      }
+
       public void TrackMorph(DAZMorph morph)
       {
         if (trackedMorphs.Exists((tm) => tm.morph == morph)) return;
@@ -89,13 +94,14 @@ namespace ThatsLewd
         }
       }
 
-      public static JSONClass GetJSONTopLevel()
+      public static JSONClass GetJSONTopLevel(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
         json["list"] = new JSONArray();
         foreach (Layer layer in Layer.list)
         {
-          json["list"].AsArray.Add(layer.GetJSON());
+          rc.layers[layer.id] = layer;
+          json["list"].AsArray.Add(layer.GetJSON(rc));
         }
         return json;
       }
@@ -109,17 +115,21 @@ namespace ThatsLewd
         }
       }
 
-      public JSONClass GetJSON()
+      public JSONClass GetJSON(ReferenceCollector rc, bool storeAnimations = true)
       {
         JSONClass json = new JSONClass();
         json["id"] = id;
         json["name"] = name;
         defaultTransitionDurationSlider.storable.StoreJSON(json);
         defaultTransitionEasingChooser.storable.StoreJSON(json);
-        json["animations"] = new JSONArray();
-        foreach (Animation animation in animations)
+        if (storeAnimations)
         {
-          json["animations"].AsArray.Add(animation.GetJSON());
+          json["animations"] = new JSONArray();
+          foreach (Animation animation in animations)
+          {
+            rc.animations[animation.id] = animation;
+            json["animations"].AsArray.Add(animation.GetJSON(rc));
+          }
         }
         json["trackedControllers"] = new JSONClass();
         foreach (TrackedController tc in trackedControllers)
@@ -134,13 +144,16 @@ namespace ThatsLewd
         return json;
       }
 
-      public void RestoreFromJSON(JSONClass json)
+      public void RestoreFromJSON(JSONClass json, bool mergeAnimations = false)
       {
         id = json["id"].Value;
         name = json["name"].Value;
         defaultTransitionDurationSlider.storable.RestoreFromJSON(json);
         defaultTransitionEasingChooser.storable.RestoreFromJSON(json);
-        Helpers.DisposeList(animations);
+        if (!mergeAnimations)
+        {
+          Helpers.DisposeList(animations);
+        }
         foreach (JSONNode node in json["animations"].AsArray)
         {
           new Animation(this).RestoreFromJSON(node.AsObject);

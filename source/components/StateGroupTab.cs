@@ -64,10 +64,12 @@ namespace ThatsLewd
         return newStateTransition;
       }
 
-      public JSONClass GetJSON()
+      public JSONClass GetJSON(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
+        rc.states[state.id] = state;
         json["state"] = state.id;
+        rc.groups[state.group.id] = state.group;
         json["stateGroup"] = state.group.id;
         weightSlider.storable.StoreJSON(json);
         return json;

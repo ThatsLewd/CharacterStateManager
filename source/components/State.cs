@@ -67,6 +67,19 @@ namespace ThatsLewd
         Group.OnDelete -= HandleGroupDeleted;
       }
 
+      public static State FindById(string id)
+      {
+        foreach (Group group in Group.list)
+        {
+          State state = group.states.Find((s) => s.id == id);
+          if (state != null)
+          {
+            return state;
+          }
+        }
+        return null;
+      }
+
       public void CopyActions()
       {
         ActionClipboard.onEnterTrigger = onEnterTrigger;
@@ -84,22 +97,26 @@ namespace ThatsLewd
         CharacterStateManager.instance.RequestRedraw();
       }
 
-      public JSONClass GetJSON()
+      public JSONClass GetJSON(ReferenceCollector rc, bool saveTransitions = true)
       {
         JSONClass json = new JSONClass();
         json["id"] = id;
+        json["groupId"] = group.id;
         json["name"] = name;
         onEnterTrigger.StoreJSON(json);
         onExitTrigger.StoreJSON(json);
-        json["playlist"] = playlist.GetJSON();
+        json["playlist"] = playlist.GetJSON(rc);
         transitionModeChooser.storable.StoreJSON(json);
         fixedDurationSlider.storable.StoreJSON(json);
         minDurationSlider.storable.StoreJSON(json);
         maxDurationSlider.storable.StoreJSON(json);
-        json["transitions"] = new JSONArray();
-        foreach (StateTransition transition in transitions)
+        if (saveTransitions)
         {
-          json["transitions"].AsArray.Add(transition.GetJSON());
+          json["transitions"] = new JSONArray();
+          foreach (StateTransition transition in transitions)
+          {
+            json["transitions"].AsArray.Add(transition.GetJSON(rc));
+          }
         }
         return json;
       }
