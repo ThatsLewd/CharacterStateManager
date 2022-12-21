@@ -90,7 +90,7 @@ namespace ThatsLewd
           json["states"].AsArray.Add(state.GetJSON(rc));
         }
         json["initialState"] = initialState?.id;
-        playbackEnabledToggle.storable.StoreJSON(json);
+        playbackEnabledToggle.StoreJSON(json);
         return json;
       }
 
@@ -110,7 +110,7 @@ namespace ThatsLewd
         }
         string initialStateId = json["initialState"]?.Value;
         initialState = states.Find((s) => s.id == initialStateId);
-        playbackEnabledToggle.storable.RestoreFromJSON(json);
+        playbackEnabledToggle.RestoreFromJSON(json);
       }
     }
   }

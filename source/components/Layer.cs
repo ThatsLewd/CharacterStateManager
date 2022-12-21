@@ -120,8 +120,8 @@ namespace ThatsLewd
         JSONClass json = new JSONClass();
         json["id"] = id;
         json["name"] = name;
-        defaultTransitionDurationSlider.storable.StoreJSON(json);
-        defaultTransitionEasingChooser.storable.StoreJSON(json);
+        defaultTransitionDurationSlider.StoreJSON(json);
+        defaultTransitionEasingChooser.StoreJSON(json);
         if (storeAnimations)
         {
           json["animations"] = new JSONArray();
@@ -148,8 +148,8 @@ namespace ThatsLewd
       {
         id = json["id"].Value;
         name = json["name"].Value;
-        defaultTransitionDurationSlider.storable.RestoreFromJSON(json);
-        defaultTransitionEasingChooser.storable.RestoreFromJSON(json);
+        defaultTransitionDurationSlider.RestoreFromJSON(json);
+        defaultTransitionEasingChooser.RestoreFromJSON(json);
         if (!mergeAnimations)
         {
           Helpers.DisposeList(animations);
@@ -205,15 +205,15 @@ namespace ThatsLewd
       {
         if (!isTracked) return;
         json[controller.name] = new JSONClass();
-        trackPositionToggle.storable.StoreJSON(json[controller.name].AsObject);
-        trackRotationToggle.storable.StoreJSON(json[controller.name].AsObject);
+        trackPositionToggle.StoreJSON(json[controller.name].AsObject);
+        trackRotationToggle.StoreJSON(json[controller.name].AsObject);
       }
 
       public void RestoreFromJSON(JSONClass json)
       {
         if (!json.HasKey(controller.name)) return;
-        trackPositionToggle.storable.RestoreFromJSON(json[controller.name].AsObject);
-        trackRotationToggle.storable.RestoreFromJSON(json[controller.name].AsObject);
+        trackPositionToggle.RestoreFromJSON(json[controller.name].AsObject);
+        trackRotationToggle.RestoreFromJSON(json[controller.name].AsObject);
       }
     }
 

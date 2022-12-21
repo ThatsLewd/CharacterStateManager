@@ -81,7 +81,7 @@ namespace ThatsLewd
       {
         JSONClass json = new JSONClass();
         json["name"] = name;
-        useRoleToggle.storable.StoreJSON(json);
+        useRoleToggle.StoreJSON(json);
         return json;
       }
 
@@ -95,7 +95,7 @@ namespace ThatsLewd
 
       public void RestoreFromJSON(JSONClass json)
       {
-        useRoleToggle.storable.RestoreFromJSON(json);
+        useRoleToggle.RestoreFromJSON(json);
       }
     }
   }

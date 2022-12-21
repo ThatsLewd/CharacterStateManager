@@ -100,12 +100,12 @@ namespace ThatsLewd
         {
           json["entries"].AsArray.Add(entry.GetJSON(rc));
         }
-        playModeChooser.storable.StoreJSON(json);
-        defaultTimingModeChooser.storable.StoreJSON(json);
-        defaultWeightSlider.storable.StoreJSON(json);
-        defaultDurationFixedSlider.storable.StoreJSON(json);
-        defaultDurationMinSlider.storable.StoreJSON(json);
-        defaultDurationMaxSlider.storable.StoreJSON(json);
+        playModeChooser.StoreJSON(json);
+        defaultTimingModeChooser.StoreJSON(json);
+        defaultWeightSlider.StoreJSON(json);
+        defaultDurationFixedSlider.StoreJSON(json);
+        defaultDurationMinSlider.StoreJSON(json);
+        defaultDurationMaxSlider.StoreJSON(json);
         return json;
       }
 
@@ -120,12 +120,12 @@ namespace ThatsLewd
             entries.Add(entry);
           }
         }
-        playModeChooser.storable.RestoreFromJSON(json);
-        defaultTimingModeChooser.storable.RestoreFromJSON(json);
-        defaultWeightSlider.storable.RestoreFromJSON(json);
-        defaultDurationFixedSlider.storable.RestoreFromJSON(json);
-        defaultDurationMinSlider.storable.RestoreFromJSON(json);
-        defaultDurationMaxSlider.storable.RestoreFromJSON(json);
+        playModeChooser.RestoreFromJSON(json);
+        defaultTimingModeChooser.RestoreFromJSON(json);
+        defaultWeightSlider.RestoreFromJSON(json);
+        defaultDurationFixedSlider.RestoreFromJSON(json);
+        defaultDurationMinSlider.RestoreFromJSON(json);
+        defaultDurationMaxSlider.RestoreFromJSON(json);
       }
     }
 
@@ -192,11 +192,11 @@ namespace ThatsLewd
         json["animation"] = animation.id;
         rc.layers[animation.layer.id] = animation.layer;
         json["animationLayer"] = animation.layer.id;
-        timingModeChooser.storable.StoreJSON(json);
-        weightSlider.storable.StoreJSON(json);
-        durationFixedSlider.storable.StoreJSON(json);
-        durationMinSlider.storable.StoreJSON(json);
-        durationMaxSlider.storable.StoreJSON(json);
+        timingModeChooser.StoreJSON(json);
+        weightSlider.StoreJSON(json);
+        durationFixedSlider.StoreJSON(json);
+        durationMinSlider.StoreJSON(json);
+        durationMaxSlider.StoreJSON(json);
         return json;
       }
 
@@ -218,11 +218,11 @@ namespace ThatsLewd
 
       public void RestoreFromJSON(JSONClass json)
       {
-        timingModeChooser.storable.RestoreFromJSON(json);
-        weightSlider.storable.RestoreFromJSON(json);
-        durationFixedSlider.storable.RestoreFromJSON(json);
-        durationMinSlider.storable.RestoreFromJSON(json);
-        durationMaxSlider.storable.RestoreFromJSON(json);
+        timingModeChooser.RestoreFromJSON(json);
+        weightSlider.RestoreFromJSON(json);
+        durationFixedSlider.RestoreFromJSON(json);
+        durationMinSlider.RestoreFromJSON(json);
+        durationMaxSlider.RestoreFromJSON(json);
       }
     }
   }

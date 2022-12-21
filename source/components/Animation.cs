@@ -147,13 +147,13 @@ namespace ThatsLewd
         {
           json["keyframes"].AsArray.Add(keyframe.GetJSON());
         }
-        loopTypeChooser.storable.StoreJSON(json);
-        playbackSpeedSlider.storable.StoreJSON(json);
-        positionNoiseSlider.storable.StoreJSON(json);
-        rotationNoiseSlider.storable.StoreJSON(json);
-        morphNoiseSlider.storable.StoreJSON(json);
-        defaultEasingChooser.storable.StoreJSON(json);
-        defaultDurationSlider.storable.StoreJSON(json);
+        loopTypeChooser.StoreJSON(json);
+        playbackSpeedSlider.StoreJSON(json);
+        positionNoiseSlider.StoreJSON(json);
+        rotationNoiseSlider.StoreJSON(json);
+        morphNoiseSlider.StoreJSON(json);
+        defaultEasingChooser.StoreJSON(json);
+        defaultDurationSlider.StoreJSON(json);
         onEnterTrigger.StoreJSON(json);
         onPlayingTrigger.StoreJSON(json);
         onExitTrigger.StoreJSON(json);
@@ -169,13 +169,13 @@ namespace ThatsLewd
         {
           new Keyframe(this).RestoreFromJSON(node.AsObject);
         }
-        loopTypeChooser.storable.RestoreFromJSON(json);
-        playbackSpeedSlider.storable.RestoreFromJSON(json);
-        positionNoiseSlider.storable.RestoreFromJSON(json);
-        rotationNoiseSlider.storable.RestoreFromJSON(json);
-        morphNoiseSlider.storable.RestoreFromJSON(json);
-        defaultEasingChooser.storable.RestoreFromJSON(json);
-        defaultDurationSlider.storable.RestoreFromJSON(json);
+        loopTypeChooser.RestoreFromJSON(json);
+        playbackSpeedSlider.RestoreFromJSON(json);
+        positionNoiseSlider.RestoreFromJSON(json);
+        rotationNoiseSlider.RestoreFromJSON(json);
+        morphNoiseSlider.RestoreFromJSON(json);
+        defaultEasingChooser.RestoreFromJSON(json);
+        defaultDurationSlider.RestoreFromJSON(json);
         onEnterTrigger.RestoreFromJSON(json);
         onPlayingTrigger.RestoreFromJSON(json);
         onExitTrigger.RestoreFromJSON(json);

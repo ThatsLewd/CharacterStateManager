@@ -1649,91 +1649,175 @@ namespace ThatsLewd
     void HandleSaveInstance(string path)
     {
       if (path.Length == 0) return;
-      JSONClass json = new JSONClass();
-      InstanceStoreJSON(json);
-      SaveJSONWithExtension(json, path);
+      try
+      {
+        JSONClass json = new JSONClass();
+        InstanceStoreJSON(json);
+        SaveJSONWithExtension(json, path);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleLoadInstance(string path)
     {
       if (path.Length == 0) return;
-      JSONClass json = LoadJSON(path).AsObject;
-      InstanceRestoreFromJSON(json);
+      try
+      {
+        JSONClass json = LoadJSON(path).AsObject;
+        InstanceRestoreFromJSON(json);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleSaveGroup(string path)
     {
       if (path.Length == 0 || activeGroup == null) return;
-      JSONClass json = new JSONClass();
-      GroupStoreJSON(json, activeGroup);
-      SaveJSONWithExtension(json, path);
+      try
+      {
+        JSONClass json = new JSONClass();
+        GroupStoreJSON(json, activeGroup);
+        SaveJSONWithExtension(json, path);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleLoadGroup(string path)
     {
       if (path.Length == 0) return;
-      JSONClass json = LoadJSON(path).AsObject;
-      GroupRestoreFromJSON(json);
+      try
+      {
+        JSONClass json = LoadJSON(path).AsObject;
+        GroupRestoreFromJSON(json);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleSaveState(string path)
     {
       if (path.Length == 0 || activeState == null) return;
-      JSONClass json = new JSONClass();
-      StateStoreJSON(json, activeState);
-      SaveJSONWithExtension(json, path);
+      try
+      {
+        JSONClass json = new JSONClass();
+        StateStoreJSON(json, activeState);
+        SaveJSONWithExtension(json, path);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleLoadState(string path)
     {
       if (path.Length == 0 || activeGroup == null) return;
-      JSONClass json = LoadJSON(path).AsObject;
-      StateRestoreFromJSON(json, activeGroup);
+      try
+      {
+        JSONClass json = LoadJSON(path).AsObject;
+        StateRestoreFromJSON(json, activeGroup);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleSaveLayer(string path)
     {
       if (path.Length == 0 || activeLayer == null) return;
-      JSONClass json = new JSONClass();
-      LayerStoreJSON(json, activeLayer);
-      SaveJSONWithExtension(json, path);
+      try
+      {
+        JSONClass json = new JSONClass();
+        LayerStoreJSON(json, activeLayer);
+        SaveJSONWithExtension(json, path);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleLoadLayer(string path)
     {
       if (path.Length == 0) return;
-      JSONClass json = LoadJSON(path).AsObject;
-      LayerRestoreFromJSON(json);
+      try
+      {
+        JSONClass json = LoadJSON(path).AsObject;
+        LayerRestoreFromJSON(json);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleSaveAnimation(string path)
     {
       if (path.Length == 0 || activeAnimation == null) return;
-      JSONClass json = new JSONClass();
-      AnimationStoreJSON(json, activeAnimation);
-      SaveJSONWithExtension(json, path);
+      try
+      {
+        JSONClass json = new JSONClass();
+        AnimationStoreJSON(json, activeAnimation);
+        SaveJSONWithExtension(json, path);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleLoadAnimation(string path)
     {
       if (path.Length == 0) return;
-      JSONClass json = LoadJSON(path).AsObject;
-      AnimationRestoreFromJSON(json);
+      try
+      {
+        JSONClass json = LoadJSON(path).AsObject;
+        AnimationRestoreFromJSON(json);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleSaveRoles(string path)
     {
       if (path.Length == 0) return;
-      JSONClass json = new JSONClass();
-      RolesStoreJSON(json);
-      SaveJSONWithExtension(json, path);
+      try
+      {
+        JSONClass json = new JSONClass();
+        RolesStoreJSON(json);
+        SaveJSONWithExtension(json, path);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
     void HandleLoadRoles(string path)
     {
       if (path.Length == 0) return;
-      JSONClass json = LoadJSON(path).AsObject;
-      RolesRestoreFromJSON(json);
+      try
+      {
+        JSONClass json = LoadJSON(path).AsObject;
+        RolesRestoreFromJSON(json);
+      }
+      catch (Exception e)
+      {
+        LogError(e.ToString());
+      }
     }
 
 

@@ -139,10 +139,10 @@ namespace ThatsLewd
         {
           JSONClass json = new JSONClass();
           json["id"] = id;
-          labelInput.storable.StoreJSON(json);
-          colorPicker.storable.StoreJSON(json);
-          easingChooser.storable.StoreJSON(json);
-          durationSlider.storable.StoreJSON(json);
+          labelInput.StoreJSON(json);
+          colorPicker.StoreJSON(json);
+          easingChooser.StoreJSON(json);
+          durationSlider.StoreJSON(json);
           onEnterTrigger.StoreJSON(json);
           onPlayingTrigger.StoreJSON(json);
           onExitTrigger.StoreJSON(json);
@@ -162,10 +162,10 @@ namespace ThatsLewd
         public void RestoreFromJSON(JSONClass json)
         {
           id = json["id"].Value;
-          labelInput.storable.RestoreFromJSON(json);
-          colorPicker.storable.RestoreFromJSON(json);
-          easingChooser.storable.RestoreFromJSON(json);
-          durationSlider.storable.RestoreFromJSON(json);
+          labelInput.RestoreFromJSON(json);
+          colorPicker.RestoreFromJSON(json);
+          easingChooser.RestoreFromJSON(json);
+          durationSlider.RestoreFromJSON(json);
           onEnterTrigger.RestoreFromJSON(json);
           onPlayingTrigger.RestoreFromJSON(json);
           onExitTrigger.RestoreFromJSON(json);

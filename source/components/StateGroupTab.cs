@@ -71,7 +71,7 @@ namespace ThatsLewd
         json["state"] = state.id;
         rc.groups[state.group.id] = state.group;
         json["stateGroup"] = state.group.id;
-        weightSlider.storable.StoreJSON(json);
+        weightSlider.StoreJSON(json);
         return json;
       }
 
@@ -93,7 +93,7 @@ namespace ThatsLewd
 
       public void RestoreFromJSON(JSONClass json)
       {
-        weightSlider.storable.RestoreFromJSON(json);
+        weightSlider.RestoreFromJSON(json);
       }
     }
   }

@@ -106,10 +106,10 @@ namespace ThatsLewd
         onEnterTrigger.StoreJSON(json);
         onExitTrigger.StoreJSON(json);
         json["playlist"] = playlist.GetJSON(rc);
-        transitionModeChooser.storable.StoreJSON(json);
-        fixedDurationSlider.storable.StoreJSON(json);
-        minDurationSlider.storable.StoreJSON(json);
-        maxDurationSlider.storable.StoreJSON(json);
+        transitionModeChooser.StoreJSON(json);
+        fixedDurationSlider.StoreJSON(json);
+        minDurationSlider.StoreJSON(json);
+        maxDurationSlider.StoreJSON(json);
         if (saveTransitions)
         {
           json["transitions"] = new JSONArray();
@@ -128,10 +128,10 @@ namespace ThatsLewd
         onEnterTrigger.RestoreFromJSON(json);
         onExitTrigger.RestoreFromJSON(json);
         playlist.RestoreFromJSON(json["playlist"].AsObject);
-        transitionModeChooser.storable.RestoreFromJSON(json);
-        fixedDurationSlider.storable.RestoreFromJSON(json);
-        minDurationSlider.storable.RestoreFromJSON(json);
-        maxDurationSlider.storable.RestoreFromJSON(json);
+        transitionModeChooser.RestoreFromJSON(json);
+        fixedDurationSlider.RestoreFromJSON(json);
+        minDurationSlider.RestoreFromJSON(json);
+        maxDurationSlider.RestoreFromJSON(json);
       }
 
       public void LateRestoreFromJSON(JSONClass json)

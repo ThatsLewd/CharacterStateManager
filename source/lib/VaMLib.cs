@@ -390,6 +390,14 @@ namespace VaMLib
       public JSONStorableBool storable;
       public bool val { get { return storable.val; } set { storable.val = value; }}
       public bool valNoCallback { set { storable.valNoCallback = value; }}
+      public void StoreJSON(JSONClass json)
+      {
+        storable.StoreJSON(json);
+      }
+      public void RestoreFromJSON(JSONClass json)
+      {
+        storable.RestoreFromJSON(json);
+      }
       public UIDynamicToggle Draw(Column side)
       {
         UIDynamicToggle toggle = script.CreateToggle(storable, side == Column.RIGHT);
@@ -454,6 +462,14 @@ namespace VaMLib
       public List<string> choices { get { return storable.choices; } set { storable.choices = value; } }
       public List<string> displayChoices { get { return storable.displayChoices; } set { storable.displayChoices = value; } }
       public bool filterable;
+      public void StoreJSON(JSONClass json)
+      {
+        storable.StoreJSON(json);
+      }
+      public void RestoreFromJSON(JSONClass json)
+      {
+        storable.RestoreFromJSON(json);
+      }
       public UIDynamicPopup Draw(Column side)
       {
         UIDynamicPopup popup;
@@ -518,6 +534,31 @@ namespace VaMLib
       public bool exponentialRangeIncrement;
       public bool integer;
       public bool interactable;
+
+      public void StoreJSON(JSONClass json)
+      {
+        JSONClass sliderJSON = new JSONClass();
+        sliderJSON["value"].AsFloat = val;
+        sliderJSON["min"].AsFloat = min;
+        sliderJSON["max"].AsFloat = max;
+        json[storable.name] = sliderJSON;
+        storable.StoreJSON(json);
+      }
+
+      public void RestoreFromJSON(JSONClass json)
+      {
+        JSONClass sliderJSON = json[storable.name].AsObject;
+        if (sliderJSON != null)
+        {
+          min = sliderJSON.HasKey("min") ? sliderJSON["min"].AsFloat : defaultMin;
+          max = sliderJSON.HasKey("max") ? sliderJSON["max"].AsFloat : defaultMax;
+          valNoCallback = sliderJSON.HasKey("value") ? sliderJSON["value"].AsFloat : defaultValue;
+        }
+        else
+        {
+          storable.RestoreFromJSON(json); // legacy
+        }
+      }
 
       public UIDynamicCustomSlider Draw(Column side)
       {
@@ -636,6 +677,14 @@ namespace VaMLib
       public JSONStorableString storable;
       public string val { get { return storable.val; } set { storable.val = value; } }
       public string valNoCallback { set { storable.valNoCallback = value; } }
+      public void StoreJSON(JSONClass json)
+      {
+        storable.StoreJSON(json);
+      }
+      public void RestoreFromJSON(JSONClass json)
+      {
+        storable.RestoreFromJSON(json);
+      }
       public UIDynamicOnelineTextInput Draw(Column side)
       {
         if (customOnelineTextInputPrefab == null)
@@ -699,6 +748,14 @@ namespace VaMLib
       public JSONStorableBool storable;
       public bool val { get { return storable.val; } set { storable.val = value; } }
       public bool valNoCallback { set { storable.valNoCallback = value; } }
+      public void StoreJSON(JSONClass json)
+      {
+        storable.StoreJSON(json);
+      }
+      public void RestoreFromJSON(JSONClass json)
+      {
+        storable.RestoreFromJSON(json);
+      }
       public UIDynamicLabelWithToggle Draw(Column side)
       {
         if (customLabelWithTogglePrefab == null)
@@ -756,6 +813,14 @@ namespace VaMLib
       public JSONStorableColor storable;
       public HSVColor val { get { return storable.val; } set { storable.val = value; } }
       public HSVColor valNoCallback { set { storable.valNoCallback = value; } }
+      public void StoreJSON(JSONClass json)
+      {
+        storable.StoreJSON(json);
+      }
+      public void RestoreFromJSON(JSONClass json)
+      {
+        storable.RestoreFromJSON(json);
+      }
       public UIDynamicColorPicker Draw(Column side)
       {
         UIDynamicColorPicker picker = script.CreateColorPicker(storable, side == Column.RIGHT);
@@ -796,6 +861,14 @@ namespace VaMLib
       public string val { get { return storable.val; } set { storable.val = value; } }
       public string valNoCallback { set { storable.valNoCallback = value; } }
       public Color? buttonColor;
+      public void StoreJSON(JSONClass json)
+      {
+        storable.StoreJSON(json);
+      }
+      public void RestoreFromJSON(JSONClass json)
+      {
+        storable.RestoreFromJSON(json);
+      }
       public UIDynamicButton Draw(Column side)
       {
         UIDynamicButton button = CreateButton(side, storable.name);
