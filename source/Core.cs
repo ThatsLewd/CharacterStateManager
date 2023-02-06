@@ -159,7 +159,3 @@ namespace ThatsLewd
     }
   }
 }
-
-// TODO:
-// character locomotion
-// merge

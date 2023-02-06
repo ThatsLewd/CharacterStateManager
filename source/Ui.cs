@@ -64,6 +64,8 @@ namespace ThatsLewd
     VaMUI.VaMStringChooser addMorphChooser;
     VaMUI.VaMToggle morphChooserUseFavoritesToggle;
 
+    VaMUI.VaMStringChooser activeListenerChooser;
+
     VaMUI.VaMStringChooser exportImportChooser;
 
     void UIInit()
@@ -89,6 +91,8 @@ namespace ThatsLewd
       transitionStateChooser = VaMUI.CreateStringChooserKeyVal("Select State", null, "");
       addMorphChooser = VaMUI.CreateStringChooserKeyVal("Select Morph", filterable: true, defaultValue: "");
       morphChooserUseFavoritesToggle = VaMUI.CreateToggle("Favorites Only", true, callbackNoVal: HandleToggleMorphChooserFavorites);
+
+      activeListenerChooser = VaMUI.CreateStringChooser("Listener", callbackNoVal: RequestRedraw);
 
       exportImportChooser = VaMUI.CreateStringChooser("Category", SerializableSection.list.ToList(), SerializableSection.Instance, callbackNoVal: RequestRedraw);
 
@@ -128,6 +132,7 @@ namespace ThatsLewd
       VaMUtils.SelectStringChooserFirstValue(activeStateIdChooser.storable);
       VaMUtils.SelectStringChooserFirstValue(activeLayerIdChooser.storable);
       VaMUtils.SelectStringChooserFirstValue(activeAnimationIdChooser.storable);
+      RefreshListenerList();
     }
 
     public void RequestRedraw()
@@ -1510,21 +1515,8 @@ namespace ThatsLewd
         6
       ));
 
-      CreateSubHeader(VaMUI.RIGHT, "Listeners");
-      if (activeGroup == null || activeState == null)
-      {
-        UI(VaMUI.CreateInfoText(
-          VaMUI.RIGHT,
-          "You must select a <b>Group</b> with at least one <b>State</b> to add any listeners.",
-          2
-        ));
-        return;
-      }
-
       UI(VaMUI.CreateSpacer(VaMUI.LEFT, 10f));
-      UI(VaMUI.CreateInfoText(VaMUI.LEFT, "The following state:", 1));
-      UI(VaMUI.CreateInfoText(VaMUI.LEFT, $"<b>{activeState.name}</b>", 1, background: false));
-      UI(VaMUI.CreateInfoText(VaMUI.LEFT, "will be triggered when this role:", 1));
+      UI(VaMUI.CreateInfoText(VaMUI.LEFT, "Listen for when this role:", 1));
       Messages.SetRoleChooserChoices();
       UI(Messages.roleChooser.Draw(VaMUI.LEFT));
       UI(VaMUI.CreateInfoText(VaMUI.LEFT, $"sends this message:", 1));
@@ -1547,30 +1539,78 @@ namespace ThatsLewd
           UI(Messages.stateInput.Draw(VaMUI.LEFT));
         }
       }
-      UI(VaMUI.CreateButton(VaMUI.LEFT, "Add Listener", HandleAddListener));
+      UI(VaMUI.CreateButton(VaMUI.LEFT, "Add Listener", HandleAddListener, VaMUI.GREEN));
 
-      UI(VaMUI.CreateInfoText(VaMUI.RIGHT, "This state will trigger when these messages are received:", 2));
-      foreach (MessageListener listener in Messages.GetListenersForState(activeState))
+      CreateSubHeader(VaMUI.RIGHT, "Listeners");
+      UI(activeListenerChooser.Draw(VaMUI.RIGHT));
+
+      MessageListener activeListener = Messages.listeners.Find((l) => l.text == activeListenerChooser.val);
+
+      if (activeListener == null)
       {
-        UI(VaMUI.CreateLabelWithX(VaMUI.RIGHT, $"<size=22>{listener.text}</size>", () => { HandleDeleteListener(listener); }));
+        return;
+      }
+
+      UI(VaMUI.CreateButton(VaMUI.RIGHT, "Delete Listener", () => { HandleDeleteListener(activeListener); }, VaMUI.RED));
+      UI(VaMUI.CreateSpacer(VaMUI.RIGHT));
+
+      UI(VaMUI.CreateInfoText(VaMUI.RIGHT, $"This listener will trigger the following states:", 2));
+      if (activeGroup == null || activeState == null)
+      {
+        UI(VaMUI.CreateInfoText(
+          VaMUI.RIGHT,
+          "You must select a <b>Group</b> with at least one <b>State</b> to add to this listener.",
+          2
+        ));
+      }
+      else
+      {
+        UI(VaMUI.CreateButton(VaMUI.RIGHT, "Add Current State", () => { activeListener.AddTarget(activeState); RequestRedraw(); }, VaMUI.GREEN));
+      }
+
+      foreach (State target in activeListener.targets)
+      {
+        UI(VaMUI.CreateLabelWithX(VaMUI.RIGHT, $"{target.group.name}::{target.name}", () => { activeListener.RemoveTarget(target); RequestRedraw(); }));
       }
     }
 
     void HandleAddListener()
     {
-      if (activeState == null) return;
-      Messages.AddListener(activeState);
+      string result = Messages.AddListener();
       Messages.customMessageInput.val = "";
       Messages.groupInput.val = "";
       Messages.stateInput.val = "";
       Messages.groupChooser.val = "";
       Messages.stateChooser.val = "";
+
+      if (result != null)
+      {
+        activeListenerChooser.val = result;
+      }
+
+      RefreshListenerList();
       RequestRedraw();
     }
 
     void HandleDeleteListener(MessageListener listener)
     {
       Messages.RemoveListener(listener);
+
+      RefreshListenerList();
+      RequestRedraw();
+    }
+
+    void RefreshListenerList()
+    {
+      List<string> choices = new List<string>();
+      foreach (MessageListener listener in Messages.listeners)
+      {
+        choices.Add(listener.text);
+      }
+      choices.Sort();
+      activeListenerChooser.choices = choices;
+
+      VaMUtils.EnsureStringChooserValue(activeListenerChooser.storable, defaultToFirstChoice: true, noCallback: true);
       RequestRedraw();
     }
 

@@ -32,22 +32,21 @@ namespace ThatsLewd
         State.OnDelete += HandleStateDeleted;
       }
 
-      public static void AddListener(State activeState)
+      public static string AddListener()
       {
-        if (activeState == null) return;
-        if (roleChooser.val == "") return;
+        if (roleChooser.val == "") return null;
 
         string listenerText = "";
         if (messageTypeChooser.val == MessageType.Custom)
         {
-          if (customMessageInput.val == "") return;
+          if (customMessageInput.val == "") return null;
           listenerText = MessageType.GetMessageTextCustom(roleChooser.val, customMessageInput.val);
         }
         else
         {
           string groupName = roleChooser.val == Role.Self ? VaMUtils.GetStringChooserDisplayFromVal(groupChooser.storable, groupChooser.val) : groupInput.val;
           string stateName = roleChooser.val == Role.Self ? VaMUtils.GetStringChooserDisplayFromVal(stateChooser.storable, stateChooser.val) : stateInput.val;
-          if (groupName == "" || stateName == "") return;
+          if (groupName == "" || stateName == "") return null;
           if (messageTypeChooser.val == MessageType.EnterState)
           {
             listenerText = MessageType.GetMessageTextEnterState(roleChooser.val, groupName, stateName);
@@ -58,9 +57,10 @@ namespace ThatsLewd
           }
         }
 
-        if (listenerText == "") return;
-        if (listeners.Exists((l) => l.target == activeState && l.text == listenerText)) return;
-        listeners.Add(new MessageListener(activeState, listenerText));
+        if (listenerText == "") return null;
+        if (listeners.Exists((l) => l.text == listenerText)) return null;
+        listeners.Add(new MessageListener(listenerText));
+        return listenerText;
       }
 
       public static void RemoveListener(MessageListener listener)
@@ -70,12 +70,10 @@ namespace ThatsLewd
 
       private static void HandleStateDeleted(State state)
       {
-        listeners.RemoveAll((l) => l.target == state);
-      }
-
-      public static List<MessageListener> GetListenersForState(State state)
-      {
-        return listeners.FindAll((l) => l.target == state);
+        foreach (MessageListener listener in listeners)
+        {
+          listener.targets.RemoveAll((t) => t == state);
+        }
       }
 
       public static void SetRoleChooserChoices()
@@ -131,7 +129,7 @@ namespace ThatsLewd
         foreach (JSONNode node in json["listeners"].AsArray.Childs)
         {
           MessageListener listener = MessageListener.FromJSON(node.AsObject);
-          if (listener != null)
+          if (listener != null && !listeners.Contains(listener))
           {
             listeners.Add(listener);
           }
@@ -154,39 +152,80 @@ namespace ThatsLewd
 
     public class MessageListener
     {
-      public State target { get; private set; }
       public string text { get; private set; }
+      public List<State> targets { get; private set; } = new List<State>();
 
-      public MessageListener (State target, string text)
+      public MessageListener (string text)
       {
-        this.target = target;
         this.text = text;
+      }
+
+      public void AddTarget(State target)
+      {
+        if (targets.Exists((t) => t == target)) return;
+        targets.Add(target);
+      }
+
+      public void RemoveTarget(State target)
+      {
+        targets.Remove(target);
       }
 
       public JSONClass GetJSON(ReferenceCollector rc)
       {
         JSONClass json = new JSONClass();
-        rc.states[target.id] = target;
-        json["state"] = target.id;
-        rc.groups[target.group.id] = target.group;
-        json["stateGroup"] = target.group.id;
         json["text"] = text;
+        json["targets"] = new JSONArray();
+        foreach (State state in targets)
+        {
+          JSONClass stateJSON = new JSONClass();
+          rc.states[state.id] = state;
+          stateJSON["state"] = state.id;
+          rc.groups[state.group.id] = state.group;
+          stateJSON["stateGroup"] = state.group.id;
+          json["targets"].AsArray.Add(stateJSON);
+        }
         return json;
       }
 
       public static MessageListener FromJSON(JSONClass json)
       {
-        string stateId = json["state"].Value;
-        string groupId = json["stateGroup"].Value;
-        Group group = Group.list.Find((g) => g.id == groupId);
-        State state = group?.states.Find((s) => s.id == stateId);
-        if (state == null)
-        {
-          LogError($"Could not find state: {stateId}");
-          return null;
-        }
         string text = json["text"];
-        MessageListener listener = new MessageListener(state, text);
+        MessageListener listener = Messages.listeners.Find((l) => l.text == text);
+        if (listener == null)
+        {
+          listener = new MessageListener(text);
+        }
+        foreach (JSONNode node in json["targets"].AsArray)
+        {
+          string stateId = node["state"].Value;
+          string groupId = node["stateGroup"].Value;
+          Group group = Group.list.Find((g) => g.id == groupId);
+          State state = group?.states.Find((s) => s.id == stateId);
+          if (state == null)
+          {
+            LogError($"Could not find state: {stateId}");
+            continue;
+          }
+          listener.targets.Add(state);
+        }
+
+        // legacy
+        if (json.HasKey("state") && json.HasKey("stateGroup"))
+        {
+          string stateId = json["state"].Value;
+          string groupId = json["stateGroup"].Value;
+          Group group = Group.list.Find((g) => g.id == groupId);
+          State state = group?.states.Find((s) => s.id == stateId);
+          if (state == null)
+          {
+            LogError($"Could not find state: {stateId}");
+          }
+          else
+          {
+            listener.targets.Add(state);
+          }
+        }
         return listener;
       }
     }

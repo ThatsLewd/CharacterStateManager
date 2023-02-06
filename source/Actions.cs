@@ -32,7 +32,10 @@ namespace ThatsLewd
       {
         if (message == listener.text)
         {
-          GroupPlayer.PlayState(listener.target.group, listener.target);
+          foreach (State target in listener.targets)
+          {
+            GroupPlayer.PlayState(target.group, target);
+          }
         }
       }
     }
